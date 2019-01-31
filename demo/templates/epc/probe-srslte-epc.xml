@@ -1,0 +1,5 @@
+<probe-srslte-epc address="127.0.0.1" port="47100">
+  <probes>
+    <SRSLTE.EPC.Tables.Traffic enable="yes"/>
+  </probes>
+</probe-srslte-epc>

@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2019 - Adjacent Link LLC, Bridgewater, New Jersey
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of Adjacent Link LLC nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * See toplevel COPYING for more information.
+ */
+
+syntax = "proto2";
+
+package EMANELTE.MHAL;
+
+option optimize_for = SPEED;
+
+// common timestamp for UL/DL messages
+message Timestamp
+{
+   required uint32 ts_sec  = 1;
+   required uint32 ts_usec = 2;
+} 
+
+// channel type
+enum CHANNEL_TYPE
+{
+     CHAN_SSS_PSS = 0;
+     CHAN_PBCH    = 1;
+     CHAN_PRACH   = 2;
+     CHAN_PCFICH  = 3;
+     CHAN_PHICH   = 4;
+     CHAN_PDCCH   = 5;
+     CHAN_PDSCH   = 6;
+     CHAN_PUCCH   = 7;
+     CHAN_PUSCH   = 8;
+     CHAN_PMCH    = 9;
+}
+
+// modulation type
+enum MOD_TYPE {
+     MOD_BPSK   = 1;
+     MOD_QPSK   = 2;
+     MOD_16QAM  = 4;
+     MOD_64QAM  = 6;
+     MOD_ERR    = 7;
+}
+
+// resource allocation type
+enum RA_TYPE {
+     RA_TYPE_0 = 1;
+     RA_TYPE_1 = 2;
+     RA_TYPE_2 = 3;
+}
+
+// cyclical prefix mode [normal or extended]
+enum CP_MODE {
+     CP_NORM  = 1;
+     CP_EXTD  = 2;
+}
+
+// phich resources type
+enum PHICH_RESOURCES {
+     PR_ONE_SIXTH = 1;
+     PR_ONE_HALF  = 2;
+     PR_ONE       = 3;
+     PR_TWO       = 4;
+}
+
+// subframe type
+enum SUBFRAME_TYPE {
+     SF_NORMAL = 1;  // normal
+     SF_MCBC   = 2;  // multi/broadcast
+}
+
+// dci format 
+enum DCI_FORMAT {
+     DCI_FORMAT_0   = 1;
+     DCI_FORMAT_1   = 2;
+     DCI_FORMAT_1A  = 3;
+     DCI_FORMAT_1C  = 4;
+     DCI_FORMAT_1B  = 5;
+     DCI_FORMAT_1D  = 6;
+     DCI_FORMAT_2   = 7;
+     DCI_FORMAT_2A  = 8;
+     DCI_FORMAT_2B  = 9;
+     DCI_FORMAT_ERR = 10;
+}
+
+
+message ChannelMessage {
+  required CHANNEL_TYPE channel_type               = 1;
+  repeated uint64 resource_block_frequencies_slot1 = 2;
+  repeated uint64 resource_block_frequencies_slot2 = 3;
+  required float tx_power_scale_db                 = 4;
+  required MOD_TYPE modulation_type                = 5;
+  required uint32 number_of_bits                   = 6;
+  optional uint32 rnti                             = 7;
+}
+
+
+enum MESSAGE_TYPE {
+  DOWNLINK = 0;
+  UPLINK = 1;
+}
+
+
+message DownlinkMessage {
+  required uint32 cfi                 = 1;
+  required uint32 num_resource_blocks = 2;
+  required ChannelMessage pcfich      = 3;
+  optional ChannelMessage pbch        = 4;
+  optional ChannelMessage pmch        = 5;
+  repeated ChannelMessage phich       = 6;
+  repeated ChannelMessage pdcch       = 7;
+  repeated ChannelMessage pdsch       = 8;
+}
+
+
+message UplinkMessage {
+  optional ChannelMessage prach = 1;
+  repeated ChannelMessage pucch = 2;
+  repeated ChannelMessage pusch = 3;
+}

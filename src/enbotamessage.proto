@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2019 - Adjacent Link LLC, Bridgewater, New Jersey
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of Adjacent Link LLC nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * See toplevel COPYING for more information.
+ */
+
+syntax = "proto2";
+
+package EMANELTE.MHAL;
+
+option optimize_for = SPEED;
+
+import "otacommon.proto";
+
+// ********** BEGIN MSG DEFS ***********
+
+message ENB_DL_Message
+{
+ // Primary and Secondary Sync Message
+ // Used to convey physical cell id cyclical prefix mode
+ // Sent on sf 0 and 5
+ message PSS_SSS
+ {
+   required CP_MODE cp_mode = 1;
+ }
+
+
+// Physical Broadcast Channel – PBCH
+//  The dedicated broadcast channel in LTE downlink.
+//  Contains parameters such as the system bandwidth, PHICH information, system frame number 
+//  and the number of transmit antennas used by the eNodeB.
+//  Sent on sf = 0
+message PBCH
+ {
+   // note System Frame Number is derived from the tti value see below.
+
+   // number of Physical Resource Blocks (PRB's) [6,15,25,50,75,100] or system bandwidth
+   //  6  = 1.4 MHz
+   // 15  = 3   MHz
+   // 25  = 5   MHz
+   // 50  = 10  MHz
+   // 75  = 15  MHz
+   // 100 = 20  MHz
+   required uint32 num_prb = 1;
+
+   // number of antennas [1,2]
+   required uint32 num_antennas = 2;
+
+   // phich resources [1/6, 1/2, 1, 2] 
+   required PHICH_RESOURCES phich_resources = 3;
+
+   enum PHICH_LENGTH {
+     LEN_NORM = 0;
+     LEN_EXTD = 1;
+   }
+
+  required PHICH_LENGTH phich_length = 4;
+}
+
+message DCI_MSG
+ {
+   // dci format 
+   required DCI_FORMAT format = 1;
+
+   // packed msg actual bit len
+   required uint32 num_bits = 2;
+
+   // peer to peer packed dci msg
+   required bytes data = 3;
+
+   // dci location level
+   required uint32 l_level = 4;
+
+   // num control channel channel elements
+   required uint32 l_ncce = 5;
+ } 
+
+
+// Physical Downlink Control Channel - PDCCH
+message PDCCH
+{
+  // Downlink Data Control Info
+  message DL_DCI
+  {
+    // radio net temp id [0x1-0xffff]
+    required uint32 rnti = 1;
+
+    // peer data data reference
+    required uint32 refid = 2;
+
+    // the packed dci msg
+    required DCI_MSG dci_msg = 3;
+  }
+
+  // Uplink Data Control Info
+  message UL_DCI
+  {
+    // radio net temp id [0x1-0xffff]
+    required uint32 rnti = 1;
+
+    // the packed dci msg
+    required DCI_MSG dci_msg = 3;
+  }
+
+  optional DL_DCI dl_dci = 1;
+
+  optional UL_DCI ul_dci = 2;
+}
+
+
+// Physical Downlink Shared Channel – PDSCH
+//  The main data channel on downlink the channel is shared between 
+//  multiple users and also it is shared by many logical channels.
+message PDSCH
+{
+  message Data 
+   {
+     // dci reference id
+     required uint32 refid = 1;
+
+     // transfer block [0,1]
+     required uint32 tb = 2;
+
+     // transfer block size
+     required uint32 tbs = 3;
+
+     // peer data
+     required bytes data = 4;
+   }
+
+  repeated Data data = 1;
+}
+
+
+message PHICH
+{
+  // radio net temp id [0x1-0xffff]
+  required uint32 rnti = 1;
+
+  // ack bit 0 nack, 1 ack
+  required uint32 ack = 2;
+
+  // num lowest physical resource blocks
+  required uint32 num_prb_low = 3;
+
+  // num demodulation reference signals
+  required uint32 num_dmrs = 4;
+}
+
+// Physical Multicast Channel 
+//  Downlink multicast message carries PMCCH and PMCH
+message PMCH
+{
+   // area id
+   required uint32 area_id = 1;
+
+   // transfer block size
+   required uint32 tbs = 2;
+
+   // data
+   required bytes data = 3;
+
+   // mbms rnti
+   required uint32 rnti = 4;
+}
+
+
+// ********** END MSG DEFS ***********
+
+ // Transmit Time Index [0-10240]
+ //  Sent in every msg for peer to peer time sync maintenance
+ // 
+ //  System Frame Number (sfn) = tti / 10
+ //  Sub Frame           (sf)  = tti % 10
+ required uint32  tti = 1;
+
+ // Physical Cell Id
+ // physical layer cell id [0-167] (phy_cell_id / 3)
+ // physical layer cell id [0-2    (phy_cell_id % 3)
+ required uint32  phy_cell_id = 2;
+
+ // control format indicator [1-3]
+ required uint32  cfi = 3;
+
+ // optional pss_sss sent on selected subframes
+ optional PSS_SSS pss_sss = 4;
+
+ // optional pbch sent on selected subframes
+ optional PBCH pbch = 5;
+
+ // repeated pdsch
+ repeated PDCCH pdcch = 6;
+
+ // optional 
+ optional PDSCH pdsch = 7;
+
+ // optional phich
+ optional PHICH phich = 8;
+
+ // repeated pmch
+ optional PMCH pmch = 9;
+}
+
+
+

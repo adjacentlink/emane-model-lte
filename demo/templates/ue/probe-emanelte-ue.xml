@@ -1,0 +1,11 @@
+<probe-emane-lte address="127.0.0.1" port="47000">
+  <probes>
+    <EMANE.LTE.UE.Counters.General enable="yes"/>
+    <EMANE.LTE.UE.Tables.Counts enable="yes"/>
+    <EMANE.LTE.UE.Tables.Downlink.Control enable="no"/>
+    <EMANE.LTE.UE.Tables.Downlink.Data enable="yes"/>
+    <EMANE.LTE.UE.Tables.Events enable="yes"/>
+    <EMANE.LTE.UE.Tables.Uplink.Control enable="no"/>
+    <EMANE.LTE.UE.Tables.Uplink.Data enable="no"/>
+  </probes>
+</probe-emane-lte>

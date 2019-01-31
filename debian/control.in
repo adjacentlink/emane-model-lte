@@ -1,0 +1,19 @@
+Source: emane-model-lte
+Section: unknown
+Priority: extra
+Maintainer: Adjacent Link LLC <emane@adjacentlink.com>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, libprotobuf-dev
+Standards-Version: 3.9.3
+Homepage: https://github.com/adjacentlink/emane
+
+Package: emane-model-lte
+Section: libs
+Architecture: any
+Depends: emane (>= @EMANE_VERSION@),${shlibs:Depends}, ${misc:Depends}
+Description: EMANE LTE Model
+
+Package: emane-model-lte-dev
+Section: libdevel
+Architecture: any
+Depends: emane-model-lte (>= @VERSION@-1)
+Description: EMANE LTE Model Headers
