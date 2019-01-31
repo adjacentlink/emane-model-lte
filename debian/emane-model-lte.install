@@ -1,0 +1,8 @@
+usr/lib/libemanelte.so
+usr/share/emane/manifest/*
+usr/share/emane-model-lte/demo/two_ues/*
+usr/share/emane-model-lte/demo/two_ues_otestpoint/*
+usr/share/emane-model-lte/demo/templates/enb/*
+usr/share/emane-model-lte/demo/templates/epc/*
+usr/share/emane-model-lte/demo/templates/host/*
+usr/share/emane-model-lte/demo/templates/ue/*

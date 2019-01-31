@@ -1,0 +1,50 @@
+# autotools
+Makefile
+Makefile.in
+configure
+libtool
+config
+config.status
+config.log
+aclocal.m4
+autom4te.cache
+*.o
+compile
+config.guess
+config.sub
+depcomp
+install-sh
+libtool.m4
+ltmain.sh
+ltoptions.m4
+ltsugar.m4
+ltversion.m4
+lt~obsolete.m4
+missing
+emane-model-lte.spec
+debian/control
+
+# protocol buffers output
+*.pb.cc
+*.pb.h
+
+# object files/dependencies
+*.la
+*.lo
+*.o
+**/.deps
+**/.libs
+src/emaneinfolte
+src/libemanelte.pc
+
+# rpm
+.rpmbuild
+
+# deb
+.debbuild
+
+# dist
+emane-model-lte*.tar.gz
+
+# code reading
+.project

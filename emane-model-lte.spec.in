@@ -1,0 +1,72 @@
+Summary: EMANE-MODEL-LTE
+Name: emane-model-lte
+Version: @VERSION@
+Release: 1%{?dist}
+License: BSD
+Group: Applications/System
+URL: https://github.com/adjacentlink/emane
+Source0: %{name}-%{version}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+Requires: protobuf emane-libs >= 1.2.3
+Prefix: /usr
+Vendor: Adjacent Link LLC
+
+%global debug_package %{nil}
+
+
+%description
+EMANE MODEL LTE
+
+%prep
+%setup -q
+
+%build
+%configure
+make
+
+%install
+make DESTDIR=${RPM_BUILD_ROOT} install
+find ${RPM_BUILD_ROOT} -name '*.a' -exec rm '{}'  \;
+find ${RPM_BUILD_ROOT} -name '*.la' -exec rm '{}' \;
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%post
+/sbin/ldconfig
+
+%postun
+/sbin/ldconfig
+
+%files
+%defattr(-, root, root)
+%{_libdir}/libemanelte.*
+%{_datadir}/emane/manifest/*.xml
+
+%doc AUTHORS
+%doc COPYING
+%doc ChangeLog
+%doc NEWS
+%doc README
+%doc %{_datadir}/emane-model-lte/demo/two_ues/*
+%doc %{_datadir}/emane-model-lte/demo/two_ues_otestpoint/*
+%doc %{_datadir}/emane-model-lte/demo/templates/enb/*
+%doc %{_datadir}/emane-model-lte/demo/templates/epc/*
+%doc %{_datadir}/emane-model-lte/demo/templates/host/*
+%doc %{_datadir}/emane-model-lte/demo/templates/ue/*
+
+
+%package devel
+Requires: %{name}%{?_isa} = %{version}-%{release}
+Summary: EMANE MODEL LTE library headers.
+Group: Development/Libraries
+
+%description devel
+Headers necessary to use EMANE MODEL LTE library libemanelte.
+
+%files devel
+%defattr(-, root, root)
+%dir %{_includedir}/libemanelte
+%{_includedir}/libemanelte/*
+%{_libdir}/pkgconfig/*
+

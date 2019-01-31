@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<emanelte>
+  <platform id="${id}"
+            loglevel="2"
+            logfile="${__top_dir}/persist/${__node_name}/var/log/emane.log"
+            otamanagerdevice="${control_interface}"
+            eventservicedevice="${control_interface}">
+
+    <radiomodel pcrcurveuri="pcr.xml"
+                resourceblocktxpower="0.0"/>
+
+    <phy noisemode="all"
+         propagationmodel="precomputed"
+         subid="12"/>
+
+  </platform>
+</emanelte>

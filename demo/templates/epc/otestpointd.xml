@@ -1,0 +1,8 @@
+<otestpoint id="epc-${id}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
+  <probe configuration="probe-srslte-mbms.xml">
+    <python module="otestpoint.lte.srsmbms" class="SRSMBMS"/>
+  </probe>
+  <probe configuration="probe-srslte-epc.xml">
+    <python module="otestpoint.lte.srsepc" class="SRSEPC"/>
+  </probe>
+</otestpoint>
