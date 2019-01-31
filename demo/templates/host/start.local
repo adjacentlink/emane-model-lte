@@ -1,0 +1,16 @@
+#!/bin/bash -
+
+top_dir=$1
+
+ulimit -c unlimited
+
+sleep 11
+
+echo "running host start.local"
+
+cd "$top_dir/host"
+
+# load common functions
+. ./functions
+
+set_initial_pathloss

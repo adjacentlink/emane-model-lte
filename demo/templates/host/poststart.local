@@ -1,0 +1,7 @@
+#!/bin/bash -
+
+top_dir=$1
+
+cd "$top_dir/host"
+
+echo "running host poststart.local"

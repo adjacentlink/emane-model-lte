@@ -1,0 +1,8 @@
+<otestpoint id="enb-${id}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
+  <probe configuration="probe-srslte-enb.xml">
+    <python module="otestpoint.lte.srsenb" class="SRSENB"/>
+  </probe>
+  <probe configuration="probe-emanelte-enb.xml">
+    <python module="otestpoint.lte.emaneenb" class="EMANEENB"/>
+  </probe>
+</otestpoint>

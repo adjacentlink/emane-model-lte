@@ -1,0 +1,5 @@
+<probe-srslte-mbms address="127.0.0.1" port="47101">
+  <probes>
+    <SRSLTE.MBMS.Tables.Traffic enable="yes"/>
+  </probes>
+</probe-srslte-mbms>
