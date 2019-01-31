@@ -32,7 +32,7 @@ AC_COPYRIGHT([
   See toplevel COPYING for more information.
 ])
 
-AC_INIT([emane-model-lte],18.9.1,[emane at adjacent link dot com])
+AC_INIT([emane-model-lte],1.0.1,[emane at adjacent link dot com])
 
 EMANE_VERSION='1.2.3'
 AC_SUBST(EMANE_VERSION)
