@@ -117,7 +117,8 @@ emaneinfolte_CPPFLAGS =                  \
  -I@top_srcdir@/include                  \
  -I@top_srcdir@/src/libemane             \
  $(AM_CPPFLAGS)                          \
- $(libemane_CFLAGS)
+ $(libemane_CFLAGS)                      \
+ $(libostatistic_CFLAGS)
 
 emaneinfolte_LDADD = \
  $(libemane_LIBS)   \
