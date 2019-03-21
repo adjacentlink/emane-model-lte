@@ -314,7 +314,17 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: slot=%d freq %lu, offset %lu, duration %lu, type %d, modType %d, sinr_dB %0.1f, por %0.3f, rand %0.3f, rbParams.res_ %d",
+                             "MACI %03hu %s::%s: "
+                             "slot=%zu "
+                             "freq %lu, "
+                             "offset %lu, "
+                             "duration %lu, "
+                             "type %d, "
+                             "modType %d, "
+                             "sinr_dB %0.1f, "
+                             "por %0.3f, "
+                             "rand %0.3f, "
+                             "rbParams.res_ %d",
                              id_,
                              "ENBMessageProcessor",
                              __func__,
@@ -386,7 +396,17 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: slot=%d freq %lu, offset %lu, duration %lu, type=%d, modType %d, sinr_dB %0.1f, por %0.3f, rand %0.3f, rbParams.res_ %d",
+                             "MACI %03hu %s::%s: "
+                             "slot=%zu "
+                             "freq %lu, "
+                             "offset %lu, "
+                             "duration %lu, "
+                             "type=%d, "
+                             "modType %d, "
+                             "sinr_dB %0.1f, "
+                             "por %0.3f, "
+                             "rand %0.3f, "
+                             "rbParams.res_ %d",
                              id_,
                              "ENBMessageProcessor",
                              __func__,
