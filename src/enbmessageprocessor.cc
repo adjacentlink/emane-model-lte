@@ -190,6 +190,11 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
       addTxSegments(txControl.downlink().pbch(), tti_tx, sfDuration, cfi);
     }
 
+  if(txControl.downlink().has_pmch())
+    {
+      addTxSegments(txControl.downlink().pmch(), tti_tx, sfDuration, cfi);
+    }
+
   for(int i = 0; i < txControl.downlink().phich_size(); ++i)
     {
       addTxSegments(txControl.downlink().phich(i), tti_tx, sfDuration, cfi);
