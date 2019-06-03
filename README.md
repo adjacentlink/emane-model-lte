@@ -15,7 +15,7 @@ not run as a separate application. The
 [emane-embedded-example](https://github.com/adjacentlink/emane-embedded-example)
 project provides a small example, for those interested.
 
-The lastest stable version: 1.0.1.
+The lastest stable version: 1.0.3.
 
 
 ---
