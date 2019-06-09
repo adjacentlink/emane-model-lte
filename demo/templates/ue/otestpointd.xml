@@ -5,4 +5,7 @@
   <probe configuration="probe-emanelte-ue.xml">
     <python module="otestpoint.lte.emaneue" class="EMANEUE"/>
   </probe>
+  <probe configuration="probe-emane-physicallayer.xml">
+    <python module="otestpoint.emane.physicallayer" class="PhysicalLayer"/>
+  </probe>
 </otestpoint>

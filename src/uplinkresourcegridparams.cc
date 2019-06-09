@@ -57,12 +57,16 @@ EMANE::Models::LTE::UplinkChannelRBParams::toString()
 
 
 EMANE::Models::LTE::PUSCHParams::PUSCHParams(std::uint32_t numSymbols) :
-  UplinkChannelRBParams(ResourceBlockParams{6 * numSymbols, 0, numSymbols})
+  // Demodulation reference symbol occupies 1 symbol
+  UplinkChannelRBParams(ResourceBlockParams{12 * (numSymbols-1), 0, numSymbols})
 {}  
 
 
 EMANE::Models::LTE::PUCCHParams::PUCCHParams(std::uint32_t numSymbols) :
-  UplinkChannelRBParams(ResourceBlockParams{4 * numSymbols, 0, numSymbols})
+  // PUCCH format 1-1b get 4 symbols (normal or extended)
+  // PUCCH format 2, 2a, 2b and 3 gets 5 symbols.
+  // Here assuming 4, TODO, make numREs dependent on PUCCH format
+  UplinkChannelRBParams(ResourceBlockParams{12 * 4, 0, numSymbols})
 {}  
 
 

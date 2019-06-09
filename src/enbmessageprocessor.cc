@@ -190,6 +190,11 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
       addTxSegments(txControl.downlink().pbch(), tti_tx, sfDuration, cfi);
     }
 
+  if(txControl.downlink().has_pmch())
+    {
+      addTxSegments(txControl.downlink().pmch(), tti_tx, sfDuration, cfi);
+    }
+
   for(int i = 0; i < txControl.downlink().phich_size(); ++i)
     {
       addTxSegments(txControl.downlink().phich(i), tti_tx, sfDuration, cfi);
@@ -314,13 +319,25 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: freq %lu, offset %lu, duration %lu, modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
+                             "MACI %03hu %s::%s: "
+                             "slot=%zu "
+                             "freq %lu, "
+                             "offset %lu, "
+                             "duration %lu, "
+                             "type %d, "
+                             "modType %d, "
+                             "sinr_dB %0.1f, "
+                             "por %0.3f, "
+                             "rand %0.3f, "
+                             "rbParams.res_ %d",
                              id_,
                              "ENBMessageProcessor",
                              __func__,
+                             slot1,
                              freq,
                              offset.count(),
                              duration.count(),
+                             type,
                              modType,
                              sinr_dB,
                              por,
@@ -384,10 +401,25 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
+                             "MACI %03hu %s::%s: "
+                             "slot=%zu "
+                             "freq %lu, "
+                             "offset %lu, "
+                             "duration %lu, "
+                             "type=%d, "
+                             "modType %d, "
+                             "sinr_dB %0.1f, "
+                             "por %0.3f, "
+                             "rand %0.3f, "
+                             "rbParams.res_ %d",
                              id_,
                              "ENBMessageProcessor",
                              __func__,
+                             slot2,
+                             freq,
+                             offset.count(),
+                             duration.count(),
+                             type,
                              modType,
                              sinr_dB,
                              por,
@@ -407,8 +439,8 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
   if(!messageReceived)
     {
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
+                             EMANE::INFO_LEVEL,
+                             "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, numberOfBits %d, messageREs %d, infoREs %d, rcvedREs %d",
                              id_,
                              "ENBMessageProcessor",
                              __func__,
@@ -416,6 +448,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
                              sfIdx,
                              type,
                              modType,
+                             numberOfBits,
                              numberMessageREs,
                              numberInfoREs,
                              numberReceivedREs);
