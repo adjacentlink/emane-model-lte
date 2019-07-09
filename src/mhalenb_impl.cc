@@ -115,13 +115,14 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
     nemBuilder.buildNEMManager(uuid,
                                nems_,
                                {
-                                 {"otamanagerchannelenable", {platformConfig.sOtamManagerChannelEnable_}},
-                                 {"otamanagergroup",         {platformConfig.sOtaManagerGroup_}},
-                                 {"otamanagerloopback",      {platformConfig.sOtaManagerLoopback_}},
-                                 {"otamanagerdevice",        {platformConfig.sOtaManagerDevice_}},
-                                 {"eventservicegroup",       {platformConfig.sEventServiceGroup_}},
-                                 {"eventservicedevice",      {platformConfig.sEventServiceDevice_}},
-                                 {"controlportendpoint",     {platformConfig.sControlPortEndpoint_}}
+                                 {"otamanagerchannelenable",   {platformConfig.sOtamManagerChannelEnable_}},
+                                 {"otamanagergroup",           {platformConfig.sOtaManagerGroup_}},
+                                 {"otamanagerloopback",        {platformConfig.sOtaManagerLoopback_}},
+                                 {"otamanagerdevice",          {platformConfig.sOtaManagerDevice_}},
+                                 {"eventservicegroup",         {platformConfig.sEventServiceGroup_}},
+                                 {"eventservicedevice",        {platformConfig.sEventServiceDevice_}},
+                                 {"controlportendpoint",       {platformConfig.sControlPortEndpoint_}},
+                                 {"antennaprofilemanifesturi", {platformConfig.sAntennaProfileManifest_}}
                                });
 
   pNEMManager_->start();
