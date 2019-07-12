@@ -36,7 +36,7 @@
 #ifndef EMANELTE_MHAL_H
 #define EMANELTE_MHAL_H
 
-#include <list>
+#include <vector>
 #include <string>
 #include <sys/time.h>
 #include "libemanelte/otacommon.pb.h"
@@ -94,7 +94,7 @@ namespace MHAL {
   };
 
   typedef std::pair<Data, RxControl> RxMessage;
-  typedef std::list<RxMessage>       RxMessages;
+  typedef std::vector<RxMessage>       RxMessages;
 }
 }
 

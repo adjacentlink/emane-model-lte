@@ -35,7 +35,6 @@
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
-#include <list>
 #include <map>
 #include <sstream>
 #include <vector>
