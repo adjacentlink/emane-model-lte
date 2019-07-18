@@ -84,25 +84,25 @@ namespace EMANELTE
             sOtaManagerDevice_{"lo"}, 
             sEventServiceGroup_{"224.1.2.8:45703"}, 
             sEventServiceDevice_{"lo"},
-            sAntennaProfileManifest_{"antennaprofilemanifest.xml"}
+            sAntennaProfileManifest_{""}
            { }
 
            std::string format()
             {
                std::stringstream ss;
 
-               ss << "\n\tid="                       << id_; 
-               ss << "\n\tcontrolportendpoint="      << sControlPortEndpoint_; 
-               ss << "\n\tantennagain="              << sAntennaGain_;
-               ss << "\n\tlogfile="                  << sLogFileName_;
-               ss << "\n\tloglevel="                 << sLogLevel_;
-               ss << "\n\totamanagerchannelenable="  << sOtamManagerChannelEnable_;
-               ss << "\n\totamanagergroup="          << sOtaManagerGroup_;
-               ss << "\n\totamanagerloopback="       << sOtaManagerLoopback_;
-               ss << "\n\totamanagerdevice="         << sOtaManagerDevice_;
-               ss << "\n\teventservicegroup="        << sEventServiceGroup_;
-               ss << "\n\teventservicedevice="       << sEventServiceDevice_;
-               ss << "\n\tantennaprofilemanifesturi" << sAntennaProfileManifest_;
+               ss << "\n\tid="                        << id_; 
+               ss << "\n\tcontrolportendpoint="       << sControlPortEndpoint_; 
+               ss << "\n\tantennagain="               << sAntennaGain_;
+               ss << "\n\tlogfile="                   << sLogFileName_;
+               ss << "\n\tloglevel="                  << sLogLevel_;
+               ss << "\n\totamanagerchannelenable="   << sOtamManagerChannelEnable_;
+               ss << "\n\totamanagergroup="           << sOtaManagerGroup_;
+               ss << "\n\totamanagerloopback="        << sOtaManagerLoopback_;
+               ss << "\n\totamanagerdevice="          << sOtaManagerDevice_;
+               ss << "\n\teventservicegroup="         << sEventServiceGroup_;
+               ss << "\n\teventservicedevice="        << sEventServiceDevice_;
+               ss << "\n\tantennaprofilemanifesturi=" << sAntennaProfileManifest_;
 
                return ss.str();
              }
