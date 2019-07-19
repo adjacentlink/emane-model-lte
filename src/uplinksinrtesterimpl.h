@@ -55,13 +55,24 @@ typedef std::map<ChannelRNTI, bool> RNTIChannelSINRResults;
 class UplinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
+  UplinkSINRTesterImpl(double sinr) : 
+   sinr_{sinr}
+  { };
+ 
   ChannelSINRResults channelSINRResults_;
 
   RNTIChannelSINRResults rntiChannelSINRResults_;
 
-  bool sinrCheck(CHANNEL_TYPE ctype);
+  bool sinrCheck(CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);  
+  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+
+private:
+  const double sinr_;
 };
 
 }

@@ -44,6 +44,8 @@ namespace EMANELTE {
 namespace MHAL {
 
 class SINRTesterImpl;
+  
+typedef std::pair<bool, double> SINRTesterResult;
 
 class SINRTester
 {
@@ -55,6 +57,10 @@ public:
   bool sinrCheck(CHANNEL_TYPE ctype);
 
   bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype);
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti);
 
   void release();
 

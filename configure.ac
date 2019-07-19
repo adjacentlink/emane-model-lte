@@ -32,7 +32,7 @@ AC_COPYRIGHT([
   See toplevel COPYING for more information.
 ])
 
-AC_INIT([emane-model-lte],1.0.2,[emane at adjacent link dot com])
+AC_INIT([emane-model-lte],1.0.3_for_v19.03,[emane at adjacent link dot com])
 
 EMANE_VERSION='1.2.3'
 AC_SUBST(EMANE_VERSION)
@@ -78,7 +78,8 @@ PKG_CHECK_MODULES([libemane], libemane)
 PKG_CHECK_MODULES([libostatistic], libostatistic)
 
 # compiler options
-CXXFLAGS="$CXXFLAGS -W -Wall -g0 -O3"
+CXXFLAGS="$CXXFLAGS -W -Wall"
+CPPFLAGS="$CPPFLAGS -W -Wall"
 
 # options for use with gprof
 if test "$with_profile" = "yes"
@@ -90,8 +91,13 @@ fi
 # options for use with debug
 if test "$with_debug" = "yes"
 then
-CPPFLAGS="$CPPFLAGS -g -O0 -DDEBUG"
-LDFLAGS="$LDFLAGS -g -O0"
+CPPFLAGS="$CPPFLAGS -g3 -O0 -DDEBUG"
+CXXFLAGS="$CXXFLAGS -g3 -O0 -DDEBUG"
+LDFLAGS="$LDFLAGS   -g3 -O0"
+else
+CPPFLAGS="$CPPFLAGS -g0 -O3"
+CXXFLAGS="$CXXFLAGS -g0 -O3"
+LDFLAGS="$LDFLAGS   -g0 -O3"
 fi
 
 # options for use with verbose logging

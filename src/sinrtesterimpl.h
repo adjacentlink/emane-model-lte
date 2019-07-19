@@ -37,6 +37,7 @@
 #define EMANELTE_SINRTESTERIMPL_H
 
 #include "libemanelte/otacommon.pb.h"
+#include "libemanelte/sinrtester.h"
 
 
 namespace EMANELTE {
@@ -50,6 +51,11 @@ public:
   virtual bool sinrCheck(CHANNEL_TYPE ctype) = 0;
 
   virtual bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) = 0;
+
+  virtual SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) = 0;
+
+  virtual SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) = 0;
+
 };
 
 }

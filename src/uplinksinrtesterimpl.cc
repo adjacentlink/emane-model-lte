@@ -62,3 +62,31 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnt
 
   return sinr_result->second;
 }
+
+
+EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
+{
+  auto sinr_result = channelSINRResults_.find(ctype);
+
+  if(sinr_result == channelSINRResults_.end())
+    {
+      return SINRTesterResult(false, sinr_);
+    }
+
+  return SINRTesterResult(sinr_result->second, sinr_);
+}
+
+
+EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
+{
+  auto sinr_result = rntiChannelSINRResults_.find(EMANELTE::MHAL::ChannelRNTI(ctype, rnti));
+
+  if(sinr_result == rntiChannelSINRResults_.end())
+    {
+      return SINRTesterResult(false, sinr_);
+    }
+
+  return SINRTesterResult(sinr_result->second, sinr_);
+}

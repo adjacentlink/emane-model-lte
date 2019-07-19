@@ -50,25 +50,32 @@ public:
                          TxControlMessage txControl,
                          EMANE::Models::LTE::SegmentMap segmentCache,
                          bool pcfichPass,
-                         bool pbchPass) :
+                         bool pbchPass,
+                         double sinr) :
     pRadioModel_{pRadioModel},
     txControl_{txControl},
     segmentCache_{segmentCache},
     pcfichPass_{pcfichPass},
     pbchPass_{pbchPass},
+    sinr_{sinr},
     pdcchRNTIResults_{}
   {}
 
-  bool sinrCheck(CHANNEL_TYPE ctype);
+  bool sinrCheck(CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);
+  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
+
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
 
 private:
-  EMANE::Models::LTE::UERadioModel * pRadioModel_;
-  TxControlMessage txControl_;
+  EMANE::Models::LTE::UERadioModel * const pRadioModel_;
+  const TxControlMessage txControl_;
   EMANE::Models::LTE::SegmentMap segmentCache_;
-  bool pcfichPass_;
-  bool pbchPass_;
+  const bool pcfichPass_;
+  const bool pbchPass_;
+  const double sinr_;
   std::map<std::uint32_t, bool> pdcchRNTIResults_;
 };
 

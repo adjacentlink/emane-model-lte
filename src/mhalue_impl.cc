@@ -227,26 +227,26 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
   // for each pending message
   for(auto & msg : pendingMessageBins_[bin].get())
     {
-      RxControl rxControl;
-
-      // get the rx control info
-      rxControl.rxData_ = std::move(std::get<1>(msg));
-
       // get the ota info
       const auto & otaInfo = std::get<2>(msg);
 
       // get the TxControl message
       const auto & txControl = std::get<3>(msg);
 
-      // reception stats
-      StatisticManager::ReceptionInfoMap receptionInfoMap;
+      // grab num segments here, some  stl list size() calls are not O(1)
+      const auto numSegments = otaInfo.segments_.size();
+
+      RxControl rxControl {};
+
+      // get the rx control info
+      rxControl.rxData_ = std::move(std::get<1>(msg));
 
 #ifdef ENABLE_INFO_2_LOGS
       logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, segments %zu",
                   __func__,
                   rxControl.rxData_.nemId_,
                   rxControl.rxData_.rx_seqnum_,
-                  otaInfo.segments_.size());
+                  numSegments);
 #endif
       double signalSum_mW = 0, noiseFloorSum_mW = 0;
 
@@ -302,12 +302,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
               continue;
             }
 
-          double rxPower_dBm = segment.getRxPowerdBm();
-          double rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
+          const double rxPower_dBm = segment.getRxPowerdBm();
+          const double rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
 
           const auto segmentSor = otaInfo.sot_ + segment.getOffset();
           const auto segmentEor = segmentSor   + segment.getDuration();
-          const auto rangeInfo = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
+          const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
 
           double noiseFloor_dBm = rangeInfo.first;
           double noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
@@ -317,8 +317,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
           double sinr_dB = rxPower_dBm - noiseFloor_dBm;
 
-          segmentCache.insert(std::pair<EMANE::Models::LTE::SegmentKey, float>(
-             EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB));
+          segmentCache.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB);
 
           pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
 
@@ -359,39 +358,45 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         } // end each segment
 
       // now check for number of pass/fail segments
-      if(otaInfo.segments_.size() > 0)
+      if(numSegments > 0)
         {
+          const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pcfich(), segmentCache);
+
+          const bool pbchPass = txControl.downlink().has_pbch() ?
+                                  pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pbch(), segmentCache) : 
+                                  false;
+
+          const auto signalAvg_dBm = EMANELTE::MW_TO_DB(signalSum_mW / numSegments);
+
+          const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / numSegments);
+
+          DownlinkSINRTesterImpl * pSINRTester =
+            new DownlinkSINRTesterImpl(pRadioModel_, 
+                                       std::move(txControl), 
+                                       std::move(segmentCache), 
+                                       pcfichPass,
+                                       pbchPass,
+                                       signalAvg_dBm - noiseFloorAvg_dBm);
+
+          rxControl.SINRTester_.setImpl(pSINRTester);
+
           rxControl.rxData_.peak_sum_ = peak_sum;
 
           rxControl.rxData_.num_samples_ = num_samples;
 
-          bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pcfich(), segmentCache);
+          StatisticManager::ReceptionInfoMap receptionInfoMap;
 
-          bool pbchPass{false};
-
-          if(txControl.downlink().has_pbch())
-            {
-              pbchPass = pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pbch(), segmentCache);
-            }
-
-          DownlinkSINRTesterImpl * pSINRTester = \
-            new DownlinkSINRTesterImpl(pRadioModel_, std::move(txControl), std::move(segmentCache), pcfichPass, pbchPass);
-
-          rxControl.SINRTester_.setImpl(pSINRTester);
-
-          // make ready, take ownership of data and control
-          readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
-
-          const auto signalAvg_dBm = EMANELTE::MW_TO_DB(signalSum_mW / otaInfo.segments_.size());
-
-          const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / otaInfo.segments_.size());
-
+          // add entry per src
           receptionInfoMap[rxControl.rxData_.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
                                                                                            noiseFloorAvg_dBm,
-                                                                                           otaInfo.segments_.size()};
-        }
+                                                                                           numSegments};
+   
+          statisticManager_.updateReceptionTable(receptionInfoMap);
 
-      statisticManager_.updateReceptionTable(receptionInfoMap);
+          // lastly, make ready, take ownership of data and control
+          readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
+
+        }
     } // end for each msg
 }
 

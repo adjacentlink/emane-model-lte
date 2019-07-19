@@ -94,7 +94,7 @@ namespace MHAL {
   };
 
   typedef std::pair<Data, RxControl> RxMessage;
-  typedef std::vector<RxMessage>       RxMessages;
+  typedef std::vector<RxMessage>     RxMessages;
 }
 }
 
