@@ -56,7 +56,7 @@ class UplinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
   UplinkSINRTesterImpl(double sinr, double noiseFloor) : 
-   sinr_dBm_{sinr},
+   sinr_dB_{sinr},
    noiseFloor_dBm_{noiseFloor}
   { };
  
@@ -73,7 +73,7 @@ public:
   SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
 
 private:
-  const double sinr_dBm_;
+  const double sinr_dB_;
   const double noiseFloor_dBm_;
 };
 

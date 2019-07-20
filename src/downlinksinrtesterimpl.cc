@@ -132,18 +132,18 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
 {
   if(ctype == CHAN_PCFICH)
     {
-      return SINRTester::SINRTesterResult{pcfichPass_, sinr_dBm_, noiseFloor_dBm_};
+      return SINRTester::SINRTesterResult{pcfichPass_, sinr_dB_, noiseFloor_dBm_};
     }
   else if(ctype == CHAN_PBCH)
     {
-      return SINRTester::SINRTesterResult{pbchPass_, sinr_dBm_, noiseFloor_dBm_};
+      return SINRTester::SINRTesterResult{pbchPass_, sinr_dB_, noiseFloor_dBm_};
     }
   else if(ctype == CHAN_PMCH)
     {
       if(txControl_.downlink().has_pmch())
         {
           return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pmch(), segmentCache_),
-                                  sinr_dBm_,
+                                  sinr_dB_,
                                   noiseFloor_dBm_};
         }
     }
@@ -172,7 +172,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
             }
 
           return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().phich(i), segmentCache_),
-                                  sinr_dBm_,
+                                  sinr_dB_,
                                   noiseFloor_dBm_};
         }
     }
@@ -190,7 +190,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
           // Store PDCCH result for corresponding PDSCH check
           pdcchRNTIResults_.emplace(rnti, pdcchPass);
 
-          return SINRTester::SINRTesterResult{pdcchPass, sinr_dBm_, noiseFloor_dBm_};
+          return SINRTester::SINRTesterResult{pdcchPass, sinr_dB_, noiseFloor_dBm_};
         }
     }
   else if(ctype == CHAN_PDSCH)
@@ -211,7 +211,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
             }
 
           return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdsch(i), segmentCache_), 
-                                  sinr_dBm_,
+                                  sinr_dB_,
                                   noiseFloor_dBm_};
         }
     }

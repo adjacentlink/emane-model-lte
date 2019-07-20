@@ -74,7 +74,7 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
       return SINRTester::SINRTesterResult{};
     }
 
-  return SINRTester::SINRTesterResult{sinr_result->second, sinr_dBm_, noiseFloor_dBm_};
+  return SINRTester::SINRTesterResult{sinr_result->second, sinr_dB_, noiseFloor_dBm_};
 }
 
 
@@ -88,5 +88,5 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rn
       return SINRTester::SINRTesterResult{};
     }
 
-  return SINRTester::SINRTesterResult{sinr_result->second, sinr_dBm_, noiseFloor_dBm_};
+  return SINRTester::SINRTesterResult{sinr_result->second, sinr_dB_, noiseFloor_dBm_};
 }

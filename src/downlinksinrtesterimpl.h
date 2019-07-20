@@ -58,7 +58,7 @@ public:
     segmentCache_{segmentCache},
     pcfichPass_{pcfichPass},
     pbchPass_{pbchPass},
-    sinr_dBm_{sinr},
+    sinr_dB_{sinr},
     noiseFloor_dBm_{noiseFloor},
     pdcchRNTIResults_{}
   {}
@@ -77,7 +77,7 @@ private:
   EMANE::Models::LTE::SegmentMap segmentCache_;
   const bool pcfichPass_;
   const bool pbchPass_;
-  const double sinr_dBm_;
+  const double sinr_dB_;
   const double noiseFloor_dBm_;
   std::map<std::uint32_t, bool> pdcchRNTIResults_;
 };

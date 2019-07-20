@@ -53,18 +53,18 @@ public:
 
   struct SINRTesterResult {
     bool bPassed_;
-    double sinr_dBm_;
+    double sinr_dB_;
     double noiseFloor_dBm_;
 
     SINRTesterResult() :
       bPassed_{false},
-      sinr_dBm_{0.0},
+      sinr_dB_{0.0},
       noiseFloor_dBm_{0.0}
     { }
 
     SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
       bPassed_{bPassed},
-      sinr_dBm_{sinr},
+      sinr_dB_{sinr},
       noiseFloor_dBm_{noiseFloor}
     { }
   };
