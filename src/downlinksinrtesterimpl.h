@@ -51,13 +51,15 @@ public:
                          EMANE::Models::LTE::SegmentMap segmentCache,
                          bool pcfichPass,
                          bool pbchPass,
-                         double sinr) :
+                         double sinr,
+                         double noiseFloor) :
     pRadioModel_{pRadioModel},
     txControl_{txControl},
     segmentCache_{segmentCache},
     pcfichPass_{pcfichPass},
     pbchPass_{pbchPass},
-    sinr_{sinr},
+    sinr_dBm_{sinr},
+    noiseFloor_dBm_{noiseFloor},
     pdcchRNTIResults_{}
   {}
 
@@ -65,9 +67,9 @@ public:
 
   bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
 
 private:
   EMANE::Models::LTE::UERadioModel * const pRadioModel_;
@@ -75,7 +77,8 @@ private:
   EMANE::Models::LTE::SegmentMap segmentCache_;
   const bool pcfichPass_;
   const bool pbchPass_;
-  const double sinr_;
+  const double sinr_dBm_;
+  const double noiseFloor_dBm_;
   std::map<std::uint32_t, bool> pdcchRNTIResults_;
 };
 

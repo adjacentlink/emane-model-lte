@@ -45,13 +45,30 @@ namespace MHAL {
 
 class SINRTesterImpl;
   
-typedef std::pair<bool, double> SINRTesterResult;
 
 class SINRTester
 {
 public:
   SINRTester();
 
+  struct SINRTesterResult {
+    bool bPassed_;
+    double sinr_dBm_;
+    double noiseFloor_dBm_;
+
+    SINRTesterResult() :
+      bPassed_{false},
+      sinr_dBm_{0.0},
+      noiseFloor_dBm_{0.0}
+    { }
+
+    SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
+      bPassed_{bPassed},
+      sinr_dBm_{sinr},
+      noiseFloor_dBm_{noiseFloor}
+    { }
+  };
+    
   void setImpl(SINRTesterImpl * impl);
 
   bool sinrCheck(CHANNEL_TYPE ctype);

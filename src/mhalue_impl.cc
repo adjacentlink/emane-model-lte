@@ -376,7 +376,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                        std::move(segmentCache), 
                                        pcfichPass,
                                        pbchPass,
-                                       signalAvg_dBm - noiseFloorAvg_dBm);
+                                       signalAvg_dBm - noiseFloorAvg_dBm,
+                                       noiseFloorAvg_dBm);
 
           rxControl.SINRTester_.setImpl(pSINRTester);
 

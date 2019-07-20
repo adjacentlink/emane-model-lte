@@ -73,23 +73,23 @@ EMANELTE::MHAL::SINRTester::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
     return false;
 }
 
-EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype)
 {
   if(impl_)
     return impl_->sinrCheck2(ctype);
   else
-    return EMANELTE::MHAL::SINRTesterResult{false, 0.0};
+    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
 
 
-EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
 {
   if(impl_)
     return impl_->sinrCheck2(ctype, rnti);
   else
-    return EMANELTE::MHAL::SINRTesterResult{false, 0.0};
+    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
 
 

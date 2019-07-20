@@ -432,7 +432,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
           const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / numSegments);
 
-          UplinkSINRTesterImpl * pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm);
+          UplinkSINRTesterImpl * pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm, noiseFloorAvg_dBm);
 
           rxControl.SINRTester_.setImpl(pSINRTester);
 

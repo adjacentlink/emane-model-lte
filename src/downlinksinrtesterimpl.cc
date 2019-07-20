@@ -127,36 +127,38 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
 }
 
 
-EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
 {
   if(ctype == CHAN_PCFICH)
     {
-      return SINRTesterResult(pcfichPass_, sinr_);
+      return SINRTester::SINRTesterResult{pcfichPass_, sinr_dBm_, noiseFloor_dBm_};
     }
   else if(ctype == CHAN_PBCH)
     {
-      return SINRTesterResult(pbchPass_, sinr_);
+      return SINRTester::SINRTesterResult{pbchPass_, sinr_dBm_, noiseFloor_dBm_};
     }
   else if(ctype == CHAN_PMCH)
     {
       if(txControl_.downlink().has_pmch())
         {
-          return SINRTesterResult(pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pmch(), segmentCache_), sinr_);
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pmch(), segmentCache_),
+                                  sinr_dBm_,
+                                  noiseFloor_dBm_};
         }
     }
 
-  return SINRTesterResult(false, sinr_);
+  return SINRTester::SINRTesterResult{};
 }
 
 
-EMANELTE::MHAL::SINRTesterResult
+EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
 {
   if(!pcfichPass_)
     {
       // fail to decode PCFICH means nothing received
-      return SINRTesterResult(false, sinr_);
+      return SINRTester::SINRTesterResult{};
     }
 
   // For other physical channels, match the specified rnti
@@ -169,7 +171,9 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
               continue;
             }
 
-          return SINRTesterResult(pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().phich(i), segmentCache_), sinr_);
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().phich(i), segmentCache_),
+                                  sinr_dBm_,
+                                  noiseFloor_dBm_};
         }
     }
   else if(ctype == CHAN_PDCCH)
@@ -186,7 +190,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
           // Store PDCCH result for corresponding PDSCH check
           pdcchRNTIResults_.emplace(rnti, pdcchPass);
 
-          return SINRTesterResult(pdcchPass, sinr_);
+          return SINRTester::SINRTesterResult{pdcchPass, sinr_dBm_, noiseFloor_dBm_};
         }
     }
   else if(ctype == CHAN_PDSCH)
@@ -196,7 +200,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
       // PDSCH reception only if corresponding PDCCH was received
       if(pdcchIter == pdcchRNTIResults_.end() || !pdcchIter->second)
         {
-          return SINRTesterResult(false, sinr_);
+          return SINRTester::SINRTesterResult{};
         }
 
       for(int i = 0; i < txControl_.downlink().pdsch_size(); ++i)
@@ -206,7 +210,9 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
               continue;
             }
 
-          return SINRTesterResult(pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdsch(i), segmentCache_), sinr_);
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdsch(i), segmentCache_), 
+                                  sinr_dBm_,
+                                  noiseFloor_dBm_};
         }
     }
   else
@@ -214,5 +220,5 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
       // unexpected channel
     }
 
-  return SINRTesterResult(false, sinr_);
+  return SINRTester::SINRTesterResult{};
 }
