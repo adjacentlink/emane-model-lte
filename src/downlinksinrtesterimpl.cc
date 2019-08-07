@@ -93,7 +93,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
           bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdcch(i), segmentCache_)};
 
           // Store PDCCH result for corresponding PDSCH check
-          pdcchRNTIResults_.insert(std::pair<uint16_t, bool>(rnti, pdcchPass));
+          pdcchRNTIResults_.emplace(rnti, pdcchPass);
 
           return pdcchPass;
         }
@@ -124,4 +124,101 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
     }
 
   return false;
+}
+
+
+EMANELTE::MHAL::SINRTester::SINRTesterResult
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
+{
+  if(ctype == CHAN_PCFICH)
+    {
+      return SINRTester::SINRTesterResult{pcfichPass_, sinr_dB_, noiseFloor_dBm_};
+    }
+  else if(ctype == CHAN_PBCH)
+    {
+      return SINRTester::SINRTesterResult{pbchPass_, sinr_dB_, noiseFloor_dBm_};
+    }
+  else if(ctype == CHAN_PMCH)
+    {
+      if(txControl_.downlink().has_pmch())
+        {
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pmch(), segmentCache_),
+                                  sinr_dB_,
+                                  noiseFloor_dBm_};
+        }
+    }
+
+  return SINRTester::SINRTesterResult{};
+}
+
+
+EMANELTE::MHAL::SINRTester::SINRTesterResult
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
+{
+  if(!pcfichPass_)
+    {
+      // fail to decode PCFICH means nothing received
+      return SINRTester::SINRTesterResult{};
+    }
+
+  // For other physical channels, match the specified rnti
+  if(ctype == CHAN_PHICH)
+    {
+      for(int i = 0; i < txControl_.downlink().phich_size(); ++i)
+        {
+          if(txControl_.downlink().phich(i).rnti() != rnti)
+            {
+              continue;
+            }
+
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().phich(i), segmentCache_),
+                                  sinr_dB_,
+                                  noiseFloor_dBm_};
+        }
+    }
+  else if(ctype == CHAN_PDCCH)
+    {
+      for(int i = 0; i < txControl_.downlink().pdcch_size(); ++i)
+        {
+          if(txControl_.downlink().pdcch(i).rnti() != rnti)
+            {
+              continue;
+            }
+
+          bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdcch(i), segmentCache_)};
+
+          // Store PDCCH result for corresponding PDSCH check
+          pdcchRNTIResults_.emplace(rnti, pdcchPass);
+
+          return SINRTester::SINRTesterResult{pdcchPass, sinr_dB_, noiseFloor_dBm_};
+        }
+    }
+  else if(ctype == CHAN_PDSCH)
+    {
+      auto pdcchIter = pdcchRNTIResults_.find(rnti);
+
+      // PDSCH reception only if corresponding PDCCH was received
+      if(pdcchIter == pdcchRNTIResults_.end() || !pdcchIter->second)
+        {
+          return SINRTester::SINRTesterResult{};
+        }
+
+      for(int i = 0; i < txControl_.downlink().pdsch_size(); ++i)
+        {
+          if(txControl_.downlink().pdsch(i).rnti() != rnti)
+            {
+              continue;
+            }
+
+          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, txControl_.downlink().pdsch(i), segmentCache_), 
+                                  sinr_dB_,
+                                  noiseFloor_dBm_};
+        }
+    }
+  else
+    {
+      // unexpected channel
+    }
+
+  return SINRTester::SINRTesterResult{};
 }
