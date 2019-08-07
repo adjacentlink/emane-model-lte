@@ -314,7 +314,7 @@ void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(E
 
   if(iter == rxFrequencyMap_.end())
     {
-      iter = rxFrequencyMap_.insert(std::make_pair(frequency, RxFrequencyTableEntry{1, noiseFloor_mW, 0, 0, 0})).first;
+      iter = rxFrequencyMap_.insert(std::make_pair(frequency, RxFrequencyTableEntry{1, EMANELTE::MW_TO_DB(noiseFloor_mW), 0, 0, 0})).first;
 
       pRxFrequencyTable_->addRow(frequency,
                                  {EMANE::Any{frequency},                         // 0
@@ -328,15 +328,15 @@ void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(E
   else
     {
       uint64_t & count = std::get<RX_FREQ_COUNT>(iter->second);
-      double & sum_mW = std::get<RX_FREQ_NF>(iter->second);
+      double & sum_dB = std::get<RX_FREQ_NF>(iter->second);
 
       count  += 1;
-      sum_mW += noiseFloor_mW;
+      sum_dB += EMANELTE::MW_TO_DB(noiseFloor_mW);
 
       pRxFrequencyTable_->setRow(frequency,
                                  {EMANE::Any{frequency},
                                   EMANE::Any{count},                                 // num samples in average
-                                  EMANE::Any{EMANELTE::MW_TO_DB(sum_mW/count)},      // 1 avg noise floor dBm
+                                  EMANE::Any{sum_dB/count},                          // 1 avg noise floor dBm
                                   EMANE::Any{std::get<RX_FREQ_SERR>(iter->second)},
                                   EMANE::Any{std::get<RX_FREQ_PASS>(iter->second)},
                                   EMANE::Any{std::get<RX_FREQ_DROP>(iter->second)},

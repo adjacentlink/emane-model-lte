@@ -89,18 +89,19 @@ namespace {
                </xs:element>\
 \
              </xs:sequence>\
-             <xs:attribute name='id'                      type='NemIdType' use='required'/> \
-             <xs:attribute name='statisticsendpoint'      type='xs:string' use='optional'/>\
-             <xs:attribute name='controlportendpoint'     type='xs:string' use='optional'/>\
-             <xs:attribute name='logfile'                 type='xs:string' use='optional'/>\
-             <xs:attribute name='loglevel'                type='xs:string' use='optional'/>\
-             <xs:attribute name='otamanagerchannelenable' type='xs:string' use='optional'/>\
-             <xs:attribute name='otamanagergroup'         type='xs:string' use='optional'/>\
-             <xs:attribute name='otamanagerloopback'      type='xs:string' use='optional'/>\
-             <xs:attribute name='otamanagerdevice'        type='xs:string' use='optional'/>\
-             <xs:attribute name='eventservicegroup'       type='xs:string' use='optional'/>\
-             <xs:attribute name='eventservicedevice'      type='xs:string' use='optional'/>\
-             <xs:attribute name='maxpropagationdelay'     type='xs:string' use='optional'/>\
+             <xs:attribute name='id'                        type='NemIdType' use='required'/> \
+             <xs:attribute name='statisticsendpoint'        type='xs:string' use='optional'/>\
+             <xs:attribute name='controlportendpoint'       type='xs:string' use='optional'/>\
+             <xs:attribute name='logfile'                   type='xs:string' use='optional'/>\
+             <xs:attribute name='loglevel'                  type='xs:string' use='optional'/>\
+             <xs:attribute name='otamanagerchannelenable'   type='xs:string' use='optional'/>\
+             <xs:attribute name='otamanagergroup'           type='xs:string' use='optional'/>\
+             <xs:attribute name='otamanagerloopback'        type='xs:string' use='optional'/>\
+             <xs:attribute name='otamanagerdevice'          type='xs:string' use='optional'/>\
+             <xs:attribute name='eventservicegroup'         type='xs:string' use='optional'/>\
+             <xs:attribute name='eventservicedevice'        type='xs:string' use='optional'/>\
+             <xs:attribute name='maxpropagationdelay'       type='xs:string' use='optional'/>\
+             <xs:attribute name='antennaprofilemanifesturi' type='xs:string' use='optional'/>\
            </xs:complexType>\
          </xs:element>\
 \
@@ -209,15 +210,16 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
            platformConfig_.id_                     = EMANE::Utils::ParameterConvert(getRequiredValue(pEntryNode, "id")).toUINT16(1, 0xFFFE);
 
            // optional
-           platformConfig_.sControlPortEndpoint_      = checkForValue(pEntryNode, "controlportendpoint",     platformConfig_.sControlPortEndpoint_);
-           platformConfig_.sLogFileName_              = checkForValue(pEntryNode, "logfile",                 platformConfig_.sLogFileName_);
-           platformConfig_.sLogLevel_                 = checkForValue(pEntryNode, "loglevel",                platformConfig_.sLogLevel_);
-           platformConfig_.sOtamManagerChannelEnable_ = checkForValue(pEntryNode, "otamanagerchannelenable", platformConfig_.sOtamManagerChannelEnable_);
-           platformConfig_.sOtaManagerGroup_          = checkForValue(pEntryNode, "otamanagergroup",         platformConfig_.sOtaManagerGroup_);
-           platformConfig_.sOtaManagerLoopback_       = checkForValue(pEntryNode, "otamanagerloopback",      platformConfig_.sOtaManagerLoopback_);
-           platformConfig_.sOtaManagerDevice_         = checkForValue(pEntryNode, "otamanagerdevice",        platformConfig_.sOtaManagerDevice_);
-           platformConfig_.sEventServiceGroup_        = checkForValue(pEntryNode, "eventservicegroup",       platformConfig_.sEventServiceGroup_);
-           platformConfig_.sEventServiceDevice_       = checkForValue(pEntryNode, "eventservicedevice",      platformConfig_.sEventServiceDevice_);
+           platformConfig_.sControlPortEndpoint_      = checkForValue(pEntryNode, "controlportendpoint",       platformConfig_.sControlPortEndpoint_);
+           platformConfig_.sLogFileName_              = checkForValue(pEntryNode, "logfile",                   platformConfig_.sLogFileName_);
+           platformConfig_.sLogLevel_                 = checkForValue(pEntryNode, "loglevel",                  platformConfig_.sLogLevel_);
+           platformConfig_.sOtamManagerChannelEnable_ = checkForValue(pEntryNode, "otamanagerchannelenable",   platformConfig_.sOtamManagerChannelEnable_);
+           platformConfig_.sOtaManagerGroup_          = checkForValue(pEntryNode, "otamanagergroup",           platformConfig_.sOtaManagerGroup_);
+           platformConfig_.sOtaManagerLoopback_       = checkForValue(pEntryNode, "otamanagerloopback",        platformConfig_.sOtaManagerLoopback_);
+           platformConfig_.sOtaManagerDevice_         = checkForValue(pEntryNode, "otamanagerdevice",          platformConfig_.sOtaManagerDevice_);
+           platformConfig_.sEventServiceGroup_        = checkForValue(pEntryNode, "eventservicegroup",         platformConfig_.sEventServiceGroup_);
+           platformConfig_.sEventServiceDevice_       = checkForValue(pEntryNode, "eventservicedevice",        platformConfig_.sEventServiceDevice_);
+           platformConfig_.sAntennaProfileManifest_   = checkForValue(pEntryNode, "antennaprofilemanifesturi", platformConfig_.sAntennaProfileManifest_);
 
            LOGGER_STANDARD_LOGGING(logger_,
                                    EMANE::INFO_LEVEL,
