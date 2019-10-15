@@ -2,53 +2,16 @@
 
 set_initial_pathloss()
 {
- path_loss=200
+ path_loss=80
  nems="1:30"
  device="letce0"
 
  date=`date +%H:%M:%S`
  echo "setting initial pathloss to $path_loss for $nems on device $device at $date"
 
+ sleep 2
+
  emaneevent-pathloss $nems $path_loss -i $device
 
-# stagger each ue to avoid existing race condition bug in srslte R18.09
-
-sleep 1
-
-emaneevent-pathloss 21 -t 1  80  -i letce0
-emaneevent-pathloss 1 -t 21  80  -i letce0
-emaneevent-pathloss 22 -t 1  80  -i letce0
-emaneevent-pathloss 1 -t 22  80  -i letce0
-
-sleep 1
-
-emaneevent-pathloss 2 -t 21  80  -i letce0
-emaneevent-pathloss 21 -t 2  80  -i letce0
-emaneevent-pathloss 2 -t 22  80  -i letce0
-emaneevent-pathloss 22 -t 2  80  -i letce0
-
-sleep 1
-
-emaneevent-pathloss 21 -t 3  80  -i letce0
-emaneevent-pathloss 3 -t 21  80  -i letce0
-emaneevent-pathloss 22 -t 3  80  -i letce0
-emaneevent-pathloss 3 -t 22  80  -i letce0
-
-sleep 1
-
-emaneevent-pathloss 21 -t 4  80  -i letce0
-emaneevent-pathloss 4 -t 21  80  -i letce0
-emaneevent-pathloss 22 -t 4  80  -i letce0
-emaneevent-pathloss 4 -t 22  80  -i letce0
-
-sleep 1
-
-emaneevent-pathloss 21 -t 5  80  -i letce0
-emaneevent-pathloss 5 -t 21  80  -i letce0
-emaneevent-pathloss 22 -t 5  80  -i letce0
-emaneevent-pathloss 5 -t 22  80  -i letce0
-
-
-echo "finished pathloss on device $device at $date"
-
+ echo "finished pathloss on device $device at $date"
 }

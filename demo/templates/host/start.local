@@ -13,4 +13,9 @@ cd "$top_dir/host"
 # load common functions
 . ./functions
 
+# start otestpointd
+if [ -f otestpoint-broker.xml ]; then
+    otestpoint-broker -d otestpoint-broker.xml
+fi
+
 set_initial_pathloss
