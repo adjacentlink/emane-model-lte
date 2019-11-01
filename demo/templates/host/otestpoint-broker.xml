@@ -1,0 +1,6 @@
+<otestpoint-broker discovery="0.0.0.0:9001" publish="0.0.0.0:9002">
+  <testpoint discovery="10.88.1.101:8881" publish="10.88.1.101:8882"/>
+  <testpoint discovery="10.88.1.11:8881"  publish="10.88.1.11:8882"/>
+  <testpoint discovery="10.88.1.1:8881"   publish="10.88.1.1:8882"/>
+  <testpoint discovery="10.88.1.2:8881"   publish="10.88.1.2:8882"/>
+</otestpoint-broker>

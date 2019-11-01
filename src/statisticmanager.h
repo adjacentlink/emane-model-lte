@@ -69,7 +69,7 @@ public:
   void updateRxPacketOtaDelay(size_t subframe, double seconds);
   void updateNoiseProcessDelay(size_t subframe, double seconds);
 
-  // src, <sinr, noiseFloor, samples>
+  // src, <signal, noiseFloor, samples>
   using ReceptionInfoData = std::tuple<double, double, size_t>;
   using ReceptionInfoMap  = std::map<std::uint16_t, ReceptionInfoData>;
 

@@ -1,4 +1,4 @@
-<otestpoint id="ue-${id}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
+<otestpoint id="ue-${'%02d' % int(id)}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
   <probe configuration="probe-srslte-ue.xml">
     <python module="otestpoint.lte.srsue" class="SRSUE"/>
   </probe>

@@ -171,68 +171,76 @@ void ENBSTATS::setMACMetrics(const ENBSTATS::MACMetrics & metrics)
 
 void ENBSTATS::setRLCMetrics(const ENBSTATS::RLCMetrics & metrics)
 {
-  if(pRLCThruputTable_  && pRLCMRBThruputTable_)
+  if(pRLCThruputTable_)
    {
      pRLCThruputTable_->clear();
 
-     pRLCMRBThruputTable_->clear();
- 
-     for(RLCMetrics::const_iterator iter = metrics.begin(); iter != metrics.end(); ++iter)
-       {
-         const RLCBearerMetrics & bearers = iter->second.first;
+     for(auto iter = metrics.begin(); iter != metrics.end(); ++iter)
+      {
+        const auto & bearers = iter->second;
 
-         for(uint16_t n = 0; n < bearers.size(); ++n)
-           { 
-             const RLCBearerMetric & bearer = bearers[n];
+        for(uint16_t n = 0; n < bearers.size(); ++n)
+         { 
+           const auto & bearer = bearers[n];
 
-             const std::uint64_t key = (iter->first << 16) + n;
+           const std::uint64_t key = (iter->first << 16) + n;
 
-             pRLCThruputTable_->addRow(key,
-                                       {OpenStatistic::Any{uint64_t{iter->first}},          // RNTI
-                                        OpenStatistic::Any{uint64_t{n}},                    // LCID
-                                        OpenStatistic::Any{1e3 * bearer.tx_mbps_},          // DL kbps
-                                        OpenStatistic::Any{1e3 * bearer.rx_mbps_},          // UL kbps
-                                        OpenStatistic::Any{bearer.qmetric_.typeToString()}, // type
-                                        OpenStatistic::Any{bearer.qmetric_.capacity_},      // capacity
-                                        OpenStatistic::Any{bearer.qmetric_.currSize_},      // currsize
-                                        OpenStatistic::Any{bearer.qmetric_.highWater_},     // highwater
-                                        OpenStatistic::Any{bearer.qmetric_.numPush_},       // numPush
-                                        OpenStatistic::Any{bearer.qmetric_.numPushFail_},   // numPushFail
-                                        OpenStatistic::Any{bearer.qmetric_.numPop_},        // numPop
-                                        OpenStatistic::Any{bearer.qmetric_.numPopFail_},    // numPopFail
-                                        OpenStatistic::Any{bearer.qmetric_.numCleared_},    // numCleared
-                                        OpenStatistic::Any{time(NULL)}});                   // timestamp
-           }
-
-#if 0
-         // waiting on next srs release more rlc metrics update 11/11/18
-         const RLCMRBBearerMetrics & mrbBearers = iter->second.second;
-
-         for(uint16_t n = 0; n < mrbBearers.size(); ++n)
-          { 
-            const RLCMRBBearerMetric & bearer = mrbBearers[n];
-
-            const std::uint64_t key = (iter->first << 16) + n;
-
-            pRLCMRBThruputTable_->addRow(key,
-                                         {OpenStatistic::Any{uint64_t{iter->first}},          // RNTI
-                                          OpenStatistic::Any{uint64_t{n}},                    // LCID
-                                          OpenStatistic::Any{1e3 * bearer.tx_mbps_},          // DL kbps
-                                          OpenStatistic::Any{bearer.qmetric_.typeToString()}, // type
-                                          OpenStatistic::Any{bearer.qmetric_.capacity_},      // capacity
-                                          OpenStatistic::Any{bearer.qmetric_.currSize_},      // currsize
-                                          OpenStatistic::Any{bearer.qmetric_.highWater_},     // highwater
-                                          OpenStatistic::Any{bearer.qmetric_.numPush_},       // numPush
-                                          OpenStatistic::Any{bearer.qmetric_.numPushFail_},   // numPushFail
-                                          OpenStatistic::Any{bearer.qmetric_.numPop_},        // numPop
-                                          OpenStatistic::Any{bearer.qmetric_.numPopFail_},    // numPopFail
-                                          OpenStatistic::Any{bearer.qmetric_.numCleared_},    // numCleared
-                                          OpenStatistic::Any{time(NULL)}});                   // timestamp
+           pRLCThruputTable_->addRow(key,
+                                     {OpenStatistic::Any{uint64_t{iter->first}},          // RNTI
+                                      OpenStatistic::Any{uint64_t{n}},                    // LCID
+                                      OpenStatistic::Any{1e3 * bearer.tx_mbps_},          // DL kbps
+                                      OpenStatistic::Any{1e3 * bearer.rx_mbps_},          // UL kbps
+                                      OpenStatistic::Any{bearer.qmetric_.typeToString()}, // type
+                                      OpenStatistic::Any{bearer.qmetric_.capacity_},      // capacity
+                                      OpenStatistic::Any{bearer.qmetric_.currSize_},      // currsize
+                                      OpenStatistic::Any{bearer.qmetric_.highWater_},     // highwater
+                                      OpenStatistic::Any{bearer.qmetric_.numPush_},       // numPush
+                                      OpenStatistic::Any{bearer.qmetric_.numPushFail_},   // numPushFail
+                                      OpenStatistic::Any{bearer.qmetric_.numPop_},        // numPop
+                                      OpenStatistic::Any{bearer.qmetric_.numPopFail_},    // numPopFail
+                                      OpenStatistic::Any{bearer.qmetric_.numCleared_},    // numCleared
+                                      OpenStatistic::Any{time(NULL)}});                   // timestamp
          }
-#endif
       }
    }
 }
+
+
+void ENBSTATS::setRLCMetrics(const ENBSTATS::RLCMRBMetrics & metrics)
+{
+  if(pRLCMRBThruputTable_)
+   {
+     pRLCMRBThruputTable_->clear();
+ 
+     for(auto iter = metrics.begin(); iter != metrics.end(); ++iter)
+      {
+        const auto & bearers = iter->second;
+
+        for(uint16_t n = 0; n < bearers.size(); ++n)
+         { 
+           const auto & bearer = bearers[n];
+
+           const std::uint64_t key = (iter->first << 16) + n;
+
+           pRLCMRBThruputTable_->addRow(key,
+                                        {OpenStatistic::Any{uint64_t{iter->first}},          // RNTI
+                                         OpenStatistic::Any{uint64_t{n}},                    // LCID
+                                         OpenStatistic::Any{1e3 * bearer.tx_mbps_},          // DL kbps
+                                         OpenStatistic::Any{bearer.qmetric_.typeToString()}, // type
+                                         OpenStatistic::Any{bearer.qmetric_.capacity_},      // capacity
+                                         OpenStatistic::Any{bearer.qmetric_.currSize_},      // currsize
+                                         OpenStatistic::Any{bearer.qmetric_.highWater_},     // highwater
+                                         OpenStatistic::Any{bearer.qmetric_.numPush_},       // numPush
+                                         OpenStatistic::Any{bearer.qmetric_.numPushFail_},   // numPushFail
+                                         OpenStatistic::Any{bearer.qmetric_.numPop_},        // numPop
+                                         OpenStatistic::Any{bearer.qmetric_.numPopFail_},    // numPopFail
+                                         OpenStatistic::Any{bearer.qmetric_.numCleared_},    // numCleared
+                                         OpenStatistic::Any{time(NULL)}});                   // timestamp
+          }
+       }
+    }
+}
+
 
 void ENBSTATS::putDLGrant(uint16_t rnti)
 {

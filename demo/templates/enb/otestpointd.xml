@@ -1,4 +1,4 @@
-<otestpoint id="enb-${id}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
+<otestpoint id="enb-${'%02d' % (int(id) % 10)}" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
   <probe configuration="probe-srslte-enb.xml">
     <python module="otestpoint.lte.srsenb" class="SRSENB"/>
   </probe>

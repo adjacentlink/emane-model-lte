@@ -92,15 +92,15 @@ bridge created by the demo:
 
 ```
 # lxc container backchannel addresses
-10.88.1.21 lxc-enb-21
-10.88.1.1 lxc-epc-01
-10.88.1.2 lxc-ue-02
-10.88.1.3 lxc-ue-03
+10.88.1.101 lxc-epc-01
+10.88.1.11  lxc-enb-01
+10.88.1.1   lxc-ue-01
+10.88.1.2   lxc-ue-02
 
 # radio network addresses
-172.16.0.1 epc-01
+172.16.0.101 epc-01
+172.16.0.1 ue-01
 172.16.0.2 ue-02
-172.16.0.3 ue-03
 ```
 
 The `srsepc-emane` and `srsue-emane` applications create Linux tuntap
@@ -112,14 +112,14 @@ in `srsenb-emane` and `srsue-emane` differ in another notable way
 from radio models that run in `emane`.  They accept emulator,
 radio model and EMANE PHY configuration from a single XML file
 (default name: `emanelte.xml`), rather than the usual hierarchy of `emane`
-configuration files.  Here is `two_ues/ue-02/emanelte.xml`:
+configuration files.  Here is `two_ues/ue-01/emanelte.xml`:
 
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
 <emanelte>
-  <platform id="2"
+  <platform id="1"
             loglevel="2"
-            logfile="/home/me/working/emane-model-lte/demo/two_ues/persist/ue-02/var/log/emane.log"
+            logfile="/home/me/working/emane-model-lte/demo/two_ues/persist/ue-01/var/log/emane.log"
             otamanagerdevice="backchan0"
             eventservicedevice="backchan0">
 
@@ -158,10 +158,10 @@ Inspect the network devices on one of the UE nodes. `srsue-emane` creates
 the `srsue` device once attached to the EPC:
 
 ```
-[me@host two_ues]$ ssh lxc-ue-02
-[me@ue-02 ~]$ ifconfig
+[me@host two_ues]$ ssh lxc-ue-01
+[me@ue-01 ~]$ ifconfig
 backchan0 Link encap:Ethernet  HWaddr e2:b3:86:0a:09:a6
-          inet addr:10.88.1.2  Bcast:10.88.1.255  Mask:255.255.255.0
+          inet addr:10.88.1.1  Bcast:10.88.1.255  Mask:255.255.255.0
           inet6 addr: fe80::e0b3:86ff:fe0a:9a6/64 Scope:Link
           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
           RX packets:111908 errors:0 dropped:0 overruns:0 frame:0
@@ -179,7 +179,7 @@ lo        Link encap:Local Loopback
           RX bytes:2333 (2.3 KB)  TX bytes:2333 (2.3 KB)
 
 srsue     Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
-          inet addr:172.16.0.2  P-t-P:172.16.0.2  Mask:255.255.255.0
+          inet addr:172.16.0.1  P-t-P:172.16.0.1  Mask:255.255.255.0
           UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
           RX packets:0 errors:0 dropped:0 overruns:0 frame:0
           TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
@@ -190,11 +190,12 @@ srsue     Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 Ping the EPC:
 
 ```
-[me@ue-02 ~]$ ping epc-01
-PING epc-01 (172.16.0.1) 56(84) bytes of data.
-64 bytes from epc-01 (172.16.0.1): icmp_seq=1 ttl=64 time=34.5 ms
-64 bytes from epc-01 (172.16.0.1): icmp_seq=2 ttl=64 time=32.8 ms
-64 bytes from epc-01 (172.16.0.1): icmp_seq=3 ttl=64 time=31.2 ms
+[me@ue-01 ~]$ ping epc-01
+PING epc-01 (172.16.0.101) 56(84) bytes of data.
+64 bytes from epc-01 (172.16.0.101): icmp_seq=1 ttl=64 time=457 ms
+64 bytes from epc-01 (172.16.0.101): icmp_seq=2 ttl=64 time=37.2 ms
+64 bytes from epc-01 (172.16.0.101): icmp_seq=3 ttl=64 time=36.1 ms
+64 bytes from epc-01 (172.16.0.101): icmp_seq=4 ttl=64 time=34.8 ms
      ...
 ```
 
@@ -230,8 +231,8 @@ The embedded EMANE instances running in `srsenb-emane` and
 these with `emanesh` using the default port, 47000:
 
 ```
-[me@host two_ues]$ emanesh lxc-ue-02 get table nems mac UplinkTxPUSCHFrequencyCounts
-nem 2   mac UplinkTxPUSCHFrequencyCounts
+[me@host two_ues]$ emanesh lxc-ue-01 get table nems mac UplinkTxPUSCHFrequencyCounts
+nem 1   mac UplinkTxPUSCHFrequencyCounts
 | Frequency  | 0.1 | 0.2 | 1.1 | 1.2 | 2.1 | 2.2 | 3.1 | 3.2 | 4.1 | 4.2 | 5.1 | 5.2 | 6.1 | 6.2 | 7.1 | 7.2 | 8.1 | 8.2 | 9.1   | 9.2   |
 | 2566259936 | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0     | 0     |
 | 2566079936 | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0     | 0     |
@@ -288,10 +289,10 @@ finished pathloss on device letce0 at 09:42:35
 
 The OpenTestPoint Daemon, `otestpointd` now also runs in each
 container. It takes an XML configuration file, `otestpointd.xml`, that
-lists the probes to load. Here is the file for `enb-21`:
+lists the probes to load. Here is the file for `enb-01`:
 
 ```XML
-<otestpoint id="enb-21" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
+<otestpoint id="enb-01" discovery="0.0.0.0:8881" publish="0.0.0.0:8882">
   <probe configuration="probe-srslte-enb.xml">
     <python module="otestpoint.lte.srsenb" class="SRSENB"/>
   </probe>
@@ -302,7 +303,7 @@ lists the probes to load. Here is the file for `enb-21`:
 ```
 
 In this case, `otestpointd` loads probes that collect shared code
-statistics from the OpenStatistic endpoint (`enb-21/probe-srslte-enb.xml`):
+statistics from the OpenStatistic endpoint (`enb-01/probe-srslte-enb.xml`):
 
 ```XML
 <probe-srslte-enb address="127.0.0.1" port="47100">
@@ -317,7 +318,7 @@ statistics from the OpenStatistic endpoint (`enb-21/probe-srslte-enb.xml`):
 ```
 
 and probes that collect radio model statistics from the Control Port
-(`enb-21/probe-emanelte-enb.xml`):
+(`enb-01/probe-emanelte-enb.xml`):
 
 ```XML
 <probe-emane-lte address="127.0.0.1" port="47000">
@@ -336,26 +337,26 @@ and probes that collect radio model statistics from the Control Port
 Query the `otestpointd` discovery endpoint for a list of running probes:
 
 ```
-[me@host two_ues_otestpoint]$ otestpoint-discover lxc-enb-21:8881
+[me@host two_ues_otestpoint]$ otestpoint-discover lxc-enb-01:8881
 tcp://0.0.0.0:8882
-EMANE.LTE.ENB.Counters.General.enb-21
-EMANE.LTE.ENB.Tables.Counts.enb-21
-EMANE.LTE.ENB.Tables.Events.enb-21
-SRSLTE.ENB.Tables.Counts.enb-21
-SRSLTE.ENB.Tables.MAC.enb-21
-SRSLTE.ENB.Tables.PHY.enb-21
-SRSLTE.ENB.Tables.RLC.enb-21
-SRSLTE.ENB.Tables.Upper.enb-21
+EMANE.LTE.ENB.Counters.General.enb-01
+EMANE.LTE.ENB.Tables.Counts.enb-01
+EMANE.LTE.ENB.Tables.Events.enb-01
+SRSLTE.ENB.Tables.Counts.enb-01
+SRSLTE.ENB.Tables.MAC.enb-01
+SRSLTE.ENB.Tables.PHY.enb-01
+SRSLTE.ENB.Tables.RLC.enb-01
+SRSLTE.ENB.Tables.Upper.enb-01
 ```
 
 Inspect current probe values from the publish endpoint:
 
 ```
-[me@host two_ues_otestpoint]$ otestpoint-dump lxc-enb-21:8882 SRSLTE.ENB.Tables.RLC
+[me@host two_ues_otestpoint]$ otestpoint-dump lxc-enb-01:8882 SRSLTE.ENB.Tables.RLC
 
-[1548773090] enb-21/0 9fec768d-185d-456e-9a47-b811fa83f234
+[1548773090] enb-01/0 9fec768d-185d-456e-9a47-b811fa83f234
 otestpoint.lte.srsenb Measurement_srslte_enb_tables_rlc v1 1077 bytes
-SRSLTE.ENB.Tables.RLC.enb-21
+SRSLTE.ENB.Tables.RLC.enb-01
 [] rlcmrbthruputtable
 |RNTI|LCID|DLKbps|Type|Cap|Size|HighWater|NumPush|NumPushFail|NumPop|NumPopFail|Cleared|Time|
 --
