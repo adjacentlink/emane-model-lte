@@ -15,7 +15,7 @@ not run as a separate application. The
 [emane-embedded-example](https://github.com/adjacentlink/emane-embedded-example)
 project provides a small example, for those interested.
 
-The lastest stable version: 1.0.4.
+The lastest stable version: 1.0.5.
 
 
 ---
@@ -25,7 +25,7 @@ The lastest stable version: 1.0.4.
 
 2. Build and install `emane-model-lte`.
    * [Centos 7](#centos-7)
-   * [Fedora 28 and 29](#fedora-28-and-29)
+   * [Fedora 31](#fedora-31)
    * [Ubuntu 16.04 and 18.04](#ubuntu-1604-and-1804)
 
 3. Build and install [srsLTE-emane](https://github.com/adjacentlink/srsLTE-emane.git).
@@ -43,7 +43,7 @@ make rpm
 sudo yum install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
-### Fedora 28 and 29
+### Fedora 31
 ```
 sudo dnf install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
 git clone https://github.com/adjacentlink/emane-model-lte.git
