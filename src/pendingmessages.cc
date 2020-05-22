@@ -89,9 +89,9 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
 {
   SegmentSpans segmentSpans;
 
-  for(PendingMessages::iterator msg = pending_.begin(); msg != pending_.end(); ++msg)
+  for(auto msg_iter = pending_.begin(); msg_iter != pending_.end(); ++msg_iter)
     {
-      const auto & otaInfo = std::get<2>(*msg);
+      const auto & otaInfo = std::get<2>(*msg_iter);
 
       for(auto & segment : otaInfo.segments_)
         {
@@ -106,8 +106,8 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
 
           if(span != segmentSpans.end())
             {
-              auto & min     = std::get<0>(span->second);
-              auto & max     = std::get<1>(span->second);
+              auto & min        = std::get<0>(span->second);
+              auto & max        = std::get<1>(span->second);
               auto & numEntries = std::get<2>(span->second);
 
               min = std::min(min, sor);
@@ -116,7 +116,7 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
             }
           else
             {
-              segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1})).first;
+              segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
             }
         }
     }

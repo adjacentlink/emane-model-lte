@@ -40,11 +40,6 @@
 #undef ENABLE_INFO_1_LOGS
 #undef ENABLE_INFO_2_LOGS
 
-// uncomment to enable info 1/2 logs
-//#define ENABLE_INFO_1_LOGS
-//#define ENABLE_INFO_2_LOGS
-
-
 
 void
 EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_config_t & mhal_config)
@@ -239,7 +234,7 @@ void EMANELTE::MHAL::MHALCommon::noise_worker(const uint32_t bin, const timeval 
                   tv_sf_start.tv_sec, 
                   tv_sf_start.tv_usec,
                   bin,
-                  pendingMessageBins_[bin].getPending().size());
+                  pendingMessageBins_[bin].get().size());
 #endif
 
   clearReadyMessages(bin);
@@ -334,20 +329,22 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
 #ifdef ENABLE_INFO_1_LOGS
       const auto & tv_curr_sf = timing_.getCurrSfTime();
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s seqnum %lu, bin %u, curr_sf %ld:%06ld, sf_time %ld:%06ld, sot %f, span %ld, sor %f, eor %f, dT %ld usec, pending %zu", 
+      timeval tv_now;
+      gettimeofday(&tv_now, NULL);
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s seqnum %lu, bin %u, curr_sf %ld:%06ld, now %ld:%06ld, sot %f, span %ld, sor %f, eor %f, dT %ld usec, pending %zu", 
                       __func__,
                       rxData.rx_seqnum_,
                       bin,
                       tv_curr_sf.tv_sec,
                       tv_curr_sf.tv_usec,
-                      rxData.sf_time_.tv_sec,
-                      rxData.sf_time_.tv_usec,
+                      tv_now.tv_sec,
+                      tv_now.tv_usec,
                       otaInfo.sot_.time_since_epoch().count()/1e9,
                       otaInfo.span_.count(),
                       sor.time_since_epoch().count()/1e9,
                       eor.time_since_epoch().count()/1e9,
                       dT.count(),
-                      pendingMessageBins_[bin].getPending().size());
+                      pendingMessageBins_[bin].get().size());
 #endif
     }
   else
