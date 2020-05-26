@@ -411,14 +411,15 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
 
   timing_.lockTime();
 
-  timeval tv_now, tv_delay, tv_process_diff, tv_sf_time = timing_.getCurrSfTime();
+  const timeval tv_sf_time = timing_.getCurrSfTime();
+  timeval tv_now, tv_delay, tv_process_diff;
 
   gettimeofday(&tv_now, NULL);
 
   // get the process time for the calling thread for the time remaining in this subframe
   timersub(&tv_now, &tv_sf_time, &tv_process_diff);
 
-  // get the time till the next subframe
+  // get the delta the next subframe
   timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
 
   const time_t dT = tvToUseconds(tv_delay);
@@ -440,7 +441,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
     }
   else
     {
-
+      // no wait, lets try to catch up
       if(dT < 0)
         {
           in_step = false;
@@ -450,10 +451,6 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
                   timing_.ts_sf_interval_usec() + abs(dT));
-
-          timing_.alignTime();
-
-          tv_sf_time = timing_.getCurrSfTime();
         }
     }
 
