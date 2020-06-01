@@ -520,7 +520,8 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & messages, timeval & tv_so
 
   timing_.lockTime();
 
-  timeval tv_now, tv_diff, tv_process_diff, tv_sf_time = timing_.getCurrSfTime();
+  const timeval tv_sf_time = timing_.getCurrSfTime();
+  timeval tv_now, tv_delay, tv_process_diff;
 
   gettimeofday(&tv_now, NULL);
 
@@ -528,30 +529,37 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & messages, timeval & tv_so
   timersub(&tv_now, &tv_sf_time, &tv_process_diff);
 
   // get the time till the next subframe
-  timersub(&timing_.getNextSfTime(), &tv_now, &tv_diff);
+  timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
+
+  const time_t dT = tvToUseconds(tv_delay);
 
   // this is where we set the pace for the system pulse
-  if(timercmp(&tv_diff, &tv_zero_, >))
+  if(dT > 0)
     {
+#if 0
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, wait %ld usec",
+                  __func__,
+                  timing_.getCurrSfTime().tv_sec,
+                  timing_.getCurrSfTime().tv_usec,
+                  abs(dT));
+#endif
+
       // next sf is still in the future
       // wait until next subframe time
-      select(0, NULL, NULL, NULL, &tv_diff);
-
-      in_step = true;
+      select(0, NULL, NULL, NULL, &tv_delay);
     }
   else
     {
-      const time_t dT = timing_.ts_sf_interval_usec() + tvToUseconds(tv_diff);
-
+      // no wait, lets try to catch up
       if(dT < 0)
         {
-          // we passed the next sf mark, continue and try to catch up on subsequent call(s)
           in_step = false;
-        }
-      else
-        {
-          // we passed the next sf mark, but are still within the sf window
-          in_step = true;
+
+          logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
+                  __func__,
+                  timing_.getCurrSfTime().tv_sec,
+                  timing_.getCurrSfTime().tv_usec,
+                  timing_.ts_sf_interval_usec() + abs(dT));
         }
     }
 
