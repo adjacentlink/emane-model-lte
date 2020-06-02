@@ -71,13 +71,9 @@ public:
     
   void setImpl(SINRTesterImpl * impl);
 
-  bool sinrCheck(CHANNEL_TYPE ctype);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id);
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);
-
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype);
-
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id);
 
   void release();
 

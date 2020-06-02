@@ -54,40 +54,21 @@ EMANELTE::MHAL::SINRTester::setImpl(SINRTesterImpl * impl)
 }
 
 
-bool
-EMANELTE::MHAL::SINRTester::sinrCheck(CHANNEL_TYPE ctype)
-{
-  if(impl_)
-    return impl_->sinrCheck(ctype);
-  else
-    return false;
-}
-
-
-bool
-EMANELTE::MHAL::SINRTester::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
-{
-  if(impl_)
-    return impl_->sinrCheck(ctype, rnti);
-  else
-    return false;
-}
-
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id)
 {
   if(impl_)
-    return impl_->sinrCheck2(ctype);
+    return impl_->sinrCheck2(ctype, carrier_id);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id)
 {
   if(impl_)
-    return impl_->sinrCheck2(ctype, rnti);
+    return impl_->sinrCheck2(ctype, rnti, carrier_id);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }

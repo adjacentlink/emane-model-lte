@@ -154,6 +154,8 @@ message PDSCH
 
      // peer data
      required bytes data = 4;
+
+     required uint32 carrierid = 5;
    }
 
   repeated Data data = 1;

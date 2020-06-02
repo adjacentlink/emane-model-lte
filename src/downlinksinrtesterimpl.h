@@ -63,13 +63,10 @@ public:
     pdcchRNTIResults_{}
   {}
 
-  bool sinrCheck(CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id) override;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
-
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id) override;  
 
 private:
   EMANE::Models::LTE::UERadioModel * const pRadioModel_;
