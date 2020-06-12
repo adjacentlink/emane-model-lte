@@ -200,7 +200,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       const auto & txControl = std::get<3>(msg);
 
-      if(txControl.phy_cell_id() != physicalCellId_)
+      // XXX multiple carriers
+      auto carrier = txControl.carriers().begin();
+
+      // XXX multiple cell ids ???
+      if(carrier->second.phy_cell_id() != physicalCellId_)
         {
           // transmitters on other cells are considered noise
           continue;
@@ -313,7 +317,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       // grab num segments here, some  stl list size() calls are not O(1)
       const size_t numSegments = otaInfo.segments_.size();
 
-      if(txControl.phy_cell_id() != physicalCellId_)
+      // XXX multiple carriers
+      auto carrier = txControl.carriers().begin();
+
+      // XXX multiple cell ids ???
+      if(carrier->second.phy_cell_id() != physicalCellId_)
         {
           // ignore transmitters from other cells
           continue;
@@ -441,28 +449,31 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
           rxControl.rxData_.num_samples_ = num_samples;
 
-          if(txControl.uplink().has_prach())
+          // XXX multiple carriers
+          auto carrier = txControl.carriers().begin();
+
+          if(carrier->second.uplink().has_prach())
             {
-              putSINRResult(txControl.uplink().prach(),
+              putSINRResult(carrier->second.uplink().prach(),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, txControl.uplink().prach(), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().prach(), segmentCache));
             }
 
-          for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
+          for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
             {
-              putSINRResult(txControl.uplink().pucch(i),
+              putSINRResult(carrier->second.uplink().pucch(i),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, txControl.uplink().pucch(i), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pucch(i), segmentCache));
             }
 
-          for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
+          for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
             {
-              putSINRResult(txControl.uplink().pusch(i),
+              putSINRResult(carrier->second.uplink().pusch(i),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, txControl.uplink().pusch(i), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pusch(i), segmentCache));
             }
 
           StatisticManager::ReceptionInfoMap receptionInfoMap;

@@ -133,49 +133,55 @@ EMANE::Models::LTE::ENBRadioStatisticManager::registerStatistics(EMANE::Registra
 void
 EMANE::Models::LTE::ENBRadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  updateTableCounts(txControl.tti_tx(), txControl.downlink().pcfich(), true);
+  // XXX TODO multiple carriers
+  auto carrier = txControl.carriers().begin();
 
-  if(txControl.downlink().has_pbch())
+  updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pcfich(), true);
+
+  if(carrier->second.downlink().has_pbch())
     {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pbch(), true);
+      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pbch(), true);
     }
 
-  for(int i = 0; i < txControl.downlink().phich_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().phich_size(); ++i)
     {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().phich(i), true);
+      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().phich(i), true);
     }
 
-  for(int i = 0; i < txControl.downlink().pdcch_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().pdcch_size(); ++i)
     {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdcch(i), true);
+      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pdcch(i), true);
     }
 
-  for(int i = 0; i < txControl.downlink().pdsch_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().pdsch_size(); ++i)
     {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdsch(i), true);
+      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pdsch(i), true);
     }
 
-  if(txControl.downlink().has_pmch())
+  if(carrier->second.downlink().has_pmch())
     {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pmch(), true);
+      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pmch(), true);
     }
 }
 
 void
 EMANE::Models::LTE::ENBRadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  if(txControl.uplink().has_prach())
+  // XXX TODO multiple carriers
+  auto carrier = txControl.carriers().begin();
+
+  if(carrier->second.uplink().has_prach())
     {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().prach(), false);
+      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().prach(), false);
     }
 
-  for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
+  for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
     {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pucch(i), false);
+      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().pucch(i), false);
     }
 
-  for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
+  for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
     {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pusch(i), false);
+      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().pusch(i), false);
     }
 }

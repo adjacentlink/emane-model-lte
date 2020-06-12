@@ -97,10 +97,7 @@ message UE_UL_Message
 
 
  required Transmitter transmitter = 1;
-
- optional PRACH prach = 2;
-
- optional PUCCH pucch = 3;
-
- optional PUSCH pusch = 4;
+ optional PRACH       prach       = 2;
+ optional PUCCH       pucch       = 3;
+ optional PUSCH       pusch       = 4;
 }

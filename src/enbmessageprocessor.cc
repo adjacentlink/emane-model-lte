@@ -175,7 +175,10 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
-  std::uint32_t cfi = txControl.downlink().cfi();
+  // XXX TODO multiple carriers
+  auto carrier = txControl.carriers().begin();
+
+  std::uint32_t cfi = carrier->second.downlink().cfi();
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
@@ -183,31 +186,31 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 
   statisticManager_.updateTxTableCounts(txControl);
 
-  addTxSegments(txControl.downlink().pcfich(), tti_tx, sfDuration, cfi);
+  addTxSegments(carrier->second.downlink().pcfich(), tti_tx, sfDuration, cfi);
 
-  if(txControl.downlink().has_pbch())
+  if(carrier->second.downlink().has_pbch())
     {
-      addTxSegments(txControl.downlink().pbch(), tti_tx, sfDuration, cfi);
+      addTxSegments(carrier->second.downlink().pbch(), tti_tx, sfDuration, cfi);
     }
 
-  if(txControl.downlink().has_pmch())
+  if(carrier->second.downlink().has_pmch())
     {
-      addTxSegments(txControl.downlink().pmch(), tti_tx, sfDuration, cfi);
+      addTxSegments(carrier->second.downlink().pmch(), tti_tx, sfDuration, cfi);
     }
 
-  for(int i = 0; i < txControl.downlink().phich_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().phich_size(); ++i)
     {
-      addTxSegments(txControl.downlink().phich(i), tti_tx, sfDuration, cfi);
+      addTxSegments(carrier->second.downlink().phich(i), tti_tx, sfDuration, cfi);
     }
 
-  for(int i = 0; i < txControl.downlink().pdcch_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().pdcch_size(); ++i)
     {
-      addTxSegments(txControl.downlink().pdcch(i), tti_tx, sfDuration, cfi);
+      addTxSegments(carrier->second.downlink().pdcch(i), tti_tx, sfDuration, cfi);
     }
 
-  for(int i = 0; i < txControl.downlink().pdsch_size(); ++i)
+  for(int i = 0; i < carrier->second.downlink().pdsch_size(); ++i)
     {
-      addTxSegments(txControl.downlink().pdsch(i), tti_tx, sfDuration, cfi);
+      addTxSegments(carrier->second.downlink().pdsch(i), tti_tx, sfDuration, cfi);
     }
 
   return segmentBuilder_.build(slotDuration);
@@ -216,14 +219,14 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 
 bool
 EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                          const EMANELTE::MHAL::ChannelMessage & channel_message,
-                                                                          EMANE::Models::LTE::SegmentMap & segmentCache)
+                                                                 const EMANELTE::MHAL::ChannelMessage & channel_message,
+                                                                 EMANE::Models::LTE::SegmentMap & segmentCache)
 {
-  size_t sfIdx{txControl.tti_tx() % 10};
+  const size_t sfIdx{txControl.tti_tx() % 10};
 
-  size_t slot1{2 * sfIdx};
+  const size_t slot1{2 * sfIdx};
 
-  size_t slot2{slot1 + 1};
+  const size_t slot2{slot1 + 1};
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 

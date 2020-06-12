@@ -601,16 +601,20 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
+   // XXX TODO iterate thru multiple carriers
+   auto & carrier = (*txControl.mutable_carriers())[0];
+
    EMANE::FrequencySegments frequencySegments{
-     messageProcessor_.buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
+      messageProcessor_.buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
 
    const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
-   txControl.set_tx_frequency_hz(u64TxFrequencyHz_);
+   // XXX TODO multiple freqs needed
+   carrier.set_tx_frequency_hz(u64TxFrequencyHz_);
 
    const EMANE::ControlMessages msgs = 
-     {EMANE::Controls::FrequencyControlMessage::create(EMANELTE::ResourceBlockBandwidthHz, frequencySegments),
-      EMANE::Controls::TimeStampControlMessage::create(timestamp)};     // sot
+      {EMANE::Controls::FrequencyControlMessage::create(EMANELTE::ResourceBlockBandwidthHz, frequencySegments),
+       EMANE::Controls::TimeStampControlMessage::create(timestamp)};     // sot
 
    std::string sSerialization{};
 
@@ -707,12 +711,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
         {
           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                                  EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: src %hu, cell 0x%x, seqnum %lu, span %lu, prop_delay %lu, max_delay %lu",
+                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, span %lu, prop_delay %lu, max_delay %lu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
                                  pktInfo.getSource(),
-                                 txControl.phy_cell_id(),
                                  txControl.tx_seqnum(),
                                  pReceivePropertiesControlMessage->getSpan().count(),
                                  pReceivePropertiesControlMessage->getPropagationDelay().count(),
@@ -728,11 +731,13 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
+#if 0 // XXX TODO check freqs/carriers
           if(txControl.tx_frequency_hz() != u64RxFrequencyHz_)
             {
               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
               return;
             }
+#endif
 
           if(txControl.message_type() != messageProcessor_.receiveMessageType_)
             {

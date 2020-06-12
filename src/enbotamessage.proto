@@ -202,9 +202,10 @@ message PMCH
  //  Sub Frame           (sf)  = tti % 10
  required uint32  tti = 1;
 
-
  message CarrierMessage
   {
+    // 1 to 5 carriers [0-4]
+    required uint32  carrier_id = 1;
     // Physical Cell Id
     // physical layer cell id [0-167] (phy_cell_id / 3)
     // physical layer cell id [0-2    (phy_cell_id % 3)
@@ -232,6 +233,7 @@ message PMCH
     optional PMCH pmch = 9;
   }
 
+  // 1 to 5 carriers 
   map<uint32, CarrierMessage> carriers = 2;
 }
 

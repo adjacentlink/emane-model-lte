@@ -135,19 +135,22 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   statisticManager_.updateTxTableCounts(txControl);
 
-  if(txControl.uplink().has_prach())
+  // XXX multiple carriers
+  auto carrier = txControl.carriers().begin();
+
+  if(carrier->second.uplink().has_prach())
     {
-      addTxSegments(txControl.uplink().prach(), tti_tx);
+      addTxSegments(carrier->second.uplink().prach(), tti_tx);
     }
 
-    for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
+    for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
     {
-      addTxSegments(txControl.uplink().pucch(i), tti_tx);
+      addTxSegments(carrier->second.uplink().pucch(i), tti_tx);
     }
 
-  for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
+  for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
     {
-      addTxSegments(txControl.uplink().pusch(i), tti_tx);
+      addTxSegments(carrier->second.uplink().pusch(i), tti_tx);
     }
 
   return segmentBuilder_.build(slotDuration);
@@ -159,15 +162,18 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                                                          const EMANELTE::MHAL::ChannelMessage & channel_message,
                                                                          EMANE::Models::LTE::SegmentMap & segmentCache)
 {
-  size_t sfIdx{txControl.tti_tx() % 10};
+  const size_t sfIdx{txControl.tti_tx() % 10};
 
-  size_t slot1{2 * sfIdx};
+  const size_t slot1{2 * sfIdx};
 
-  size_t slot2{slot1 + 1};
+  const size_t slot2{slot1 + 1};
 
-  std::uint32_t cfi{txControl.downlink().cfi()};
+  // XXX multiple carriers
+  auto carrier = txControl.carriers().begin();
 
-  std::uint32_t numResourceBlocks{txControl.downlink().num_resource_blocks()};
+  std::uint32_t cfi{carrier->second.downlink().cfi()};
+
+  std::uint32_t numResourceBlocks{carrier->second.downlink().num_resource_blocks()};
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
