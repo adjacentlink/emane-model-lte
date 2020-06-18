@@ -43,17 +43,6 @@ import "otacommon.proto";
 message UE_UL_Message
 {
 // ********** BEGIN MSG DEFS ***********
- message Transmitter 
-  {
-    // cell radio net temp id
-    required uint32 crnti = 1;
-
-    // Physical Cell Id
-    required uint32  phy_cell_id = 2;
-
-    // tx tti
-    required uint32 tti = 3;
-  }
 
  // random access channel
  message PRACH
@@ -93,11 +82,29 @@ message UE_UL_Message
 
    repeated Grant grant = 1;
  }
+
+ // 1 to 5 carriers [0-4]
+ message Carrier 
+  {
+    // 1 to 5 carriers [0-4]
+    required uint32  carrier_id  = 1;
+
+    // Physical Cell Id
+    required uint32  phy_cell_id = 2;
+
+    optional PRACH   prach       = 3;
+    optional PUCCH   pucch       = 4;
+    optional PUSCH   pusch       = 5;
+  }
+
 // ********** END MSG DEFS ***********
 
+ // cell radio net temp id
+ required uint32 crnti = 1;
 
- required Transmitter transmitter = 1;
- optional PRACH       prach       = 2;
- optional PUCCH       pucch       = 3;
- optional PUSCH       pusch       = 4;
+ // tx tti
+ required uint32 tti = 2;
+
+ map<uint32, Carrier> carriers = 3;
+
 }
