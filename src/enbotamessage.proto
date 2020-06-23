@@ -192,6 +192,11 @@ message PMCH
    required uint32 rnti = 4;
 }
 
+message FrequencyPairMessage
+ {
+   required double dl_frequency_hz = 1;
+   required double ul_frequency_hz = 2;
+ }
 
 // ********** END MSG DEFS ***********
 
@@ -235,6 +240,8 @@ message PMCH
 
   // 1 to 5 carriers 
   map<uint32, CarrierMessage> carriers = 2;
+
+  map<uint32, FrequencyPairMessage> frequencies = 3;
 }
 
 

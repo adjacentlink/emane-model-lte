@@ -601,16 +601,16 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
-   // XXX TODO iterate thru multiple carriers
-   auto & carrier = (*txControl.mutable_carriers())[0];
+   // XXX TODO multiple freqs needed, set required freqs here
+   for(auto carrier : txControl.carriers())
+     {
+       (*txControl.mutable_carriers())[carrier.first].set_tx_frequency_hz(u64TxFrequencyHz_);
+     }
 
    EMANE::FrequencySegments frequencySegments{
       messageProcessor_.buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
 
    const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
-
-   // XXX TODO multiple freqs needed
-   carrier.set_tx_frequency_hz(u64TxFrequencyHz_);
 
    const EMANE::ControlMessages msgs = 
       {EMANE::Controls::FrequencyControlMessage::create(EMANELTE::ResourceBlockBandwidthHz, frequencySegments),
