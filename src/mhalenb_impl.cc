@@ -37,19 +37,32 @@
 #include "configmanager.h"
 
 
-void EMANELTE::MHAL::MHALENBImpl::initialize(const mhal_config_t & mhal_config,
+void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrier_id,
+                                             const mhal_config_t & mhal_config,
                                              const ENB::mhal_enb_config_t & mhal_enb_config)
 {
-  MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
+  // XXX_CC TODO multiple carriers do this once ???
+  if(carrier_id == 0)
+   {
+     // this must be done first
+     MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
 
-  physicalCellId_ = mhal_enb_config.physical_cell_id_;
+     pRadioModel_->setFrequencies(carrier_id,
+                                  llround(mhal_enb_config.uplink_frequency_hz_),    // rx
+                                  llround(mhal_enb_config.downlink_frequency_hz_)); // tx
 
-  pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
+     pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
 
-  pRadioModel_->setFrequencies(llroundf(mhal_enb_config.uplink_frequency_hz_),
-                               llroundf(mhal_enb_config.downlink_frequency_hz_));
+     pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
+  }
+ else
+  {
+     pRadioModel_->setFrequencies(carrier_id,
+                                 llround(mhal_enb_config.uplink_frequency_hz_),    // rx
+                                 llround(mhal_enb_config.downlink_frequency_hz_)); // tx
+  }
 
-  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
+  physicalCellIds_.insert(mhal_enb_config.physical_cell_id_);
 }
 
 
@@ -133,9 +146,10 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
 
 void EMANELTE::MHAL::MHALENBImpl::start()
 {
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, physicalCellId_=0x%x",
-              __func__,
-              physicalCellId_);
+  for(auto id : physicalCellIds_)
+   {
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, physicalCellId_=0x%x", __func__, id);
+   }
 
   MHALCommon::start(5);
 }
@@ -200,11 +214,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       const auto & txControl = std::get<3>(msg);
 
-      // XXX multiple carriers
+      // XXX_CC TODO multiple carriers
       auto carrier = txControl.carriers().begin();
 
-      // XXX multiple cell ids ???
-      if(carrier->second.phy_cell_id() != physicalCellId_)
+      // XXX_CC TODO multiple carriers cell ids ???
+      if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
         {
           // transmitters on other cells are considered noise
           continue;
@@ -317,11 +331,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       // grab num segments here, some  stl list size() calls are not O(1)
       const size_t numSegments = otaInfo.segments_.size();
 
-      // XXX multiple carriers
+      // XXX_CC TODO multiple carriers
       auto carrier = txControl.carriers().begin();
 
-      // XXX multiple cell ids ???
-      if(carrier->second.phy_cell_id() != physicalCellId_)
+      // XXX_CC TODO multiple carriers cell ids ???
+      if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
         {
           // ignore transmitters from other cells
           continue;
@@ -449,7 +463,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
           rxControl.rxData_.num_samples_ = num_samples;
 
-          // XXX multiple carriers
+          // XXX_CC TODO multiple carriers
           auto carrier = txControl.carriers().begin();
 
           if(carrier->second.uplink().has_prach())

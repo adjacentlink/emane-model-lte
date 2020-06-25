@@ -199,10 +199,11 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_frequencies(float ul_freq, float dl_freq)
+EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz)
 {
-  pRadioModel_->setFrequencies(llroundf(dl_freq),         // rx freq
-                               llroundf(ul_freq));        // tx freq
+  pRadioModel_->setFrequencies(carrier_id,              // carrier id
+                               llround(rx_freq_hz),     // rx freq
+                               llround(tx_freq_hz));    // tx freq
 
   pRadioModel_->setNumResourceBlocks(100, true);
 }
@@ -235,7 +236,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
       // get the TxControl message
       const auto & txControl = std::get<3>(msg);
 
-      // grab num segments here, some  stl list size() calls are not O(1)
+      // grab num segments here, some stl_list.size() calls are not O(1)
       const auto numSegments = otaInfo.segments_.size();
 
       RxControl rxControl {};
@@ -244,10 +245,11 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
       rxControl.rxData_ = std::move(std::get<1>(msg));
 
 #ifdef ENABLE_INFO_2_LOGS
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, segments %zu",
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu",
                   __func__,
                   rxControl.rxData_.nemId_,
                   rxControl.rxData_.rx_seqnum_,
+                  txControl.carriers().size(),
                   numSegments);
 #endif
       double signalSum_mW = 0, noiseFloorSum_mW = 0;
@@ -312,7 +314,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
           const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
 
           double noiseFloor_dBm = rangeInfo.first;
-          double noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+          double noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
           signalSum_mW     += rxPower_mW;
           noiseFloorSum_mW += noiseFloor_mW;
@@ -362,7 +364,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
       // now check for number of pass/fail segments
       if(numSegments > 0)
         {
-          // XXX multiple carriers
+          // XXX_CC TODO multiple carriers
           auto carrier = txControl.carriers().begin();
 
           const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.downlink().pcfich(), segmentCache);
@@ -401,7 +403,6 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
           // lastly, make ready, take ownership of data and control
           readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
-
         }
     } // end for each msg
 }

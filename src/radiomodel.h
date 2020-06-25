@@ -122,7 +122,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setSymbolsPerSlot(std::uint32_t symbolsPerSlot);
 
-      void setFrequencies(EMANELTE::FrequencyHz rxFrequency,
+      void setFrequencies(uint32_t carrierId,
+                          EMANELTE::FrequencyHz rxFrequency,
                           EMANELTE::FrequencyHz txFrequency);
 
       void setNumResourceBlocks(std::uint32_t numResourceBlocks, bool search=false);
@@ -150,6 +151,11 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint16_t u16SubId_;
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
+
+      using FrequencyPair  = std::pair<std::uint64_t, std::uint64_t>;
+      using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
+
+      FrequencyTable frequencyTable_;
 
       std::uint64_t u64TxSeqNum_;
       std::uint64_t u64RxFrequencyHz_;

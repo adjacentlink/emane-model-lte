@@ -194,8 +194,8 @@ message PMCH
 
 message FrequencyPairMessage
  {
-   required double dl_frequency_hz = 1;
-   required double ul_frequency_hz = 2;
+   required double tx_frequency_hz = 1;
+   required double rx_frequency_hz = 2;
  }
 
 // ********** END MSG DEFS ***********

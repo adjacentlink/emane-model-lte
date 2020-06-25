@@ -86,9 +86,9 @@ EMANELTE::MHAL::UE::get_tx_prb_frequency(int prb_index)
 }
 
 
-void EMANELTE::MHAL::UE::set_frequencies(float ul_freq, float dl_freq)
+void EMANELTE::MHAL::UE::set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz)
 {
-  impl_.set_frequencies(ul_freq, dl_freq);
+  impl_.set_frequencies(carrier_id, rx_freq_hz, tx_freq_hz);
 }
 
 

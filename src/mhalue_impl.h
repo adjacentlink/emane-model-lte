@@ -76,7 +76,7 @@ namespace MHAL {
 
     long long unsigned int get_tx_prb_frequency(int prb_index);
 
-    void set_frequencies(float ul_freq, float dl_freq);
+    void set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz);
 
     void set_num_resource_blocks(int num_resource_blocks);
 

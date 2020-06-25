@@ -40,10 +40,11 @@ namespace {
   EMANELTE::MHAL::MHALENBImpl impl_;
 }
 
-void EMANELTE::MHAL::ENB::initialize(const EMANELTE::MHAL::mhal_config_t & mhal_config,
+void EMANELTE::MHAL::ENB::initialize(uint32_t idx,
+                                     const EMANELTE::MHAL::mhal_config_t & mhal_config,
                                      const mhal_enb_config_t & mhal_enb_config)
 {
-  impl_.initialize(mhal_config, mhal_enb_config);
+  impl_.initialize(idx, mhal_config, mhal_enb_config);
 }
 
 

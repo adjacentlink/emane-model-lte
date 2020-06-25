@@ -64,11 +64,6 @@ AC_ARG_WITH([verbose-logging],
            [with_verbose_logging=yes])
 
 
-
-
-
-
-
 AC_C_BIGENDIAN(AC_DEFINE([__BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),
 AC_DEFINE([__BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 AC_DEFINE([__LITTLE_ENDIAN],1234,[for the places where it is not defined])
@@ -90,7 +85,7 @@ fi
 # options for use with debug
 if test "$with_debug" = "yes"
 then
-CPPFLAGS="$CPPFLAGS -g -O0 -DDEBUG"
+CXXFLAGS="$CXXFLAGS -g3 -O0 -DDEBUG"
 LDFLAGS="$LDFLAGS -g -O0"
 fi
 

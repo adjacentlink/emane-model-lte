@@ -51,7 +51,8 @@ namespace MHAL {
       pRadioModel_{NULL}
     {}
 
-    void initialize(const mhal_config_t & mhal_config,
+    void initialize(uint32_t idx,
+                    const mhal_config_t & mhal_config,
                     const ENB::mhal_enb_config_t & mhal_enb_config);
 
     void init_emane();
@@ -78,7 +79,7 @@ namespace MHAL {
     void noise_processor(const uint32_t bin, const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache);
 
   private:
-    std::uint32_t physicalCellId_;
+    std::set<std::uint32_t> physicalCellIds_;
     EMANE::Application::NEMs nems_;
     std::unique_ptr<EMANE::Application::NEMManager> pNEMManager_;
     EMANE::Models::LTE::ENBRadioModel * pRadioModel_;

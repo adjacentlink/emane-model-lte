@@ -56,8 +56,6 @@
 namespace EMANELTE {
 namespace MHAL {
 
-
-
 class MHALCommon : public EMANELTE::MHAL::PHY::MHALPHY
 {
 public:
@@ -86,11 +84,13 @@ public:
 protected:
   EMANE::Application::Logger logger_;
   StatisticManager statisticManager_;
+
   // rx message bins, 1 for each subframe
   PendingMessageBin pendingMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
-  ReadyMessages readyMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
+  ReadyMessages     readyMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
+
   TimingInfo timing_;
-  StateInfo state_;
+  StateInfo  state_;
   
   void initialize(uint32_t sf_interval_msec, const mhal_config_t & mhal_config);
 

@@ -362,20 +362,26 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setNumR
   EMANELTE::FrequencyHz halfChannelBandwidthHz{
     numResourceBlocks * EMANELTE::ResourceBlockBandwidthHz + EMANELTE::HalfResourceBlockBandwidthHz};
 
+  LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                          EMANE::INFO_LEVEL,
+                          "%s %03hu %s: numResourceBlocks %d, rbBandwidth %lu, 1/2rbBndwidth %lu, search %d, 1/2chanBandwdith %lu, rxFreq %lu Hz, txFreq %lu Hz",
+                          pzModuleName_,
+                          id_,
+                          __func__,
+                          numResourceBlocks,
+                          EMANELTE::ResourceBlockBandwidthHz,
+                          EMANELTE::HalfResourceBlockBandwidthHz,
+                          search,
+                          halfChannelBandwidthHz,
+                          u64RxFrequencyHz_,
+                          u64TxFrequencyHz_);
+
+  // XXX_CC TODO multiple carriers
   // Don't allow configured channel to have negative frequencies
   if(halfChannelBandwidthHz > u64RxFrequencyHz_ || halfChannelBandwidthHz > u64TxFrequencyHz_)
     {
       throw EMANE::makeException<EMANE::ConfigureException>("Invalid configuration, first resource block crosses 0 Hz.");
     }
-
-  LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                          EMANE::INFO_LEVEL,
-                          "%s %03hu %s: numResourceBlocks %d, search %d",
-                          pzModuleName_,
-                          id_,
-                          __func__,
-                          numResourceBlocks,
-                          search);
 
   u32NumResourceBlocks_ = numResourceBlocks;
 
@@ -385,20 +391,28 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setNumR
 
 
 template <class RadioStatManager, class MessageProcessor>
-void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(EMANELTE::FrequencyHz rxFrequency,
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(uint32_t carrierId,
+                                                                                        EMANELTE::FrequencyHz rxFrequency,
                                                                                         EMANELTE::FrequencyHz txFrequency)
 {
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: rx_freq %lu, tx_freq %lu",
+                          "%s %03hu %s: carrierId %u, rx_freq %lu MHz, tx_freq %lu MHz",
                           pzModuleName_,
                           id_,
                           __func__,
-                          rxFrequency,
-                          txFrequency);
+                          carrierId,
+                          rxFrequency/1000000,
+                          txFrequency/1000000);
 
-  u64RxFrequencyHz_ = rxFrequency;
-  u64TxFrequencyHz_ = txFrequency;
+  frequencyTable_[carrierId] = FrequencyPair{rxFrequency, txFrequency};
+
+  // XXX_CC TODO multiple carriers
+  if(carrierId == 0)
+   {
+     u64RxFrequencyHz_ = rxFrequency;
+     u64TxFrequencyHz_ = txFrequency;
+   }
 }
 
 
@@ -601,7 +615,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
-   // XXX TODO multiple freqs needed, set required freqs here
+   // XXX_CC TODO multiple freqs needed, set required freqs here
    for(auto carrier : txControl.carriers())
      {
        (*txControl.mutable_carriers())[carrier.first].set_tx_frequency_hz(u64TxFrequencyHz_);
@@ -731,7 +745,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
-#if 0 // XXX TODO check freqs/carriers
+#if 0 // XXX_CC TODO multiple carriers check freqs/carriers
           if(txControl.tx_frequency_hz() != u64RxFrequencyHz_)
             {
               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());

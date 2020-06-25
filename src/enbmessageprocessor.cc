@@ -175,7 +175,7 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
-  // XXX TODO multiple carriers
+  // XXX_CC TODO multiple carriers
   auto carrier = txControl.carriers().begin();
 
   std::uint32_t cfi = carrier->second.downlink().cfi();

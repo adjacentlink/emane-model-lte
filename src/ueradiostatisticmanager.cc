@@ -132,7 +132,7 @@ EMANE::Models::LTE::UERadioStatisticManager::registerStatistics(EMANE::Registrar
 void
 EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  // XXX multiple carriers
+  // XXX_CC TODO multiple carriers
   auto carrier = txControl.carriers().begin();
 
   if(carrier->second.uplink().has_prach())
@@ -155,7 +155,7 @@ EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE:
 void
 EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  // XXX multiple carriers
+  // XXX_CC TODO multiple carriers
   auto carrier = txControl.carriers().begin();
 
   updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pcfich(), false);

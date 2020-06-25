@@ -135,7 +135,7 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   statisticManager_.updateTxTableCounts(txControl);
 
-  // XXX multiple carriers
+  // XXX_CC TODO multiple carriers
   auto carrier = txControl.carriers().begin();
 
   if(carrier->second.uplink().has_prach())
@@ -168,7 +168,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
   const size_t slot2{slot1 + 1};
 
-  // XXX multiple carriers
+  // XXX_CC TODO multiple carriers
   auto carrier = txControl.carriers().begin();
 
   std::uint32_t cfi{carrier->second.downlink().cfi()};
