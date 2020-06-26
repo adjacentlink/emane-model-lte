@@ -59,8 +59,7 @@ EMANE::Models::LTE::UEMessageProcessor::swapFrequencyMaps(EMANELTE::FrequencyRes
 
   size_t numResourceBlocks{rxFreqToRBMap.size()};
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxFreqToRBMap, new DownlinkResourceGridParams(rxFreqToRBMap.size(), 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxFreqToRBMap, new DownlinkResourceGridParams(rxFreqToRBMap.size(), 7)));
 
   txFreqToRBMap_.swap(txFreqToRBMap);
 }
@@ -75,15 +74,11 @@ EMANE::Models::LTE::UEMessageProcessor::swapSearchFrequencyMaps(EMANELTE::Freque
 
   size_t numResourceBlocks{rxEvenFreqToRBMap.size()};
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxEvenFreqToRBMap,
-                                                                              new DownlinkResourceGridParams(numResourceBlocks, 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxEvenFreqToRBMap, new DownlinkResourceGridParams(numResourceBlocks, 7)));
 
   numResourceBlocks = rxOddFreqToRBMap.size();
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxOddFreqToRBMap,
-                                                                              new DownlinkResourceGridParams(numResourceBlocks, 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxOddFreqToRBMap, new DownlinkResourceGridParams(numResourceBlocks, 7)));
 
   txFreqToRBMap_.swap(txFreqToRBMap);
 }

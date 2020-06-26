@@ -77,7 +77,7 @@ public:
   void send_msg(const Data & data, 
                 TxControlMessage & txControl);
 
-  virtual long long unsigned int get_tx_prb_frequency(int prb_index) = 0;
+  virtual std::uint64_t get_tx_prb_frequency(int prb_index, uint32_t carrier_id) = 0;
 
   void stop();
 

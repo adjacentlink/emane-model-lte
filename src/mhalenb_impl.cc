@@ -53,7 +53,7 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrier_id,
 
      pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
 
-     pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
+     pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrier_id);
   }
  else
   {
@@ -188,10 +188,10 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALENBImpl::get_noise(FrequencyHz frequen
 }
 
 
-long long unsigned int
-EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index)
+std::uint64_t
+EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, uint32_t carrier_id)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, carrier_id);
 }
 
 
@@ -220,6 +220,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       // XXX_CC TODO multiple carriers cell ids ???
       if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
         {
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI %u, not found, ignore",
+                      __func__, carrier->second.phy_cell_id());
+
           // transmitters on other cells are considered noise
           continue;
         }
@@ -337,6 +340,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       // XXX_CC TODO multiple carriers cell ids ???
       if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
         {
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI %u, not found, ignore",
+                     __func__, carrier->second.phy_cell_id());
+
           // ignore transmitters from other cells
           continue;
         }
@@ -348,6 +354,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                   rxControl.rxData_.rx_seqnum_,
                   numSegments);
 #endif
+
       double signalSum_mW = 0, noiseFloorSum_mW = 0;
 
       int segnum = -1;
@@ -502,7 +509,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
         }
     } // end for each msg
-
 }
 
 

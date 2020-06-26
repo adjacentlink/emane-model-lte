@@ -179,7 +179,7 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
   // on cell search, configure for the largest bandwidth to
   // ensure packet reception from any enb (register all possible FOI
   // for the configured receive frequency)
-  pRadioModel_->setNumResourceBlocks(100, true);
+  pRadioModel_->setNumResourceBlocks(100, 0, true); // carrier_id 0, search enable true
 
   for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
     {
@@ -205,21 +205,21 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrier_id, double rx_freq_
                                llround(rx_freq_hz),     // rx freq
                                llround(tx_freq_hz));    // tx freq
 
-  pRadioModel_->setNumResourceBlocks(100, true);
+  pRadioModel_->setNumResourceBlocks(100, carrier_id, true); // search
 }
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int num_resource_blocks)
+EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int num_resource_blocks, std::uint32_t carrier_id)
 {
-  pRadioModel_->setNumResourceBlocks(num_resource_blocks);
+  pRadioModel_->setNumResourceBlocks(num_resource_blocks, carrier_id);
 }
 
 
-long long unsigned int
-EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index)
+std::uint64_t
+EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index, uint32_t carrier_id)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, carrier_id);
 }
 
 

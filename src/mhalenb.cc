@@ -79,7 +79,7 @@ bool EMANELTE::MHAL::ENB::get_messages(EMANELTE::MHAL::RxMessages & messages, ti
 }
 
 
-long long unsigned int EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index)
+std::uint64_t EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index, uint32_t carrier_id)
 {
-  return impl_.get_tx_prb_frequency(prb_index);
+  return impl_.get_tx_prb_frequency(prb_index, carrier_id);
 }

@@ -68,6 +68,7 @@ using FrequencySegmentParams = std::pair<EMANELTE::FrequencyHz, EMANELTE::Bandwi
 
 using ResourceBlockMap = std::map<uint32_t, FrequencySegmentParams>;
 
+const uint32_t MAX_CARRIERS = 5;
 
 template <class RadioStatManager, class MessageProcessor>
 class RadioModel : public EMANE::MACLayerImplementor
@@ -126,11 +127,11 @@ class RadioModel : public EMANE::MACLayerImplementor
                           EMANELTE::FrequencyHz rxFrequency,
                           EMANELTE::FrequencyHz txFrequency);
 
-      void setNumResourceBlocks(std::uint32_t numResourceBlocks, bool search=false);
+      void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId, bool search=false);
 
-      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const;
+      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId);
 
-      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const;
+      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId);
 
       EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
@@ -158,13 +159,12 @@ class RadioModel : public EMANE::MACLayerImplementor
       FrequencyTable frequencyTable_;
 
       std::uint64_t u64TxSeqNum_;
-      std::uint64_t u64RxFrequencyHz_;
-      std::uint64_t u64TxFrequencyHz_;
+      std::set<std::uint64_t> rxFrequencySetHz_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
 
       RadioStatManager statisticManager_;
-      MessageProcessor messageProcessor_;
+      MessageProcessor *messageProcessor_[MAX_CARRIERS]; // XXX_CC just handle each carrier here ???
 
       EMANELTE::MHAL::PHY::MHALPHY * pMHAL_;
 
@@ -176,7 +176,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;
       SubframeReceiveCountDB subframeReceiveCountDB_;
 
-      void setFrequenciesOfInterest(bool search);
+      void setFrequenciesOfInterest(bool search, std::uint32_t carrierId);
 
       EMANELTE::FrequencyHz getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
                                                       EMANELTE::FrequencyHz centerFreq,

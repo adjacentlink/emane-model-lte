@@ -127,6 +127,12 @@ enum MESSAGE_TYPE {
   UPLINK = 1;
 }
 
+// uplink/downlink for enb, downlink/uplink for ue
+message FrequencyPairMessage {
+   required uint64 tx_frequency_hz = 1;
+   required uint64 rx_frequency_hz = 2;
+}
+
 
 message DownlinkMessage {
   required uint32 cfi                 = 1;

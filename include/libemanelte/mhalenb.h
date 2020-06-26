@@ -89,7 +89,7 @@ namespace ENB {
 
   bool get_messages(RxMessages & messages, timeval & rx_time);
 
-  long long unsigned int get_tx_prb_frequency(int prb_index);
+  std::uint64_t get_tx_prb_frequency(int prb_index, uint32_t carrier_id);
 
 }
 }
