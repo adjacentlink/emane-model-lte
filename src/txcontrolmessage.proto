@@ -45,10 +45,11 @@ option optimize_for = SPEED;
 message TxControlCarrierMessage
 {
   // 1 to 5 carriers [0-4]
-  required uint32          carrier_id       = 1;
-  required uint32          phy_cell_id      = 2;
-  optional DownlinkMessage downlink         = 3;
-  optional UplinkMessage   uplink           = 4;
+  required uint32               carrier_id  = 1;
+  required uint32               phy_cell_id = 2;
+  required FrequencyPairMessage frequencies = 3;
+  optional DownlinkMessage      downlink    = 4;
+  optional UplinkMessage        uplink      = 5;
 }
 
 message TxControlMessage

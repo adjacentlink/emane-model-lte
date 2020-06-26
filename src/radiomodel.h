@@ -153,10 +153,18 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
 
+      // relative rx/tx per node type ue/enb
       using FrequencyPair  = std::pair<std::uint64_t, std::uint64_t>;
+
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
 
+      using CarrierTable   = std::map<FrequencyPair, std::uint32_t>;
+
+      // track frequencies by carrier
       FrequencyTable frequencyTable_;
+
+      // track carrier by freq pair
+      CarrierTable   carrierTable_;
 
       std::uint64_t u64TxSeqNum_;
       std::set<std::uint64_t> rxFrequencySetHz_;

@@ -81,7 +81,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
   u32SymbolsPerSlot_{},
   statisticManager_{id, pPlatformService}
 {
-  // XXX_CC create all carriers or set via config ???
+  // create message processor per carrier
   for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
    {
      messageProcessor_[idx] = new MessageProcessor{id, pPlatformService, statisticManager_};
@@ -191,12 +191,14 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.first.c_str(),
                                   pcrCurveURI_.c_str());
 
+          // XXX_CC TODO
           messageProcessor_[0]->loadPCRFile(pcrCurveURI_);
         }
       else if(item.first == "resourceblocktxpower")
         {
           float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
 
+          // XXX_CC TODO
           messageProcessor_[0]->setTxPower(resourceBlockTxPowerdBm);
 
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
@@ -411,8 +413,13 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
                           rxFrequency/1000000,
                           txFrequency/1000000);
 
+  const FrequencyPair fp{rxFrequency, txFrequency};
+
   // save rx/tx freq per carrier id
-  frequencyTable_[carrierId] = FrequencyPair{rxFrequency, txFrequency};
+  frequencyTable_[carrierId] = fp;
+
+  // save carrier id per freq pair 
+  carrierTable_[fp] = carrierId;
 
   // save rx freq set for quick lookup
   rxFrequencySetHz_.insert(rxFrequency);
@@ -497,14 +504,18 @@ template <class RadioStatManager, class MessageProcessor>
 void
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(bool search, std::uint32_t carrierId)
 {
+  const auto & freqPair = frequencyTable_.at(carrierId);
+
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "MACI %03hu %s::%s: search=%d, carrierId=%u",
+                          "MACI %03hu %s::%s: search=%d, carrierId=%u, rxFreq=%lu Hz, txFreq=%lu Hz",
                           id_,
                           pzModuleName_,
                           __func__,
                           search,
-                          carrierId);
+                          carrierId,
+                          freqPair.first,
+                          freqPair.second);
 
   EMANE::FrequencySet rxFrequencies{};
   EMANELTE::FrequencyResourceBlockMap rxFreqToRBMap{};
@@ -512,14 +523,12 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   EMANE::FrequencySet txFrequencies{};
   EMANELTE::FrequencyResourceBlockMap txFreqToRBMap{};
 
-  const auto & freqPair = frequencyTable_.at(carrierId);
-
   for(uint32_t rbidx=0; rbidx<u32NumResourceBlocks_; ++rbidx)
     {
       const auto freq = getTxResourceBlockFrequency(rbidx, 0);
 
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                              EMANE::INFO_LEVEL,
+                              EMANE::DEBUG_LEVEL,
                               "%s %03hu %s: rbidx=%d txfreq=%lu",
                               pzModuleName_,
                               id_,
@@ -575,7 +584,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
 
       for(uint32_t rbidx=0; rbidx<75; ++rbidx)
         {
-          const auto freq = getResourceBlockFrequency(rbidx, freqPair.first, 75);
+          const auto freq = getResourceBlockFrequency(rbidx, freqPair.first, 75); // rx freq
 
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::DEBUG_LEVEL,
@@ -590,10 +599,12 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
           rxFrequencies.emplace(freq);
         }
 
+      // XXX_CC TODO
       messageProcessor_[0]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
     }
   else
     {
+      // XXX_CC TODO
       messageProcessor_[0]->swapFrequencyMaps(rxFreqToRBMap, txFreqToRBMap);
     }
 
@@ -623,6 +634,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
+   // XXX_CC TODO
    EMANE::FrequencySegments frequencySegments{
       messageProcessor_[0]->buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
 
@@ -747,13 +759,32 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
-          // XXX_CC check all freqs
-//          if(! rxFrequencySetHz_.count(txControl.tx_frequency_hz()))
-//            {
-//              updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
-//              return;
-//            }
+          size_t numMisMatch = 0;
 
+          for(auto carrier : txControl.carriers())
+            {
+              if(! rxFrequencySetHz_.count(carrier.second.frequencies().tx_frequency_hz()))
+               {
+                 ++numMisMatch;
+               }
+            }
+
+          if(numMisMatch == txControl.carriers().size())
+            {
+               LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                                      EMANE::INFO_LEVEL,
+                                      "MACI %03hu %s::%s: src %hu, no matching frequencies",
+                                      id_,
+                                      pzModuleName_,
+                                      __func__,
+                                      pktInfo.getSource());
+
+               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
+               return;
+            }
+
+
+          // XXX_CC TODO
           if(txControl.message_type() != messageProcessor_[0]->receiveMessageType_)
             {
               updateSubframeDropDirection_i(pktInfo.getSource());
@@ -944,6 +975,7 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
    const EMANELTE::MHAL::ChannelMessage & channel_msg,
    SegmentMap & segmentCache)
 {
+  // XXX_CC TODO
   return messageProcessor_[0]->noiseTestChannelMessage(txControl, channel_msg, segmentCache);
 }
 
