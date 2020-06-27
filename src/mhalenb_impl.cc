@@ -189,9 +189,9 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALENBImpl::get_noise(FrequencyHz frequen
 
 
 std::uint64_t
-EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, uint32_t carrier_id)
+EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index, carrier_id);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, tx_freq_hz);
 }
 
 

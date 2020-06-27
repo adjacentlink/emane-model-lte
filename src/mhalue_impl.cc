@@ -217,9 +217,9 @@ EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int num_resource_blocks, std
 
 
 std::uint64_t
-EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index, uint32_t carrier_id)
+EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index, carrier_id);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, tx_freq_hz);
 }
 
 

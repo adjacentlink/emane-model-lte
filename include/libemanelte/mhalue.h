@@ -57,7 +57,7 @@ namespace UE {
 
   bool get_messages(RxMessages & messages, timeval & rx_time);
 
-  std::uint64_t get_tx_prb_frequency(int prb_index, uint32_t carrier_id);
+  std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz);
   
   void set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz);
 

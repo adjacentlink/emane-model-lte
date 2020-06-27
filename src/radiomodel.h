@@ -60,6 +60,8 @@ namespace EMANE {
 namespace Models {
 namespace LTE {
 
+// relative rx/tx per node type ue/enb
+using FrequencyPair = std::pair<std::uint64_t, std::uint64_t>;
 
 // frequency, spectrum window
 using SpectrumWindowCache = std::map<std::uint64_t, EMANE::SpectrumWindow>;
@@ -129,9 +131,9 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId, bool search=false);
 
-      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId);
+      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t rx_freq_hz);
 
-      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId);
+      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t tx_freq_hz);
 
       EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
@@ -152,9 +154,6 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint16_t u16SubId_;
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
-
-      // relative rx/tx per node type ue/enb
-      using FrequencyPair  = std::pair<std::uint64_t, std::uint64_t>;
 
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
 

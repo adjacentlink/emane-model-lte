@@ -429,18 +429,18 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
 
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId)
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t rx_freq_hz)
 {
-  return getResourceBlockFrequency(resourceBlockIndex, frequencyTable_[carrierId].first, u32NumResourceBlocks_);
+  return getResourceBlockFrequency(resourceBlockIndex, rx_freq_hz, u32NumResourceBlocks_);
 }
 
 
 
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint32_t carrierId)
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t tx_freq_hz)
 {
-  return getResourceBlockFrequency(resourceBlockIndex, frequencyTable_[carrierId].second, u32NumResourceBlocks_);
+  return getResourceBlockFrequency(resourceBlockIndex, tx_freq_hz, u32NumResourceBlocks_);
 }
 
 
@@ -448,8 +448,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourc
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
-                                                                        EMANELTE::FrequencyHz centerFreq,
-                                                                        std::uint64_t numResourceBlocks) const
+                                                                                              EMANELTE::FrequencyHz centerFreq,
+                                                                                              std::uint64_t numResourceBlocks) const
 {
   return centerFreq + ((resourceBlockIndex - numResourceBlocks/2) * 180000) + (((numResourceBlocks + 1) % 2) * 90000);
 }
@@ -525,7 +525,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
 
   for(uint32_t rbidx=0; rbidx<u32NumResourceBlocks_; ++rbidx)
     {
-      const auto freq = getTxResourceBlockFrequency(rbidx, 0);
+      const auto freq = getTxResourceBlockFrequency(rbidx, freqPair.second);
 
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::DEBUG_LEVEL,
@@ -537,14 +537,14 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
                               freq);
 
       txFreqToRBMap.emplace(freq, rbidx);
-      txFrequencies.emplace(getTxResourceBlockFrequency(rbidx, 0));
+      txFrequencies.emplace(getTxResourceBlockFrequency(rbidx, freqPair.second));
     }
 
   for(uint32_t rbidx=0; rbidx<u32NumResourceBlocks_; ++rbidx)
     {
       for(auto iter = frequencyTable_.begin(); iter != frequencyTable_.end(); ++iter)
        {
-         const auto freq = getRxResourceBlockFrequency(rbidx, iter->first);
+         const auto freq = getRxResourceBlockFrequency(rbidx, iter->second.first);
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::DEBUG_LEVEL,
