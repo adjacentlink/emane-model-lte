@@ -214,14 +214,21 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       const auto & txControl = std::get<3>(msg);
 
-      // XXX_CC TODO multiple carriers
-      auto carrier = txControl.carriers().begin();
+      bool bFoundPci = false;
+ 
+      for(auto carrier : txControl.carriers())
+       {
+         if(physicalCellIds_.count(carrier.second.phy_cell_id()))
+           {
+             bFoundPci = true;
 
-      // XXX_CC TODO multiple carriers cell ids ???
-      if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
+             break;
+           }
+       }
+
+      if(! bFoundPci)
         {
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI %u, not found, ignore",
-                      __func__, carrier->second.phy_cell_id());
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI not found, ignore", __func__);
 
           // transmitters on other cells are considered noise
           continue;
@@ -334,14 +341,21 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       // grab num segments here, some  stl list size() calls are not O(1)
       const size_t numSegments = otaInfo.segments_.size();
 
-      // XXX_CC TODO multiple carriers
-      auto carrier = txControl.carriers().begin();
+      bool bFoundPci = false;
 
-      // XXX_CC TODO multiple carriers cell ids ???
-      if(! physicalCellIds_.count(carrier->second.phy_cell_id()))
+      for(auto carrier : txControl.carriers())
+       {
+         if(physicalCellIds_.count(carrier.second.phy_cell_id()))
+           {
+             bFoundPci = true;
+
+             break;
+           }
+       }
+
+      if(! bFoundPci)
         {
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI %u, not found, ignore",
-                     __func__, carrier->second.phy_cell_id());
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI not found, ignore", __func__);
 
           // ignore transmitters from other cells
           continue;

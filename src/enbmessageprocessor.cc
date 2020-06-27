@@ -175,43 +175,44 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
-  // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
-
-  std::uint32_t cfi = carrier->second.downlink().cfi();
+  statisticManager_.updateTxTableCounts(txControl);
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
   const EMANE::Microseconds slotDuration = sfDuration / 2;
 
-  statisticManager_.updateTxTableCounts(txControl);
+  // for each carrier
+  for(auto carrier : txControl.carriers())
+   {
+     std::uint32_t cfi = carrier.second.downlink().cfi();
 
-  addTxSegments(carrier->second.downlink().pcfich(), tti_tx, sfDuration, cfi);
+     addTxSegments(carrier.second.downlink().pcfich(), tti_tx, sfDuration, cfi);
 
-  if(carrier->second.downlink().has_pbch())
-    {
-      addTxSegments(carrier->second.downlink().pbch(), tti_tx, sfDuration, cfi);
-    }
+     if(carrier.second.downlink().has_pbch())
+      {
+       addTxSegments(carrier.second.downlink().pbch(), tti_tx, sfDuration, cfi);
+      }
 
-  if(carrier->second.downlink().has_pmch())
-    {
-      addTxSegments(carrier->second.downlink().pmch(), tti_tx, sfDuration, cfi);
-    }
+    if(carrier.second.downlink().has_pmch())
+      {
+        addTxSegments(carrier.second.downlink().pmch(), tti_tx, sfDuration, cfi);
+      }
 
-  for(int i = 0; i < carrier->second.downlink().phich_size(); ++i)
-    {
-      addTxSegments(carrier->second.downlink().phich(i), tti_tx, sfDuration, cfi);
-    }
+    for(int i = 0; i < carrier.second.downlink().phich_size(); ++i)
+      {
+        addTxSegments(carrier.second.downlink().phich(i), tti_tx, sfDuration, cfi);
+      }
 
-  for(int i = 0; i < carrier->second.downlink().pdcch_size(); ++i)
-    {
-      addTxSegments(carrier->second.downlink().pdcch(i), tti_tx, sfDuration, cfi);
-    }
+    for(int i = 0; i < carrier.second.downlink().pdcch_size(); ++i)
+      {
+        addTxSegments(carrier.second.downlink().pdcch(i), tti_tx, sfDuration, cfi);
+      }
 
-  for(int i = 0; i < carrier->second.downlink().pdsch_size(); ++i)
-    {
-      addTxSegments(carrier->second.downlink().pdsch(i), tti_tx, sfDuration, cfi);
-    }
+    for(int i = 0; i < carrier.second.downlink().pdsch_size(); ++i)
+      {
+        addTxSegments(carrier.second.downlink().pdsch(i), tti_tx, sfDuration, cfi);
+      }
+  }
 
   return segmentBuilder_.build(slotDuration);
 }

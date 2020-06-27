@@ -38,7 +38,7 @@
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz)
 {
   if(ctype == CHAN_PCFICH)
     {
@@ -50,7 +50,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint32_t 
     }
   else if(ctype == CHAN_PMCH)
     {
-      auto carrier = txControl_.carriers().find(carrier_id);
+      auto carrier = txControl_.carriers().find(rx_freq_hz);
 
       if(carrier != txControl_.carriers().end() && carrier->second.downlink().has_pmch())
         {
@@ -65,7 +65,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint32_t 
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz)
 {
   if(!pcfichPass_)
     {
@@ -76,7 +76,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
   // For other physical channels, match the specified rnti
   if(ctype == CHAN_PHICH)
     {
-      auto carrier = txControl_.carriers().find(carrier_id);
+      auto carrier = txControl_.carriers().find(rx_freq_hz);
 
       if(carrier != txControl_.carriers().end())
         {
@@ -97,7 +97,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
     }
   else if(ctype == CHAN_PDCCH)
     {
-      auto carrier = txControl_.carriers().find(carrier_id);
+      auto carrier = txControl_.carriers().find(rx_freq_hz);
 
       if(carrier != txControl_.carriers().end())
         {
@@ -129,7 +129,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
           return SINRTester::SINRTesterResult{};
         }
 
-      auto carrier = txControl_.carriers().find(carrier_id);
+      auto carrier = txControl_.carriers().find(rx_freq_hz);
 
       if(carrier != txControl_.carriers().end())
         {

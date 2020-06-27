@@ -134,7 +134,7 @@ void
 EMANE::Models::LTE::ENBRadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
   // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
+  const auto & carrier = txControl.carriers().begin();
 
   updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pcfich(), true);
 
@@ -168,7 +168,7 @@ void
 EMANE::Models::LTE::ENBRadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
   // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
+  const auto & carrier = txControl.carriers().begin();
 
   if(carrier->second.uplink().has_prach())
     {

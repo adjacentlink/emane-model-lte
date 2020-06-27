@@ -203,40 +203,37 @@ message PMCH
 
  message CarrierMessage
   {
-    // 1 to 5 carriers [0-4]
-    required uint32  carrier_id = 1;
-
-    required FrequencyPairMessage frequencies = 2;
+    required FrequencyPairMessage frequencies = 1;
 
     // Physical Cell Id
     // physical layer cell id [0-167] (phy_cell_id / 3)
     // physical layer cell id [0-2    (phy_cell_id % 3)
-    required uint32  phy_cell_id = 3;
+    required uint32  phy_cell_id = 2;
 
     // control format indicator [1-3]
-    required uint32  cfi = 4;
+    required uint32  cfi = 3;
 
     // optional pss_sss sent on selected subframes
-    optional PSS_SSS pss_sss = 5;
+    optional PSS_SSS pss_sss = 4;
 
     // optional pbch sent on selected subframes
-    optional PBCH pbch = 6;
+    optional PBCH pbch = 5;
 
     // repeated pdsch
-    repeated PDCCH pdcch = 7;
+    repeated PDCCH pdcch = 6;
 
     // optional 
-    optional PDSCH pdsch = 8;
+    optional PDSCH pdsch = 7;
 
     // optional phich
-    optional PHICH phich = 9;
+    optional PHICH phich = 8;
 
     // repeated pmch
-    optional PMCH pmch = 10;
+    optional PMCH pmch = 9;
   }
 
-  // 1 to 5 carriers 
-  map<uint32, CarrierMessage> carriers = 2;
+  // tx_freq, Carrier
+  map<uint64, CarrierMessage> carriers = 2;
 }
 
 

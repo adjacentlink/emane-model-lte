@@ -55,20 +55,20 @@ EMANELTE::MHAL::SINRTester::setImpl(SINRTesterImpl * impl)
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz)
 {
   if(impl_)
-    return impl_->sinrCheck2(ctype, carrier_id);
+    return impl_->sinrCheck2(ctype, rx_freq_hz);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz)
 {
   if(impl_)
-    return impl_->sinrCheck2(ctype, rnti, carrier_id);
+    return impl_->sinrCheck2(ctype, rnti, rx_freq_hz);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }

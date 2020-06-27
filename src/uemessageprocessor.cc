@@ -130,23 +130,23 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   statisticManager_.updateTxTableCounts(txControl);
 
-  // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
+  for(auto carrier : txControl.carriers())
+   {
+    if(carrier.second.uplink().has_prach())
+     {
+       addTxSegments(carrier.second.uplink().prach(), tti_tx);
+     }
 
-  if(carrier->second.uplink().has_prach())
-    {
-      addTxSegments(carrier->second.uplink().prach(), tti_tx);
-    }
+    for(int i = 0; i < carrier.second.uplink().pucch_size(); ++i)
+     {
+       addTxSegments(carrier.second.uplink().pucch(i), tti_tx);
+     }
 
-    for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
-    {
-      addTxSegments(carrier->second.uplink().pucch(i), tti_tx);
-    }
-
-  for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
-    {
-      addTxSegments(carrier->second.uplink().pusch(i), tti_tx);
-    }
+    for(int i = 0; i < carrier.second.uplink().pusch_size(); ++i)
+     {
+       addTxSegments(carrier.second.uplink().pusch(i), tti_tx);
+     }
+   }
 
   return segmentBuilder_.build(slotDuration);
 }
@@ -154,8 +154,8 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
 bool
 EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                         const EMANELTE::MHAL::ChannelMessage & channel_message,
-                                                                         EMANE::Models::LTE::SegmentMap & segmentCache)
+                                                                const EMANELTE::MHAL::ChannelMessage & channel_message,
+                                                                EMANE::Models::LTE::SegmentMap & segmentCache)
 {
   const size_t sfIdx{txControl.tti_tx() % 10};
 

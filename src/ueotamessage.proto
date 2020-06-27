@@ -84,19 +84,16 @@ message UE_UL_Message
  }
 
  // 1 to 5 carriers [0-4]
- message Carrier 
+ message CarrierMessage
   {
-    // 1 to 5 carriers [0-4]
-    required uint32  carrier_id  = 1;
-
-    required FrequencyPairMessage frequencies = 2;
+    required FrequencyPairMessage frequencies = 1;
 
     // Physical Cell Id
-    required uint32  phy_cell_id = 3;
+    required uint32  phy_cell_id = 2;
 
-    optional PRACH   prach       = 4;
-    optional PUCCH   pucch       = 5;
-    optional PUSCH   pusch       = 6;
+    optional PRACH   prach       = 3;
+    optional PUCCH   pucch       = 4;
+    optional PUSCH   pusch       = 5;
   }
 
 // ********** END MSG DEFS ***********
@@ -107,6 +104,7 @@ message UE_UL_Message
  // tx tti
  required uint32 tti = 2;
 
- map<uint32, Carrier> carriers = 3;
+ // tx_freq, Carrier
+ map<uint64, CarrierMessage> carriers = 3;
 
 }

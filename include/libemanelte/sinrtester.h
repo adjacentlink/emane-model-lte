@@ -71,9 +71,9 @@ public:
     
   void setImpl(SINRTesterImpl * impl);
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint32_t carrier_id);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz);
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint32_t carrier_id);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz);
 
   void release();
 
