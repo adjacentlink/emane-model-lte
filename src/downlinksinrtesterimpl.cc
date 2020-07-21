@@ -54,9 +54,13 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t 
 
       if(carrier != txControl_.carriers().end() && carrier->second.downlink().has_pmch())
         {
-          return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, carrier->second.downlink().pmch(), segmentCache_),
-                                  sinr_dB_,
-                                  noiseFloor_dBm_};
+          return SINRTester::SINRTesterResult{
+                   pRadioModel_->noiseTestChannelMessage(txControl_, 
+                                                         carrier->second.downlink().pmch(),
+                                                         segmentCache_,
+                                                         carrier->first),
+                   sinr_dB_,
+                   noiseFloor_dBm_};
         }
     }
 
@@ -87,11 +91,13 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
                  continue;
                }
 
-             return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, 
-                                                                                       carrier->second.downlink().phich(i),
-                                                                                       segmentCache_),
-                                                  sinr_dB_,
-                                                 noiseFloor_dBm_};
+             return SINRTester::SINRTesterResult{
+                      pRadioModel_->noiseTestChannelMessage(txControl_,
+                                                            carrier->second.downlink().phich(i),
+                                                            segmentCache_,
+                                                            carrier->first),
+                      sinr_dB_,
+                      noiseFloor_dBm_};
            }
         }
     }
@@ -110,7 +116,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
 
               bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_,
                                                                    carrier->second.downlink().pdcch(i),
-                                                                   segmentCache_)};
+                                                                   segmentCache_,
+                                                                   carrier->first)};
 
               // Store PDCCH result for corresponding PDSCH check
               pdcchRNTIResults_.emplace(rnti, pdcchPass);
@@ -142,7 +149,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
 
               return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, 
                                                                                         carrier->second.downlink().pdsch(i),
-                                                                                        segmentCache_), 
+                                                                                        segmentCache_,
+                                                                                        carrier->first), 
                                                   sinr_dB_,
                                                   noiseFloor_dBm_};
             }

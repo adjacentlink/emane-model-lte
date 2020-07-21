@@ -492,7 +492,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               putSINRResult(carrier->second.uplink().prach(),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().prach(), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().prach(), segmentCache, carrier->first));
             }
 
           for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
@@ -500,7 +500,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               putSINRResult(carrier->second.uplink().pucch(i),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pucch(i), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pucch(i), segmentCache, carrier->first));
             }
 
           for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
@@ -508,7 +508,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               putSINRResult(carrier->second.uplink().pusch(i),
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pusch(i), segmentCache));
+                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pusch(i), segmentCache, carrier->first));
             }
 
           StatisticManager::ReceptionInfoMap receptionInfoMap;

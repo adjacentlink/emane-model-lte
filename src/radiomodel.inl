@@ -191,15 +191,19 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.first.c_str(),
                                   pcrCurveURI_.c_str());
 
-          // XXX_CC TODO
-          messageProcessor_[0]->loadPCRFile(pcrCurveURI_);
+          for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->loadPCRFile(pcrCurveURI_);
+           }
         }
       else if(item.first == "resourceblocktxpower")
         {
           float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
 
-          // XXX_CC TODO
-          messageProcessor_[0]->setTxPower(resourceBlockTxPowerdBm);
+          for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->setTxPower(resourceBlockTxPowerdBm);
+           }
 
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
@@ -634,9 +638,15 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
-   // XXX_CC TODO
-   EMANE::FrequencySegments frequencySegments{
-      messageProcessor_[0]->buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
+   EMANE::FrequencySegments frequencySegments;
+
+   for(auto iter = txControl.carriers().begin(); iter != txControl.carriers().end(); ++iter)
+    {
+      // XXX_CC TODO
+      auto f = messageProcessor_[0]->buildFrequencySegments(txControl, iter->first);
+
+      frequencySegments.splice(frequencySegments.begin(), f);
+    }
 
    const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
@@ -784,7 +794,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
             }
 
 
-          // XXX_CC TODO
+          // check for up/down link type
           if(txControl.message_type() != messageProcessor_[0]->receiveMessageType_)
             {
               updateSubframeDropDirection_i(pktInfo.getSource());
@@ -973,10 +983,11 @@ template <class RadioStatManager, class MessageProcessor>
 bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTestChannelMessage(
    const EMANELTE::MHAL::TxControlMessage & txControl,
    const EMANELTE::MHAL::ChannelMessage & channel_msg,
-   SegmentMap & segmentCache)
+   SegmentMap & segmentCache,
+   std::uint64_t carrierFreqHz)
 {
   // XXX_CC TODO
-  return messageProcessor_[0]->noiseTestChannelMessage(txControl, channel_msg, segmentCache);
+  return messageProcessor_[0]->noiseTestChannelMessage(txControl, channel_msg, segmentCache, carrierFreqHz);
 }
 
 

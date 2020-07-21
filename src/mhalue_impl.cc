@@ -367,10 +367,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
           // XXX_CC TODO multiple carriers
           auto carrier = txControl.carriers().begin();
 
-          const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.downlink().pcfich(), segmentCache);
+          const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.downlink().pcfich(), segmentCache, carrier->first);
 
           const bool pbchPass = carrier->second.downlink().has_pbch() ?
-                                  pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.downlink().pbch(), segmentCache) : 
+                                  pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.downlink().pbch(), segmentCache, carrier->first) : 
                                   false;
 
           const auto signalAvg_dBm = EMANELTE::MW_TO_DB(signalSum_mW / numSegments);
@@ -379,7 +379,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
           DownlinkSINRTesterImpl * pSINRTester =
             new DownlinkSINRTesterImpl(pRadioModel_, 
-                                       std::move(txControl),   // watch out for this move if iterating over multiple carriers
+                                       std::move(txControl),   // XXX watch out for this std::move if iterating over multiple carriers
                                        std::move(segmentCache), 
                                        pcfichPass,
                                        pbchPass,
