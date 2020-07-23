@@ -179,7 +179,7 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
   // on cell search, configure for the largest bandwidth to
   // ensure packet reception from any enb (register all possible FOI
   // for the configured receive frequency)
-  pRadioModel_->setNumResourceBlocks(100, 0, true); // carrier_id 0, search enable true
+  pRadioModel_->setNumResourceBlocks(100, 0); // carrier_id 0 during search
 
   for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
     {
@@ -205,7 +205,9 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrier_id, double rx_freq_
                                llround(rx_freq_hz),     // rx freq
                                llround(tx_freq_hz));    // tx freq
 
-  pRadioModel_->setNumResourceBlocks(100, carrier_id, true); // search
+  pRadioModel_->setNumResourceBlocks(100, carrier_id);
+
+  pRadioModel_->setFrequenciesOfInterest(true, carrier_id);  // search mode true
 }
 
 
@@ -213,6 +215,8 @@ void
 EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int num_resource_blocks, std::uint32_t carrier_id)
 {
   pRadioModel_->setNumResourceBlocks(num_resource_blocks, carrier_id);
+
+  pRadioModel_->setFrequenciesOfInterest(false, carrier_id);  // search mode false
 }
 
 
@@ -448,7 +452,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
         {
           in_step = false;
 
-          logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
+          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
@@ -469,7 +473,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
   // check for orphans
   if(size_t orphaned = pendingMessageBins_[nextbin].clearAndCheck())
     {
-      logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,

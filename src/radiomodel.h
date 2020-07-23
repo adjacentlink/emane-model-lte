@@ -129,7 +129,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                           EMANELTE::FrequencyHz rxFrequency,
                           EMANELTE::FrequencyHz txFrequency);
 
-      void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId, bool search=false);
+      void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId);
 
       EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t rx_freq_hz);
 
@@ -147,6 +147,8 @@ class RadioModel : public EMANE::MACLayerImplementor
                                    const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                    SegmentMap & segmentCache,
                                    std::uint64_t carrierCenterFrequencyHz);
+
+      void setFrequenciesOfInterest(bool search, std::uint32_t carrierId);
 
     private:
       bool bRunning_;
@@ -188,7 +190,6 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       SubframeReceiveCountDB subframeReceiveCountDB_;
 
-      void setFrequenciesOfInterest(bool search, std::uint32_t carrierId);
 
       EMANELTE::FrequencyHz getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
                                                       EMANELTE::FrequencyHz centerFreq,

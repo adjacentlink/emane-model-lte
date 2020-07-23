@@ -41,28 +41,24 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrier_id,
                                              const mhal_config_t & mhal_config,
                                              const ENB::mhal_enb_config_t & mhal_enb_config)
 {
-  // XXX_CC TODO multiple carriers do this once ???
+  // XXX_CC
   if(carrier_id == 0)
    {
      // this must be done first
      MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
 
-     pRadioModel_->setFrequencies(carrier_id,
-                                  llround(mhal_enb_config.uplink_frequency_hz_),    // rx
-                                  llround(mhal_enb_config.downlink_frequency_hz_)); // tx
-
      pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
-
-     pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrier_id);
-  }
- else
-  {
-     pRadioModel_->setFrequencies(carrier_id,
-                                 llround(mhal_enb_config.uplink_frequency_hz_),    // rx
-                                 llround(mhal_enb_config.downlink_frequency_hz_)); // tx
-  }
+   }
 
   physicalCellIds_.insert(mhal_enb_config.physical_cell_id_);
+
+  pRadioModel_->setFrequencies(carrier_id,
+                               llround(mhal_enb_config.uplink_frequency_hz_),    // rx
+                               llround(mhal_enb_config.downlink_frequency_hz_)); // tx
+
+  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrier_id);
+
+  pRadioModel_->setFrequenciesOfInterest(false, carrier_id); // search mode false
 }
 
 
@@ -600,7 +596,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & messages, timeval & tv_so
         {
           in_step = false;
 
-          logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
+          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
@@ -621,7 +617,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & messages, timeval & tv_so
   // check for orphans
   if(size_t orphaned = pendingMessageBins_[nextbin].clearAndCheck())
     {
-      logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
