@@ -44,10 +44,10 @@ option optimize_for = SPEED;
 
 message TxControlCarrierMessage
 {
-  required uint32               phy_cell_id = 1;
-  required FrequencyPairMessage frequencies = 2;
-  optional DownlinkMessage      downlink    = 3;
-  optional UplinkMessage        uplink      = 4;
+  required uint32               phy_cell_id    = 1;
+  map<uint64, uint64>           frequencies    = 2; // <actual tx freq, carrier tx center freq>
+  optional DownlinkMessage      downlink       = 3;
+  optional UplinkMessage        uplink         = 4;
 }
 
 message TxControlMessage

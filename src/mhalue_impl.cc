@@ -252,11 +252,9 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                   txControl.carriers().size(),
                   numSegments);
 #endif
-      double signalSum_mW = 0, noiseFloorSum_mW = 0;
+      double signalSum_mW = 0.0, noiseFloorSum_mW = 0.0, peak_sum = 0.0;
 
       int segnum = -1;
-
-      double peak_sum = 0.0;
 
       uint32_t num_samples = 0;
 

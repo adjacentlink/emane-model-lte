@@ -146,7 +146,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                    const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                    SegmentMap & segmentCache,
-                                   std::uint64_t carrierFreqHz);
+                                   std::uint64_t carrierCenterFrequencyHz);
 
     private:
       bool bRunning_;
@@ -156,23 +156,25 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
 
+      // <carrierId, <rx/tx freq>>
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
 
-      using CarrierTable   = std::map<FrequencyPair, std::uint32_t>;
+      // <freq, carrierId>
+      using CarrierTable = std::map<std::uint64_t, std::uint32_t>;
 
-      // track frequencies by carrier
+      // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;
 
-      // track carrier by freq pair
-      CarrierTable   carrierTable_;
+      // track carrier by freq 
+      CarrierTable   txCarrierTable_;
+      CarrierTable   rxCarrierTable_;
 
       std::uint64_t u64TxSeqNum_;
-      std::set<std::uint64_t> rxFrequencySetHz_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
 
       RadioStatManager statisticManager_;
-      MessageProcessor *messageProcessor_[MAX_CARRIERS]; // XXX_CC just handle each carrier here ???
+      MessageProcessor *messageProcessor_[MAX_CARRIERS]; // XXX_CC handle each carrier 
 
       EMANELTE::MHAL::PHY::MHALPHY * pMHAL_;
 
@@ -180,8 +182,10 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       // NumPass, DropPropDelay, DropFreqMismatch, DropDirection
       using SubframeReceiveCountEntry = std::tuple<size_t, size_t, size_t, size_t>;
+
       // NEMId key
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;
+
       SubframeReceiveCountDB subframeReceiveCountDB_;
 
       void setFrequenciesOfInterest(bool search, std::uint32_t carrierId);

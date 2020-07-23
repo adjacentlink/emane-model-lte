@@ -94,7 +94,7 @@ namespace LTE
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                  const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                  EMANE::Models::LTE::SegmentMap & segmentCache,
-                                 std::uint64_t carrierFreqHz);
+                                 std::uint64_t carrierCenterFrequencyHz);
 
   private:
     struct DownlinkParams

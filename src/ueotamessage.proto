@@ -86,7 +86,8 @@ message UE_UL_Message
  // 1 to 5 carriers [0-4]
  message CarrierMessage
   {
-    required FrequencyPairMessage frequencies = 1;
+    // tx center freq for this carrier
+    required uint64 center_frequency_hz = 1;
 
     // Physical Cell Id
     required uint32  phy_cell_id = 2;
