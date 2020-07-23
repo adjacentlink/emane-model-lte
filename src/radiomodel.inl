@@ -660,11 +660,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 
           for(auto f : subFrequencies)
            {
-             // assign the sub frequency to the carrier center frequency map
-             // this will provide a quick lookup on the receive side
-             auto & e = (*txControl.mutable_carriers())[carrierCenterFrequencyHz];
-
-             (*e.mutable_frequencies())[f.getFrequencyHz()] = carrierCenterFrequencyHz;
+             (*txControl.mutable_carriers())[carrierCenterFrequencyHz].add_sub_channels(f.getFrequencyHz());
 
              frequencySegments.push_back(f);
            }
@@ -809,33 +805,33 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
-#if 0 // XXX_CC TODO
           size_t numMisMatch = 0;
 
           for(auto carrier : txControl.carriers())
             {
-              // check the tx freq, see if it matches one of our carrier rx freqs
-              if(! rxCarrierTable_.count(carrier.second.frequencies().tx_frequency_hz()))
+              // check the carrier tx freq, see if it matches one of our carrier rx freqs
+              if(! rxCarrierTable_.count(carrier.first))
                {
                  ++numMisMatch;
                }
             }
 
-           if(0)
-            {
-               LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                       EMANE::INFO_LEVEL,
-                                       "MACI %03hu %s::%s: src %hu, no matching frequencies",
-                                       id_,
-                                       pzModuleName_,
-                                       __func__,
-                                       pktInfo.getSource());
+          if(numMisMatch == txControl.carriers().size())
+           {
+              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                      EMANE::INFO_LEVEL,
+                                      "MACI %03hu %s::%s: src %hu, no matching frequencies in %zu carriers",
+                                      id_,
+                                      pzModuleName_,
+                                      __func__,
+                                      pktInfo.getSource(),
+                                      txControl.carriers().size());
 
-               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
+              updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
 
-               return;
-            }
-#endif
+              return;
+           }
+
           statisticManager_.updateRxTableCounts(txControl);
 
           pMHAL_->handle_upstream_msg(
