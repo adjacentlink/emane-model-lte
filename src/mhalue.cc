@@ -80,21 +80,21 @@ EMANELTE::MHAL::UE::get_messages(EMANELTE::MHAL::RxMessages & messages, timeval 
 
 
 std::uint64_t
-EMANELTE::MHAL::UE::get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz)
+EMANELTE::MHAL::UE::get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz)
 {
-  return impl_.get_tx_prb_frequency(prb_index, tx_freq_hz);
+  return impl_.get_tx_prb_frequency(prb_index, freq_hz);
 }
 
 
-void EMANELTE::MHAL::UE::set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz)
+void EMANELTE::MHAL::UE::set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz)
 {
-  impl_.set_frequencies(carrier_id, rx_freq_hz, tx_freq_hz);
+  impl_.set_frequencies(carrierIndex, carrierRxFrequencyHz, carrierTxFrequencyHz);
 }
 
 
-void EMANELTE::MHAL::UE::set_num_resource_blocks(int n_prb, std::uint32_t carrier_id)
+void EMANELTE::MHAL::UE::set_num_resource_blocks(int n_prb, std::uint32_t carrierIndex)
 {
-  impl_.set_num_resource_blocks(n_prb, carrier_id);
+  impl_.set_num_resource_blocks(n_prb, carrierIndex);
 }
 
 

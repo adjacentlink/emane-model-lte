@@ -37,6 +37,7 @@
 #define EMANELTE_SINRTESTER_H
 
 #include <pthread.h>
+#include <map>
 #include "libemanelte/otacommon.pb.h"
 
 
@@ -69,16 +70,17 @@ public:
     { }
   };
     
-  void setImpl(SINRTesterImpl * impl);
+  void setImpl(std::uint64_t, SINRTesterImpl * impl);
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrrierFrequencyHz);
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz);
+  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrrierFrequencyHz);
 
   void release();
 
 private:
-  SINRTesterImpl * impl_;
+  // <carrier center frequency Hz, Impl>
+  std::map<std::uint64_t, SINRTesterImpl *> impl_;
   pthread_mutex_t mutex_;
 };
 

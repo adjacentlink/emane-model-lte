@@ -105,7 +105,7 @@ message UE_UL_Message
  // tx tti
  required uint32 tti = 2;
 
- // tx_freq, Carrier
+ // Center Freq, Carrier
  map<uint64, CarrierMessage> carriers = 3;
 
 }

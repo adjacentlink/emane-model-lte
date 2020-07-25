@@ -53,7 +53,7 @@ namespace MHAL {
     timeval  rx_time_;      // actual rx time
     timeval  tx_time_;      // actual tx time
     timeval  sf_time_;      // slot time
-    float peak_sum_;        // sum of power over whole message
+    float    peak_sum_;     // sum of power over whole message
     uint32_t num_samples_;  // number of segments in peak_sum
 
     RxData() {}
@@ -86,7 +86,7 @@ namespace MHAL {
               const timeval & rx_time,
               const timeval & tx_time,
               const timeval & sf_time,
-              const float & peak_sum,
+              const float   & peak_sum,
               const uint32_t & num_samples) :
       rxData_(nemId, rx_seqnum, rx_time, tx_time, sf_time, peak_sum, num_samples),
       SINRTester_()

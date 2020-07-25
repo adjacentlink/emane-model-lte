@@ -37,12 +37,12 @@
 #include "configmanager.h"
 
 
-void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrier_id,
+void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
                                              const mhal_config_t & mhal_config,
                                              const ENB::mhal_enb_config_t & mhal_enb_config)
 {
   // XXX_CC
-  if(carrier_id == 0)
+  if(carrierIndex == 0)
    {
      // this must be done first
      MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
@@ -50,15 +50,22 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrier_id,
      pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
    }
 
+  // enb will run thru each carrier 0,1... each 1 and only 1 time
+  const bool clearCache = false;
+  const bool searchMode = false;
+
   physicalCellIds_.insert(mhal_enb_config.physical_cell_id_);
 
-  pRadioModel_->setFrequencies(carrier_id,
-                               llround(mhal_enb_config.uplink_frequency_hz_),    // rx
-                               llround(mhal_enb_config.downlink_frequency_hz_)); // tx
+  pRadioModel_->setFrequencies(carrierIndex,
+                               llround(mhal_enb_config.uplink_frequency_hz_),   // rx
+                               llround(mhal_enb_config.downlink_frequency_hz_), // tx
+                               clearCache);
 
-  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrier_id);
+  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrierIndex);
 
-  pRadioModel_->setFrequenciesOfInterest(false, carrier_id); // search mode false
+  pRadioModel_->setFrequenciesOfInterest(searchMode,
+                                         carrierIndex,
+                                         clearCache);
 }
 
 
@@ -185,9 +192,9 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALENBImpl::get_noise(FrequencyHz frequen
 
 
 std::uint64_t
-EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz)
+EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index, tx_freq_hz);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, freq_hz);
 }
 
 
@@ -306,7 +313,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       const auto duration = std::get<2>(segment.first);
 
       EMANE::TimePoint minSot, maxSot;
-      double rxPower_mW;
+
+      double rxPower_mW = 0;
       std::tie(minSot, maxSot, rxPower_mW) = segment.second;
 
       const auto rxPower_dBm = EMANELTE::MW_TO_DB(rxPower_mW);
@@ -333,9 +341,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       const auto & otaInfo = std::get<2>(msg);
 
       const auto & txControl = std::get<3>(msg);
-
-      // grab num segments here, some  stl list size() calls are not O(1)
-      const size_t numSegments = otaInfo.segments_.size();
 
       bool bFoundPci = false;
 
@@ -367,11 +372,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       double signalSum_mW = 0, noiseFloorSum_mW = 0;
 
-      int segnum = -1;
-
-      float peak_sum = 0.0;
-
-      uint32_t num_samples = 0;
+      float peakSum = 0.0;
 
       EMANE::Models::LTE::SegmentMap segmentCache;
 
@@ -389,8 +390,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                       segment.getOffset().count(),
                       segment.getDuration().count());
 
-          ++segnum;
-
           if(spectrumWindow == spectrumWindowCache.end())
             {
               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
@@ -404,16 +403,16 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               continue;
             }
 
-          float rxPower_dBm = segment.getRxPowerdBm();
-          float rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
+          const auto rxPower_dBm = segment.getRxPowerdBm();
+          const auto rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
 
-          double noiseFloor_dBm = outOfBandNoiseFloor_dBm.find(EMANE::Models::LTE::SegmentKey(segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()))->second;
-          double noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+          const auto noiseFloor_dBm = outOfBandNoiseFloor_dBm.find(EMANE::Models::LTE::SegmentKey(segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()))->second;
+          const auto noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+
+          const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
 
           signalSum_mW     += rxPower_mW;
           noiseFloorSum_mW += noiseFloor_mW;
-
-          const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
 
           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, freq %lu, offset %lu, duration %lu, rxPower_dBm %0.1f, noisefloor_dbm %0.1f, sinr_dB %0.1f",
                       __func__,
@@ -460,10 +459,10 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                       sinr_dB);
 #endif
 
-          peak_sum += sinr_dB;
-
-          num_samples++;
+          peakSum += sinr_dB;
         } // end each segment
+
+      const auto numSegments = segmentCache.size();
 
       // now check for number of pass/fail segments
       if(numSegments > 0)
@@ -474,11 +473,12 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
           UplinkSINRTesterImpl * pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm, noiseFloorAvg_dBm);
 
-          rxControl.SINRTester_.setImpl(pSINRTester);
+          rxControl.SINRTester_.setImpl(0, pSINRTester); // XXX set carrier
+#warning "set carrier"
 
-          rxControl.rxData_.peak_sum_ = peak_sum;
+          rxControl.rxData_.peak_sum_ = peakSum;
 
-          rxControl.rxData_.num_samples_ = num_samples;
+          rxControl.rxData_.num_samples_ = numSegments;
 
           // XXX_CC TODO multiple carriers
           auto carrier = txControl.carriers().begin();

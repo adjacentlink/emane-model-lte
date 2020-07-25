@@ -57,11 +57,11 @@ namespace UE {
 
   bool get_messages(RxMessages & messages, timeval & rx_time);
 
-  std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz);
+  std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
   
-  void set_frequencies(uint32_t carrier_id, double rx_freq_hz, double tx_freq_hz);
+  void set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz);
 
-  void set_num_resource_blocks(int n_prb, uint32_t carrier_id = 0);
+  void set_num_resource_blocks(int n_prb, uint32_t carrierIndex = 0);
 
   void begin_cell_search();
 

@@ -74,10 +74,9 @@ public:
 
   void set_thread_priority(pthread_t tid, int policy, int priority);
 
-  void send_msg(const Data & data, 
-                TxControlMessage & txControl);
+  void send_msg(const Data & data, TxControlMessage & txControl);
 
-  virtual std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz) = 0;
+  virtual std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz) = 0;
 
   void stop();
 

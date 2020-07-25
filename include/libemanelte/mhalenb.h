@@ -89,7 +89,7 @@ namespace ENB {
 
   bool get_messages(RxMessages & messages, timeval & rx_time);
 
-  std::uint64_t get_tx_prb_frequency(int prb_index, uint64_t tx_freq_hz);
+  std::uint64_t get_tx_prb_frequency(int prb_index, uint64_t freq_hz);
 
 }
 }

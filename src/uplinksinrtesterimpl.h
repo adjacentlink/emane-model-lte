@@ -64,9 +64,9 @@ public:
 
   RNTIChannelSINRResults rntiChannelSINRResults_;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz) override;
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) override;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz) override;  
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) override;  
 
 private:
   const double sinr_dB_;

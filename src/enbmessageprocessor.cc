@@ -171,7 +171,7 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                uint64_t carrierCenterFrequencyHz)
+                                                                uint64_t carrierFrequencyHz)
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
@@ -181,7 +181,7 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 
   const EMANE::Microseconds slotDuration = sfDuration / 2;
 
-  auto & carrier = (*txControl.mutable_carriers())[carrierCenterFrequencyHz];
+  auto & carrier = (*txControl.mutable_carriers())[carrierFrequencyHz];
 
   std::uint32_t cfi = carrier.downlink().cfi();
 
@@ -220,7 +220,7 @@ bool
 EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                                                  const EMANELTE::MHAL::ChannelMessage & channel_message,
                                                                  EMANE::Models::LTE::SegmentMap & segmentCache,
-                                                                 std::uint64_t carrierCenterFrequencyHz)
+                                                                 std::uint64_t carrierFrequencyHz)
 {
   const size_t sfIdx{txControl.tti_tx() % 10};
 
@@ -228,7 +228,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
   const size_t slot2{slot1 + 1};
 
-  auto carrier = txControl.carriers().find(carrierCenterFrequencyHz);
+  const auto carrierIter = txControl.carriers().find(carrierFrequencyHz);
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 

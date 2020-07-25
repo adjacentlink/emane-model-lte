@@ -233,7 +233,7 @@ message PMCH
     optional PMCH pmch = 9;
   }
 
-  // tx_freq, Carrier
+  // Center Freq, Carrier
   map<uint64, CarrierMessage> carriers = 2;
 }
 

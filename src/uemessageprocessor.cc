@@ -120,7 +120,7 @@ EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::Chan
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                               uint64_t carrierCenterFrequencyHz)
+                                                               uint64_t carrierFrequencyHz)
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
@@ -130,7 +130,7 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   statisticManager_.updateTxTableCounts(txControl);
 
-  auto & carrier = (*txControl.mutable_carriers())[carrierCenterFrequencyHz];
+  auto & carrier = (*txControl.mutable_carriers())[carrierFrequencyHz];
 
   if(carrier.uplink().has_prach())
    {
@@ -155,7 +155,7 @@ bool
 EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                                                 const EMANELTE::MHAL::ChannelMessage & channel_message,
                                                                 EMANE::Models::LTE::SegmentMap & segmentCache,
-                                                                std::uint64_t carrierCenterFrequencyHz)
+                                                                std::uint64_t carrierFrequencyHz)
 {
   const size_t sfIdx{txControl.tti_tx() % 10};
 
@@ -163,11 +163,11 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
   const size_t slot2{slot1 + 1};
 
-  auto carrier = txControl.carriers().find(carrierCenterFrequencyHz);
+  const auto carrierIter = txControl.carriers().find(carrierFrequencyHz);
 
-  std::uint32_t cfi{carrier->second.downlink().cfi()};
+  const auto cfi{carrierIter->second.downlink().cfi()};
 
-  std::uint32_t numResourceBlocks{carrier->second.downlink().num_resource_blocks()};
+  const auto numResourceBlocks{carrierIter->second.downlink().num_resource_blocks()};
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
@@ -278,7 +278,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
       std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot1, rbParams.first_, rbParams.last_, slotDuration);
 
-      auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
+      auto segmentIter = segmentCache.find(SegmentKey{freq, offset, duration});
 
       if(segmentIter == segmentCache.end())
         {
@@ -309,11 +309,11 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
           continue;
         }
 
-      float sinr_dB = segmentIter->second;
+      const auto sinr_dB = segmentIter->second;
 
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+      const auto por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-      float fRandomValue{RNDZeroToOne_()};
+      const auto fRandomValue{RNDZeroToOne_()};
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
@@ -390,11 +390,11 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
           continue;
         }
 
-      float sinr_dB = segmentIter->second;
+      const auto sinr_dB = segmentIter->second;
 
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+      const auto por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-      float fRandomValue{RNDZeroToOne_()};
+      const auto fRandomValue{RNDZeroToOne_()};
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,

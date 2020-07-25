@@ -38,37 +38,36 @@
 #include "utils.h"
 
 
-EMANELTE::MHAL::SINRTester::SINRTester() :
-  impl_{nullptr}
+EMANELTE::MHAL::SINRTester::SINRTester()
 {
   init_mutex(&mutex_);
 }
 
 
 void
-EMANELTE::MHAL::SINRTester::setImpl(SINRTesterImpl * impl)
+EMANELTE::MHAL::SINRTester::setImpl(std::uint64_t carrierFrequencyHz, SINRTesterImpl * impl)
 {
   LOCK_WITH_CHECK(&mutex_);
-  impl_ = impl;
+  impl_[carrierFrequencyHz] = impl;
   UNLOCK_WITH_CHECK(&mutex_);
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz)
 {
-  if(impl_)
-    return impl_->sinrCheck2(ctype, rx_freq_hz);
+  if(impl_.count(carrierFrequencyHz))
+    return impl_.at(carrierFrequencyHz)->sinrCheck2(ctype, carrierFrequencyHz);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz)
 {
-  if(impl_)
-    return impl_->sinrCheck2(ctype, rnti, rx_freq_hz);
+  if(impl_.count(carrierFrequencyHz))
+    return impl_.at(carrierFrequencyHz)->sinrCheck2(ctype, rnti, carrierFrequencyHz);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
@@ -78,11 +77,12 @@ void
 EMANELTE::MHAL::SINRTester::release()
 {
   LOCK_WITH_CHECK(&mutex_);
-  if(impl_)
+  for(auto iter = impl_.begin(); iter != impl_.end(); ++iter)
     {
-      delete impl_;
-      impl_ = nullptr;
+      delete iter->second;
     }
+
+  impl_.clear();
   UNLOCK_WITH_CHECK(&mutex_);
 }
 

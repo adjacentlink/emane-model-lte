@@ -125,15 +125,16 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setSymbolsPerSlot(std::uint32_t symbolsPerSlot);
 
-      void setFrequencies(uint32_t carrierId,
-                          EMANELTE::FrequencyHz rxFrequency,
-                          EMANELTE::FrequencyHz txFrequency);
+      void setFrequencies(uint32_t carrierIndex,
+                          EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                          EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                          bool clearCache);
 
       void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId);
 
-      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t rx_freq_hz);
+      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
-      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t tx_freq_hz);
+      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
       EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
@@ -146,9 +147,9 @@ class RadioModel : public EMANE::MACLayerImplementor
       bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                    const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                    SegmentMap & segmentCache,
-                                   std::uint64_t carrierCenterFrequencyHz);
+                                   std::uint64_t carrierFrequencyHz);
 
-      void setFrequenciesOfInterest(bool search, std::uint32_t carrierId);
+      void setFrequenciesOfInterest(bool searchMode, std::uint32_t carrierIndex, bool clearCache);
 
     private:
       bool bRunning_;
@@ -158,18 +159,21 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
 
-      // <carrierId, <rx/tx freq>>
+      // <carrierIndex, <rx/tx freq>>
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
 
-      // <freq, carrierId>
-      using CarrierTable = std::map<std::uint64_t, std::uint32_t>;
+      // <freq, carrierIndex>
+      using CarrierFrequencyToIndexTable = std::map<std::uint64_t, std::uint32_t>;
 
       // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;
 
-      // track carrier by freq 
-      CarrierTable   txCarrierTable_;
-      CarrierTable   rxCarrierTable_;
+      // track carrier index by freq 
+      CarrierFrequencyToIndexTable   txCarrierFrequencyToIndexTable_;
+      CarrierFrequencyToIndexTable   rxCarrierFrequencyToIndexTable_;
+
+      EMANE::FrequencySet rxFrequenciesHz_;
+      EMANE::FrequencySet txFrequenciesHz_;
 
       std::uint64_t u64TxSeqNum_;
       std::uint32_t u32NumResourceBlocks_;

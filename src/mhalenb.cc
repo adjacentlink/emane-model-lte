@@ -79,7 +79,7 @@ bool EMANELTE::MHAL::ENB::get_messages(EMANELTE::MHAL::RxMessages & messages, ti
 }
 
 
-std::uint64_t EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz)
+std::uint64_t EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz)
 {
-  return impl_.get_tx_prb_frequency(prb_index, tx_freq_hz);
+  return impl_.get_tx_prb_frequency(prb_index, freq_hz);
 }

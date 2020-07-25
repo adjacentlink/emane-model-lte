@@ -38,7 +38,7 @@
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz)
 {
   if(ctype == CHAN_PCFICH)
     {
@@ -50,7 +50,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t 
     }
   else if(ctype == CHAN_PMCH)
     {
-      auto carrier = txControl_.carriers().find(rx_freq_hz);
+      auto carrier = txControl_.carriers().find(carrierFrequencyHz);
 
       if(carrier != txControl_.carriers().end() && carrier->second.downlink().has_pmch())
         {
@@ -58,7 +58,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t 
                    pRadioModel_->noiseTestChannelMessage(txControl_, 
                                                          carrier->second.downlink().pmch(),
                                                          segmentCache_,
-                                                         carrier->first),
+                                                         carrierFrequencyHz),
                    sinr_dB_,
                    noiseFloor_dBm_};
         }
@@ -69,7 +69,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t 
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz)
 {
   if(!pcfichPass_)
     {
@@ -80,7 +80,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
   // For other physical channels, match the specified rnti
   if(ctype == CHAN_PHICH)
     {
-      auto carrier = txControl_.carriers().find(rx_freq_hz);
+      auto carrier = txControl_.carriers().find(carrierFrequencyHz);
 
       if(carrier != txControl_.carriers().end())
         {
@@ -95,7 +95,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
                       pRadioModel_->noiseTestChannelMessage(txControl_,
                                                             carrier->second.downlink().phich(i),
                                                             segmentCache_,
-                                                            carrier->first),
+                                                            carrierFrequencyHz),
                       sinr_dB_,
                       noiseFloor_dBm_};
            }
@@ -103,7 +103,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
     }
   else if(ctype == CHAN_PDCCH)
     {
-      auto carrier = txControl_.carriers().find(rx_freq_hz);
+      auto carrier = txControl_.carriers().find(carrierFrequencyHz);
 
       if(carrier != txControl_.carriers().end())
         {
@@ -117,7 +117,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
               bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_,
                                                                    carrier->second.downlink().pdcch(i),
                                                                    segmentCache_,
-                                                                   carrier->first)};
+                                                                   carrierFrequencyHz)};
 
               // Store PDCCH result for corresponding PDSCH check
               pdcchRNTIResults_.emplace(rnti, pdcchPass);
@@ -136,7 +136,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
           return SINRTester::SINRTesterResult{};
         }
 
-      auto carrier = txControl_.carriers().find(rx_freq_hz);
+      auto carrier = txControl_.carriers().find(carrierFrequencyHz);
 
       if(carrier != txControl_.carriers().end())
         {
@@ -150,7 +150,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t 
               return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, 
                                                                                         carrier->second.downlink().pdsch(i),
                                                                                         segmentCache_,
-                                                                                        carrier->first), 
+                                                                                        carrierFrequencyHz), 
                                                   sinr_dB_,
                                                   noiseFloor_dBm_};
             }

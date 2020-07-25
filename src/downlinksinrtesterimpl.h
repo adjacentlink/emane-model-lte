@@ -47,8 +47,8 @@ class DownlinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
   DownlinkSINRTesterImpl(EMANE::Models::LTE::UERadioModel * pRadioModel,
-                         TxControlMessage txControl,
-                         EMANE::Models::LTE::SegmentMap segmentCache,
+                         const TxControlMessage & txControl,
+                         const EMANE::Models::LTE::SegmentMap & segmentCache,
                          bool pcfichPass,
                          bool pbchPass,
                          double sinr,
@@ -64,9 +64,9 @@ public:
   {}
 
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t rx_freq_hz) override;
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) override;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t rx_freq_hz) override;  
+  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) override;  
 
 private:
   EMANE::Models::LTE::UERadioModel * const pRadioModel_;

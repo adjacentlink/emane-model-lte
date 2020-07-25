@@ -74,13 +74,13 @@ namespace MHAL {
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
-    std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t tx_freq_hz);
+    std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
 
     void noise_processor(const uint32_t bin, const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache);
 
   private:
-    std::set<std::uint32_t> physicalCellIds_;
-    EMANE::Application::NEMs nems_;
+    std::set<std::uint32_t>   physicalCellIds_;
+    EMANE::Application::NEMs  nems_;
     std::unique_ptr<EMANE::Application::NEMManager> pNEMManager_;
     EMANE::Models::LTE::ENBRadioModel * pRadioModel_;
 

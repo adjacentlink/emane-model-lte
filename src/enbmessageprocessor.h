@@ -92,7 +92,7 @@ namespace LTE
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                  const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                  SegmentMap & segmentCache,
-                                 std::uint64_t carrierCenterFrequencyHz);
+                                 std::uint64_t carrierFrequencyHz);
 
   private:
     EMANE::NEMId id_;
