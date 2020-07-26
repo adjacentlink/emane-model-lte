@@ -48,6 +48,9 @@ void
 EMANELTE::MHAL::SINRTester::setImpl(std::uint64_t carrierFrequencyHz, SINRTesterImpl * impl)
 {
   LOCK_WITH_CHECK(&mutex_);
+  if(impl_.count(carrierFrequencyHz))
+    delete impl_.at(carrierFrequencyHz);
+
   impl_[carrierFrequencyHz] = impl;
   UNLOCK_WITH_CHECK(&mutex_);
 }
@@ -57,7 +60,7 @@ EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz)
 {
   if(impl_.count(carrierFrequencyHz))
-    return impl_.at(carrierFrequencyHz)->sinrCheck2(ctype, carrierFrequencyHz);
+    return impl_.at(carrierFrequencyHz)->sinrCheck(ctype);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }
@@ -67,7 +70,7 @@ EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz)
 {
   if(impl_.count(carrierFrequencyHz))
-    return impl_.at(carrierFrequencyHz)->sinrCheck2(ctype, rnti, carrierFrequencyHz);
+    return impl_.at(carrierFrequencyHz)->sinrCheck(ctype, rnti);
   else
     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
 }

@@ -53,7 +53,7 @@ public:
   SINRTester();
 
   struct SINRTesterResult {
-    bool bPassed_;
+    bool   bPassed_;
     double sinr_dB_;
     double noiseFloor_dBm_;
 

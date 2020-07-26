@@ -154,7 +154,7 @@ EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE:
 
 void
 EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                 const EMANELTE::CarriersOfInterest & carriersOfInterest)
+                                                                 const EMANELTE::FrequencySet & carriersOfInterest)
 {
   for(const auto & carrier : txControl.carriers())
    {

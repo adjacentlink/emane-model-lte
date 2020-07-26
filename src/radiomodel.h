@@ -151,6 +151,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setFrequenciesOfInterest(bool searchMode, std::uint32_t carrierIndex, bool clearCache);
 
+      EMANELTE::FrequencySet getCarriersOfInterest() const;
+
     private:
       bool bRunning_;
       EMANE::Microseconds subframeIntervalMicroseconds_;
@@ -162,8 +164,11 @@ class RadioModel : public EMANE::MACLayerImplementor
       // <carrierIndex, <rx/tx freq>>
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
 
-      // <freq, carrierIndex>
+      // <carierCenterFreq, carrierIndex>
       using CarrierFrequencyToIndexTable = std::map<std::uint64_t, std::uint32_t>;
+
+      // carrier CenterFreq
+      EMANELTE::FrequencySet carriersOfInterest_;
 
       // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;

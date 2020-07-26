@@ -410,6 +410,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
      frequencyTable_.clear();
      rxCarrierFrequencyToIndexTable_.clear();
      txCarrierFrequencyToIndexTable_.clear();
+     carriersOfInterest_.clear();
    }
 
   // save rx/tx frequencyHz per carrier id
@@ -418,6 +419,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
   // save carrier id per frequencyHz pair 
   rxCarrierFrequencyToIndexTable_[carrierRxFrequencyHz] = carrierIndex;
   txCarrierFrequencyToIndexTable_[carrierTxFrequencyHz] = carrierIndex;
+
+  carriersOfInterest_.insert(carrierRxFrequencyHz);
 
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
@@ -657,7 +660,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
-   // frequency segments for the msg
+   // MUX all frequency segments for the msg
    EMANE::FrequencySegments frequencySegments;
 
    // txControl carrier map uses center frequency as the key
@@ -667,17 +670,25 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 
       const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
 
+      EMANELTE::FrequencySet frequenciesThisCarrier;
+
       // sanity check
       if(iter != txCarrierFrequencyToIndexTable_.end())
        {
          const auto carrierIndex = iter->second;
 
-         // get the frequency segments for this carrier idx
+         // get the all frequency segments for this carrier
          const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl, carrierFrequencyHz);
 
          for(auto segment : segments)
           {
-            (*txControl.mutable_carriers())[carrierFrequencyHz].add_sub_channels(segment.getFrequencyHz());
+            const auto frequencyHz = segment.getFrequencyHz();
+
+            // unique list of subchannel frequencies
+            if(frequenciesThisCarrier.insert(frequencyHz).second)
+             {
+               (*txControl.mutable_carriers())[carrierFrequencyHz].add_sub_channels(frequencyHz);
+             }
 
             frequencySegments.push_back(segment);
           }
@@ -831,41 +842,31 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
-          EMANELTE::CarriersOfInterest carriersOfInterest;
+          size_t numMatchingCarriers = 0;
 
           for(auto carrier : txControl.carriers())
             {
               // check the carrier frequencyHz, see if it matches one of our carrier rx freqs
-              if(rxCarrierFrequencyToIndexTable_.count(carrier.first))
+              if(carriersOfInterest_.count(carrier.first))
                {
-                 carriersOfInterest.insert(carrier.first);
+                 ++numMatchingCarriers;
                }
             }
 
-          if(carriersOfInterest.empty())
+          if(numMatchingCarriers == 0)
            {
              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                      EMANE::INFO_LEVEL,
-                                     "MACI %03hu %s::%s: src %hu, 0 of %zu matching carriers",
+                                     "MACI %03hu %s::%s: src %hu, skip, no matching carriers",
                                      id_,
                                      pzModuleName_,
                                      __func__,
-                                     pktInfo.getSource(),
-                                     txControl.carriers().size());
+                                     pktInfo.getSource());
 
               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
 
               return;
            }
-
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                           EMANE::INFO_LEVEL,
-                           "%s %03hu %s matchingCarriers %zu, totalSegments=%zu",
-                           pzModuleName_,
-                           id_,
-                           __func__,
-                           carriersOfInterest.size(),
-                           pFrequencyControlMessage->getFrequencySegments().size());
 
 #if 0
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
@@ -877,8 +878,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                            txControl.DebugString().c_str());
 #endif
 
-
-          statisticManager_.updateRxTableCounts(txControl, carriersOfInterest);
+          statisticManager_.updateRxTableCounts(txControl, carriersOfInterest_);
 
           pMHAL_->handle_upstream_msg(
             EMANELTE::MHAL::Data{reinterpret_cast<const char *>(pkt.get()), pkt.length()},   // opaque data
@@ -1074,6 +1074,14 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
      return false;
    }
 }
+
+
+template <class RadioStatManager, class MessageProcessor>
+EMANELTE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getCarriersOfInterest() const
+{
+  return carriersOfInterest_;
+}
+
 
 
 namespace EMANE

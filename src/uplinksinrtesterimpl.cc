@@ -38,7 +38,7 @@
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
 {
   auto sinr_result = channelSINRResults_.find(ctype);
 
@@ -52,7 +52,7 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint64_t ca
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
 {
   auto sinr_result = rntiChannelSINRResults_.find(EMANELTE::MHAL::ChannelRNTI(ctype, rnti));
 

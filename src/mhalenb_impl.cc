@@ -471,40 +471,46 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
           const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / numSegments);
 
-          UplinkSINRTesterImpl * pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm, noiseFloorAvg_dBm);
 
-          rxControl.SINRTester_.setImpl(0, pSINRTester); // XXX set carrier
-#warning "set carrier"
+          // XXX_CC TODO multiple carriers
+          auto carrier = txControl.carriers().begin();
+
+          const auto carrierFrequencyHz = carrier->first;
+
+          UplinkSINRTesterImpl * pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm,
+                                                                        noiseFloorAvg_dBm,
+                                                                        carrierFrequencyHz);
+
+          rxControl.SINRTester_.setImpl(carrierFrequencyHz, pSINRTester);
 
           rxControl.rxData_.peak_sum_ = peakSum;
 
           rxControl.rxData_.num_samples_ = numSegments;
 
-          // XXX_CC TODO multiple carriers
-          auto carrier = txControl.carriers().begin();
-
           if(carrier->second.uplink().has_prach())
             {
-              putSINRResult(carrier->second.uplink().prach(),
+              const auto & prach = carrier->second.uplink().prach();
+
+              putSINRResult(prach,
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().prach(), segmentCache, carrier->first));
+                            pRadioModel_->noiseTestChannelMessage(txControl, prach, segmentCache, carrierFrequencyHz));
             }
 
-          for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
+          for(const auto & pucch : carrier->second.uplink().pucch())
             {
-              putSINRResult(carrier->second.uplink().pucch(i),
+              putSINRResult(pucch,
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pucch(i), segmentCache, carrier->first));
+                            pRadioModel_->noiseTestChannelMessage(txControl, pucch, segmentCache, carrierFrequencyHz));
             }
 
-          for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
+          for(const auto & pusch : carrier->second.uplink().pusch())
             {
-              putSINRResult(carrier->second.uplink().pusch(i),
+              putSINRResult(pusch,
                             rxControl,
                             pSINRTester,
-                            pRadioModel_->noiseTestChannelMessage(txControl, carrier->second.uplink().pusch(i), segmentCache, carrier->first));
+                            pRadioModel_->noiseTestChannelMessage(txControl, pusch, segmentCache, carrierFrequencyHz));
             }
 
           StatisticManager::ReceptionInfoMap receptionInfoMap;
