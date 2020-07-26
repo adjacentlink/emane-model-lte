@@ -657,7 +657,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                           txControl.sf_time().ts_usec(),
                           timestamp.time_since_epoch().count()/1e9);
 
-   // all frequency segments for the msg
+   // frequency segments for the msg
    EMANE::FrequencySegments frequencySegments;
 
    // txControl carrier map uses center frequency as the key
@@ -672,7 +672,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
        {
          const auto carrierIndex = iter->second;
 
-         // load up all the frequency segments for this carrier idx
+         // get the frequency segments for this carrier idx
          const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl, carrierFrequencyHz);
 
          for(auto segment : segments)
@@ -831,18 +831,18 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
               return;
             }
 
-          size_t numCarrierMatch = 0;
+          EMANELTE::CarriersOfInterest carriersOfInterest;
 
           for(auto carrier : txControl.carriers())
             {
-              // check the carrier tx frequencyHz, see if it matches one of our carrier rx freqs
+              // check the carrier frequencyHz, see if it matches one of our carrier rx freqs
               if(rxCarrierFrequencyToIndexTable_.count(carrier.first))
                {
-                 ++numCarrierMatch;
+                 carriersOfInterest.insert(carrier.first);
                }
             }
 
-          if(! numCarrierMatch)
+          if(carriersOfInterest.empty())
            {
              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                      EMANE::INFO_LEVEL,
@@ -860,10 +860,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                            EMANE::INFO_LEVEL,
-                           "%s %03hu %s totalSegments=%zu",
+                           "%s %03hu %s matchingCarriers %zu, totalSegments=%zu",
                            pzModuleName_,
                            id_,
                            __func__,
+                           carriersOfInterest.size(),
                            pFrequencyControlMessage->getFrequencySegments().size());
 
 #if 0
@@ -877,7 +878,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 #endif
 
 
-          statisticManager_.updateRxTableCounts(txControl);
+          statisticManager_.updateRxTableCounts(txControl, carriersOfInterest);
 
           pMHAL_->handle_upstream_msg(
             EMANELTE::MHAL::Data{reinterpret_cast<const char *>(pkt.get()), pkt.length()},   // opaque data

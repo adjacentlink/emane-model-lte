@@ -132,56 +132,60 @@ EMANE::Models::LTE::UERadioStatisticManager::registerStatistics(EMANE::Registrar
 void
 EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carrier.second.uplink().has_prach())
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().prach(), true);
+      }
 
-  if(carrier->second.uplink().has_prach())
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().prach(), true);
-    }
+     for(int i = 0; i < carrier.second.uplink().pucch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pucch(i), true);
+      }
 
-  for(int i = 0; i < carrier->second.uplink().pucch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().pucch(i), true);
-    }
-
-  for(int i = 0; i < carrier->second.uplink().pusch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.uplink().pusch(i), true);
-    }
+     for(int i = 0; i < carrier.second.uplink().pusch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pusch(i), true);
+      }
+   }
 }
 
 
 void
-EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
+EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl,
+                                                                 const EMANELTE::CarriersOfInterest & carriersOfInterest)
 {
-  // XXX_CC TODO multiple carriers
-  auto carrier = txControl.carriers().begin();
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carriersOfInterest.count(carrier.first))
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pcfich(), false);
 
-  updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pcfich(), false);
+        if(carrier.second.downlink().has_pbch())
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pbch(), false);
+         }
 
-  if(carrier->second.downlink().has_pbch())
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pbch(), false);
-    }
+        for(int i = 0; i < carrier.second.downlink().phich_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().phich(i), false);
+         }
+  
+        for(int i = 0; i < carrier.second.downlink().pdcch_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdcch(i), false);
+         }
 
-  for(int i = 0; i < carrier->second.downlink().phich_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().phich(i), false);
-    }
+       for(int i = 0; i < carrier.second.downlink().pdsch_size(); ++i)
+        {
+          updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdsch(i), false);
+        }
 
-  for(int i = 0; i < carrier->second.downlink().pdcch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pdcch(i), false);
-    }
-
-  for(int i = 0; i < carrier->second.downlink().pdsch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pdsch(i), false);
-    }
-
-  if(carrier->second.downlink().has_pmch())
-    {
-      updateTableCounts(txControl.tti_tx(), carrier->second.downlink().pmch(), false);
-    }
+       if(carrier.second.downlink().has_pmch())
+        {
+         updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pmch(), false);
+        }
+      }
+   }
 }
