@@ -634,6 +634,20 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
                               frequencyHz);
    }
 
+  idx = 0; 
+  for(const auto & frequencyHz : txFrequenciesHz_)
+   {
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "%s %03hu %s: idx %zu, txfreq=%lu",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              idx++,
+                              frequencyHz);
+   }
+
+
   statisticManager_.updateFrequencies(rxFrequenciesHz_, txFrequenciesHz_);
 
   sendDownstreamControl({EMANE::Controls::FrequencyOfInterestControlMessage::create(EMANELTE::ResourceBlockBandwidthHz,

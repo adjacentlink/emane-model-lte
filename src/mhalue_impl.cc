@@ -220,9 +220,7 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrie
      pRadioModel_->setNumResourceBlocks(100, carrierIndex);
    }
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, 
-                                         carrierIndex,
-                                         clearCache);
+  pRadioModel_->setFrequenciesOfInterest(searchMode, carrierIndex, clearCache);
 }
 
 
@@ -233,6 +231,11 @@ EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks, std::
               __func__, carrierIndex, numResourceBlocks);
 
   pRadioModel_->setNumResourceBlocks(numResourceBlocks, carrierIndex);
+
+  const bool clearCache = carrierIndex == 0;
+  const bool searchMode = false;
+
+  pRadioModel_->setFrequenciesOfInterest(searchMode, carrierIndex, clearCache);
 }
 
 
@@ -451,14 +454,15 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                                                            segmentCacheThisCarrier,
                                                                            carrierFrequencyHz) : false;
 
-             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFreqHz %lu, segments %lu/%zu, num PCFICH %u, num PBCH %u",
-                         __func__, 
-                         rxControl.rxData_.nemId_, 
-                         carrierFrequencyHz,
-                         segmentCacheSize,
-                         segmentsThisCarrier.size(), 
-                         pcfichPass,
-                         pbchPass);
+             if(pcfichPass || pbchPass)
+               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFreqHz %lu, segments %lu/%zu, num PCFICH %u, num PBCH %u",
+                           __func__, 
+                           rxControl.rxData_.nemId_, 
+                           carrierFrequencyHz,
+                           segmentCacheSize,
+                           segmentsThisCarrier.size(), 
+                           pcfichPass,
+                           pbchPass);
 
              const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
              const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
