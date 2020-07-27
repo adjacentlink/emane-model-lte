@@ -257,7 +257,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
      const auto & txControl = std::get<3>(msg);
 
      // MUX of all frequency segmenets for all carriers
-     const auto & allFrequencySegments = otaInfo.segments_;
+     const auto & frequencySegments = otaInfo.segments_;
 
      RxControl rxControl{};
 
@@ -268,7 +268,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
      // track all segments/subchannels by frequency,
      // may have multiple segments at the same frequency with different slot/offset(s)
-     for(auto & segment : allFrequencySegments)
+     for(auto & segment : frequencySegments)
       {
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
       }
@@ -278,26 +278,29 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                  rxControl.rxData_.nemId_,
                  rxControl.rxData_.rx_seqnum_,
                  txControl.carriers().size(),
-                 allFrequencySegments.size(),
+                 frequencySegments.size(),
                  frequencySegmentTable.size());
 
-     size_t numValidCarriers = 0;
+     bool bHaveValidCarrier = false;
 
      // for each carrier
      for(auto & carrier : txControl.carriers())
       {
         // carrier center freq
         const auto carrierFrequencyHz = carrier.first;
+        const auto carrierIndex       = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
 
         // check carriers of interest
-        if(carriersOfInterest.count(carrierFrequencyHz) == 0)
-          {
-            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
-                        __func__,
-                       rxControl.rxData_.nemId_,
-                       carrierFrequencyHz);
-            continue;
-          }
+        if(carrierIndex < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
+         {
+           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
+                       __func__,
+                      rxControl.rxData_.nemId_,
+                      carrierFrequencyHz);
+
+           // ignore carriers not of interest
+           continue;
+         }
 
         // DEMUX frequency segments for this carrier
         EMANE::FrequencySegments segmentsThisCarrier;
@@ -329,7 +332,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                 noiseFloorSum_mW = 0.0, 
                 peakSum          = 0.0;
 
-         EMANE::Models::LTE::SegmentMap segmentCacheThisCarrier;
+         EMANE::Models::LTE::SegmentMap segmentCache;
 
          // build segmentCache based on actual received segments for this carrier
          for(auto & segment : segmentsThisCarrier)
@@ -389,7 +392,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
             signalSum_mW     += rxPower_mW;
             noiseFloorSum_mW += noiseFloor_mW;
 
-            segmentCacheThisCarrier.emplace(EMANE::Models::LTE::SegmentKey{frequencyHz, segment.getOffset(), segment.getDuration()}, sinr_dB);
+            segmentCache.emplace(EMANE::Models::LTE::SegmentKey{frequencyHz, segment.getOffset(), segment.getDuration()}, sinr_dB);
 
             pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
 
@@ -429,48 +432,40 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
             peakSum += sinr_dB;
           } // end each segment
 
-          const auto segmentCacheSize = segmentCacheThisCarrier.size();
+          const auto segmentCacheSize = segmentCache.size();
 
           // now check for number of pass/fail segments
           if(segmentCacheSize > 0)
            {
+             const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
+             const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
+
              const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, 
                                                                            carrier.second.downlink().pcfich(), 
-                                                                           segmentCacheThisCarrier,
+                                                                           segmentCache,
                                                                            carrierFrequencyHz);
 
              const bool pbchPass = carrier.second.downlink().has_pbch() ?
                                      pRadioModel_->noiseTestChannelMessage(txControl, 
                                                                            carrier.second.downlink().pbch(),
-                                                                           segmentCacheThisCarrier,
+                                                                           segmentCache,
                                                                            carrierFrequencyHz) : false;
 
-             logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, carrierFreqHz %lu, segments %lu/%zu, num PCFICH %u, num PBCH %u",
-                         __func__, 
-                         rxControl.rxData_.nemId_, 
-                         carrierFrequencyHz,
-                         segmentCacheSize,
-                         segmentsThisCarrier.size(), 
-                         pcfichPass,
-                         pbchPass);
-
-             const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
-             const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
+             bHaveValidCarrier = true;
 
              rxControl.SINRTester_.setImpl(carrierFrequencyHz,
                   new DownlinkSINRTesterImpl(pRadioModel_, 
                                              txControl,
-                                             segmentCacheThisCarrier, 
+                                             segmentCache, 
                                              pcfichPass,
                                              pbchPass,
                                              signalAvg_dBm - noiseFloorAvg_dBm,
                                              noiseFloorAvg_dBm,
                                              carrierFrequencyHz));
 
-             ++numValidCarriers;
 
-             rxControl.rxData_.peak_sum_ = peakSum;
-             rxControl.rxData_.num_samples_ = segmentCacheSize;
+             rxControl.rxData_.peak_sum_[carrierIndex]    = peakSum;
+             rxControl.rxData_.num_samples_[carrierIndex] = segmentCacheSize;
 
              StatisticManager::ReceptionInfoMap receptionInfoMap;
 
@@ -483,7 +478,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
            }
        } // end each carrier
 
-      if(numValidCarriers)
+      if(bHaveValidCarrier)
        {
          // lastly, make ready, take ownership of data and control
          readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});

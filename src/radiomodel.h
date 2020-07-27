@@ -70,7 +70,6 @@ using FrequencySegmentParams = std::pair<EMANELTE::FrequencyHz, EMANELTE::Bandwi
 
 using ResourceBlockMap = std::map<uint32_t, FrequencySegmentParams>;
 
-const uint32_t MAX_CARRIERS = 5;
 
 template <class RadioStatManager, class MessageProcessor>
 class RadioModel : public EMANE::MACLayerImplementor
@@ -153,6 +152,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 
+      int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
+
     private:
       bool bRunning_;
       EMANE::Microseconds subframeIntervalMicroseconds_;
@@ -185,7 +186,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint16_t u32SymbolsPerSlot_;
 
       RadioStatManager statisticManager_;
-      MessageProcessor *messageProcessor_[MAX_CARRIERS];
+      MessageProcessor *messageProcessor_[EMANELTE::MAX_CARRIERS];
 
       EMANELTE::MHAL::PHY::MHALPHY * pMHAL_;
 

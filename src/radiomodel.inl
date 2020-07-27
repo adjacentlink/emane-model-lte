@@ -82,7 +82,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
   statisticManager_{id, pPlatformService}
 {
   // create message processor per carrier
-  for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+  for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
    {
      messageProcessor_[idx] = new MessageProcessor{id, pPlatformService, statisticManager_};
    }
@@ -191,7 +191,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.first.c_str(),
                                   pcrCurveURI_.c_str());
 
-          for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
            {
              messageProcessor_[idx]->loadPCRFile(pcrCurveURI_);
            }
@@ -200,7 +200,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
         {
           float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
 
-          for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
            {
              messageProcessor_[idx]->setTxPower(resourceBlockTxPowerdBm);
            }
@@ -914,9 +914,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                 tpToTimeval(tpRxTime),                                                       // clock rx time
                 tpToTimeval(pktInfo.getCreationTime()),                                      // clock tx time
                 timeval{txControl.sf_time().ts_sec(),                                        // sf time
-                        txControl.sf_time().ts_usec()},
-                0.0,                                                                         // peak sum
-                0},                                                                          // num samples
+                        txControl.sf_time().ts_usec()}},
 
             EMANELTE::MHAL::PHY::OTAInfo{pReceivePropertiesControlMessage->getTxTime(),      // emulation sot
                 pReceivePropertiesControlMessage->getPropagationDelay(),                     // propagation delay
@@ -1089,11 +1087,11 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
    std::uint64_t carrierFrequencyHz)
 {
   // check rx carrier table for tx frequencyHz
-  const auto iter = rxCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+  const auto index = getRxCarrierIndex(carrierFrequencyHz);
 
-  if(iter != rxCarrierFrequencyToIndexTable_.end())
+  if(index >= 0)
    {
-     return messageProcessor_[iter->second]->noiseTestChannelMessage(txControl, channel_msg, segmentCache, carrierFrequencyHz);
+     return messageProcessor_[index]->noiseTestChannelMessage(txControl, channel_msg, segmentCache, carrierFrequencyHz);
    }
   else
    {
@@ -1108,6 +1106,20 @@ EMANELTE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageP
   return rxCarriersOfInterest_;
 }
 
+template <class RadioStatManager, class MessageProcessor>
+int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCarrierIndex(std::uint64_t carrierFrequencyHz) const
+{
+  const auto iter = rxCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+
+  if(iter !=  rxCarrierFrequencyToIndexTable_.end())
+   {
+     return iter->second;
+   }
+  else
+   {
+     return -1;
+   }
+}
 
 
 namespace EMANE

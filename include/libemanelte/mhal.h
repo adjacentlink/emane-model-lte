@@ -44,6 +44,9 @@
 
 
 namespace EMANELTE {
+
+const uint32_t MAX_CARRIERS = 5;
+
 namespace MHAL {
   typedef std::string Data;
 
@@ -53,8 +56,8 @@ namespace MHAL {
     timeval  rx_time_;      // actual rx time
     timeval  tx_time_;      // actual tx time
     timeval  sf_time_;      // slot time
-    float    peak_sum_;     // sum of power over whole message
-    uint32_t num_samples_;  // number of segments in peak_sum
+    float    peak_sum_[MAX_CARRIERS];     // sum of power over carriers
+    uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
 
     RxData() {}
 
@@ -62,21 +65,23 @@ namespace MHAL {
            uint64_t rx_seqnum,
            const timeval & rx_time,
            const timeval & tx_time,
-           const timeval & sf_time,
-           const float & peak_sum,
-           const uint32_t & num_samples) :
+           const timeval & sf_time) :
       nemId_(nemId),
       rx_seqnum_(rx_seqnum),
       rx_time_(rx_time),
       tx_time_(tx_time),
-      sf_time_(sf_time),
-      peak_sum_(peak_sum),
-      num_samples_(num_samples)
-    {}
+      sf_time_(sf_time)
+    {
+      for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+       {
+         peak_sum_[idx]    = 0.0f;
+         num_samples_[idx] = 0;
+       }
+    }
   };
 
   struct RxControl {
-    RxData rxData_;
+    RxData     rxData_;
     SINRTester SINRTester_;
 
     RxControl() {}
@@ -85,10 +90,8 @@ namespace MHAL {
               uint64_t rx_seqnum,
               const timeval & rx_time,
               const timeval & tx_time,
-              const timeval & sf_time,
-              const float   & peak_sum,
-              const uint32_t & num_samples) :
-      rxData_(nemId, rx_seqnum, rx_time, tx_time, sf_time, peak_sum, num_samples),
+              const timeval & sf_time) :
+      rxData_(nemId, rx_seqnum, rx_time, tx_time, sf_time),
       SINRTester_()
     { }
   };
