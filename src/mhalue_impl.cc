@@ -179,15 +179,15 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
   // on cell search, configure for the largest bandwidth to
   // ensure packet reception from any enb (register all possible FOI
   // for the configured receive frequency)
-  pRadioModel_->setNumResourceBlocks(100, 0); // carrierIndex 0 during search
+  pRadioModel_->setNumResourceBlocks(100);
 
   for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
-    {
-      pendingMessageBins_[bin].lockBin();
-      pendingMessageBins_[bin].clear();
-      readyMessageBins_  [bin].clear();
-      pendingMessageBins_[bin].unlockBin();
-    }
+   {
+     pendingMessageBins_[bin].lockBin();
+     pendingMessageBins_[bin].clear();
+     readyMessageBins_  [bin].clear();
+     pendingMessageBins_[bin].unlockBin();
+   }
 
   timing_.lockTime();
 
@@ -201,15 +201,11 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 void
 EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz)
 {
-
-  logger_.log(EMANE::INFO_LEVEL, " MHAL::PHY %s carrierIndex %u, rxFrequency %f Hz, txFrequency %f Hz",
-              __func__, carrierIndex, carrierRxFrequencyHz, carrierTxFrequencyHz);
-
   // ue will rotate thru its frequency list using carrierId 0 initially
+  // if/when the carrierIndex is > 0, then accumulate frequencies
   const bool clearCache = carrierIndex == 0;
   const bool searchMode = carrierIndex == 0;
 
- 
   pRadioModel_->setFrequencies(carrierIndex,                   // carrier idx
                                llround(carrierRxFrequencyHz),  // rx freq
                                llround(carrierTxFrequencyHz),  // tx freq
@@ -217,25 +213,24 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrie
 
   if(carrierIndex == 0)
    {
-     pRadioModel_->setNumResourceBlocks(100, carrierIndex);
+     // when the mib is detected, the bandwidth will be adjusted
+     pRadioModel_->setNumResourceBlocks(100);
    }
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, carrierIndex, clearCache);
+  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
 }
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks, std::uint32_t carrierIndex)
+EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks)
 {
-  logger_.log(EMANE::INFO_LEVEL, " MHAL::PHY %s carrierIndex %u, numResourceBlocks %d",
-              __func__, carrierIndex, numResourceBlocks);
-
-  pRadioModel_->setNumResourceBlocks(numResourceBlocks, carrierIndex);
-
-  const bool clearCache = carrierIndex == 0;
+  // called when bandwidth is detected
+  const bool clearCache = true;
   const bool searchMode = false;
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, carrierIndex, clearCache);
+  pRadioModel_->setNumResourceBlocks(numResourceBlocks);
+
+  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
 }
 
 
@@ -266,7 +261,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
      RxControl rxControl{};
 
-     // get the Data msg
+     // take over the data
      rxControl.rxData_ = std::move(std::get<1>(msg));
 
      std::multimap<std::uint64_t, EMANE::FrequencySegment> frequencySegmentTable;
@@ -278,15 +273,13 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
       }
 
-#if 0
-     logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu/%zu",
+     logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu/%zu",
                  __func__,
                  rxControl.rxData_.nemId_,
                  rxControl.rxData_.rx_seqnum_,
                  txControl.carriers().size(),
                  allFrequencySegments.size(),
                  frequencySegmentTable.size());
-#endif
 
      size_t numValidCarriers = 0;
 
@@ -299,12 +292,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         // check carriers of interest
         if(carriersOfInterest.count(carrierFrequencyHz) == 0)
           {
-#if 0
-            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
+            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
                         __func__,
                        rxControl.rxData_.nemId_,
                        carrierFrequencyHz);
-#endif  
             continue;
           }
 
@@ -454,15 +445,14 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                                                            segmentCacheThisCarrier,
                                                                            carrierFrequencyHz) : false;
 
-             if(pcfichPass || pbchPass)
-               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFreqHz %lu, segments %lu/%zu, num PCFICH %u, num PBCH %u",
-                           __func__, 
-                           rxControl.rxData_.nemId_, 
-                           carrierFrequencyHz,
-                           segmentCacheSize,
-                           segmentsThisCarrier.size(), 
-                           pcfichPass,
-                           pbchPass);
+             logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, carrierFreqHz %lu, segments %lu/%zu, num PCFICH %u, num PBCH %u",
+                         __func__, 
+                         rxControl.rxData_.nemId_, 
+                         carrierFrequencyHz,
+                         segmentCacheSize,
+                         segmentsThisCarrier.size(), 
+                         pcfichPass,
+                         pbchPass);
 
              const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
              const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
@@ -493,11 +483,11 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
            }
        } // end each carrier
 
-       if(numValidCarriers)
-        {
-          // lastly, make ready, take ownership of data and control
-          readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
-        }
+      if(numValidCarriers)
+       {
+         // lastly, make ready, take ownership of data and control
+         readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
+       }
     } // end for each msg
 }
 

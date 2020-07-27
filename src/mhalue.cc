@@ -92,9 +92,9 @@ void EMANELTE::MHAL::UE::set_frequencies(uint32_t carrierIndex, double carrierRx
 }
 
 
-void EMANELTE::MHAL::UE::set_num_resource_blocks(int n_prb, std::uint32_t carrierIndex)
+void EMANELTE::MHAL::UE::set_num_resource_blocks(int n_prb)
 {
-  impl_.set_num_resource_blocks(n_prb, carrierIndex);
+  impl_.set_num_resource_blocks(n_prb);
 }
 
 

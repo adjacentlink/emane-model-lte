@@ -130,7 +130,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                           EMANELTE::FrequencyHz carrierTxFrequencyHz,
                           bool clearCache);
 
-      void setNumResourceBlocks(std::uint32_t numResourceBlocks, std::uint32_t carriedId);
+      void setNumResourceBlocks(std::uint32_t numResourceBlocks);
 
       EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
@@ -149,7 +149,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                                    SegmentMap & segmentCache,
                                    std::uint64_t carrierFrequencyHz);
 
-      void setFrequenciesOfInterest(bool searchMode, std::uint32_t carrierIndex, bool clearCache);
+      void setFrequenciesOfInterest(bool searchMode, bool clearCache);
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 
@@ -167,8 +167,8 @@ class RadioModel : public EMANE::MACLayerImplementor
       // <carierCenterFreq, carrierIndex>
       using CarrierFrequencyToIndexTable = std::map<std::uint64_t, std::uint32_t>;
 
-      // carrier CenterFreq
-      EMANELTE::FrequencySet carriersOfInterest_;
+      // rx carriers of interest
+      EMANELTE::FrequencySet rxCarriersOfInterest_;
 
       // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;
@@ -185,7 +185,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint16_t u32SymbolsPerSlot_;
 
       RadioStatManager statisticManager_;
-      MessageProcessor *messageProcessor_[MAX_CARRIERS]; // XXX_CC handle each carrier 
+      MessageProcessor *messageProcessor_[MAX_CARRIERS];
 
       EMANELTE::MHAL::PHY::MHALPHY * pMHAL_;
 

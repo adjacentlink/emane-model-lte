@@ -61,7 +61,7 @@ namespace UE {
   
   void set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz);
 
-  void set_num_resource_blocks(int n_prb, uint32_t carrierIndex = 0);
+  void set_num_resource_blocks(int n_prb);
 
   void begin_cell_search();
 

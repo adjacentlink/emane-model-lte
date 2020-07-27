@@ -41,7 +41,7 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
                                              const mhal_config_t & mhal_config,
                                              const ENB::mhal_enb_config_t & mhal_enb_config)
 {
-  // XXX_CC
+  // enb will run thru each carrier each and only once at startup
   if(carrierIndex == 0)
    {
      // this must be done first
@@ -50,7 +50,6 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
      pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
    }
 
-  // enb will run thru each carrier 0,1... each 1 and only 1 time
   const bool clearCache = false;
   const bool searchMode = false;
 
@@ -61,11 +60,9 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
                                llround(mhal_enb_config.downlink_frequency_hz_), // tx
                                clearCache);
 
-  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_, carrierIndex);
+  pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode,
-                                         carrierIndex,
-                                         clearCache);
+  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
 }
 
 
@@ -279,7 +276,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
   for(auto & segment : inBandSegmentPowerMap_mW)
     {
-      const auto frequencyHz    = std::get<0>(segment.first);
+      const auto frequencyHz = std::get<0>(segment.first);
 
       const auto spectrumWindow = spectrumWindowCache.find(frequencyHz);
 
