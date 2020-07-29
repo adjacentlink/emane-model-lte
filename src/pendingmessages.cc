@@ -91,7 +91,7 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
 
   for(auto msg_iter = pending_.begin(); msg_iter != pending_.end(); ++msg_iter)
     {
-      const auto & otaInfo = std::get<2>(*msg_iter);
+      const auto & otaInfo = PendingMessage_OtaInfo(*msg_iter);
 
       for(auto & segment : otaInfo.segments_)
         {
