@@ -77,7 +77,7 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
         }
     }
 
-  pending_.push_back(msg);
+  pending_.emplace_back(msg);
 }
 
 
@@ -89,9 +89,9 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
 {
   SegmentSpans segmentSpans;
 
-  for(auto msg_iter = pending_.begin(); msg_iter != pending_.end(); ++msg_iter)
+  for(const auto & msg : pending_)
     {
-      const auto & otaInfo = PendingMessage_OtaInfo(*msg_iter);
+      const auto & otaInfo = PendingMessage_OtaInfo(msg);
 
       for(auto & segment : otaInfo.segments_)
         {

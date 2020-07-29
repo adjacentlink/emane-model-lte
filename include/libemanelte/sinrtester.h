@@ -52,8 +52,6 @@ using SINRTesterImpls = std::map<std::uint64_t, SINRTesterImpl*>;
     public:
      SINRTester(const SINRTesterImpls & impls);
 
-     SINRTester();
-
      struct SINRTesterResult {
        bool   bPassed_;
        double sinr_dB_;

@@ -90,11 +90,25 @@ namespace MHAL {
   };
 
 
-#define RxMessage_Data(x)        std::get<0>((x))
-#define RxMessage_RxControl(x)   std::get<1>((x))
-#define RxMessage_SINRTesters(x) std::get<2>((x))
+#define RxMessage_Data(x)        (x).data_
+#define RxMessage_RxControl(x)   (x).rxControl_
+#define RxMessage_SINRTesters(x) (x).sinrTesters_
 
-  using RxMessage = std::tuple<Data, RxControl, SINRTesterImpls>;
+  struct RxMessage {
+    Data            data_;
+    RxControl       rxControl_;
+    SINRTesterImpls sinrTesters_;
+
+    void release()
+     {
+       SINRTester tester(sinrTesters_);
+
+       tester.release();
+
+       sinrTesters_.clear();
+     }
+  };
+
 
   using RxMessages = std::vector<RxMessage>;
  }

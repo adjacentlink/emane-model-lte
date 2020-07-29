@@ -37,13 +37,10 @@
 #include "sinrtesterimpl.h"
 #include "utils.h"
 
-EMANELTE::MHAL::SINRTester::SINRTester()
-{ }
-
 
 EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
 {
-  impls_ = impls;
+  impls_ = std::move(impls);
 }
 
 
@@ -52,7 +49,7 @@ EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 {
   release();
 
-  impls_ = impls;
+  impls_ = std::move(impls);
 }
 
 

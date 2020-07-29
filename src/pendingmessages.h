@@ -96,9 +96,9 @@ namespace MHAL {
     void lockBin();
 
   private:
-    pthread_mutex_t     mutex_;
-    PendingMessages     pending_;
-    timeval             binTime_;
+    pthread_mutex_t   mutex_;
+    PendingMessages   pending_;
+    timeval           binTime_;
   };
 }
 }

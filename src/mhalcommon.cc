@@ -357,13 +357,27 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 void
 EMANELTE::MHAL::MHALCommon::clearReadyMessages(const uint32_t bin)
 {
-  if(size_t orphaned = readyMessageBins_[bin].clearAndCheck())
+  if(auto numOrphans = readyMessageBins_[bin].clearAndCheck())
     {
-      logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s, bin %u, purge %zu ready orphans",
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, bin %u, purge %zu ready orphans",
                   __func__,
                   bin,
-                  orphaned);
+                  numOrphans);
 
-      statisticManager_.updateOrphanedMessages(bin, orphaned);
+      statisticManager_.updateOrphanedMessages(bin, numOrphans);
+    }
+}
+
+void
+EMANELTE::MHAL::MHALCommon::clearPendingMessages(const uint32_t bin)
+{
+  if(auto numOrphans = pendingMessageBins_[bin].clearAndCheck())
+    {
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, bin %u, purge %zu pending orphans",
+                  __func__,
+                  bin,
+                  numOrphans);
+
+      statisticManager_.updateOrphanedMessages(bin, numOrphans);
     }
 }

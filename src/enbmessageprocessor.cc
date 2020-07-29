@@ -228,6 +228,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
   const size_t slot2{slot1 + 1};
 
+  // XXX_CC TODO ???
   const auto carrierIter = txControl.carriers().find(carrierFrequencyHz);
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};

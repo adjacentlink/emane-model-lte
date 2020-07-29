@@ -104,6 +104,8 @@ protected:
 
   void clearReadyMessages(const uint32_t bin);
 
+  void clearPendingMessages(const uint32_t bin);
+
   virtual void init_emane() = 0;
 
   virtual void send_downstream(const Data & data,

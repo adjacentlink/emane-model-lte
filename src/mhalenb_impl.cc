@@ -659,18 +659,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_
 
   pendingMessageBins_[nextbin].lockBin();
 
-  // check for orphans
-  if(size_t orphaned = pendingMessageBins_[nextbin].clearAndCheck())
-    {
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  nextbin,
-                  orphaned);
-
-      statisticManager_.updateOrphanedMessages(nextbin, orphaned);
-    }
+  clearPendingMessages(nextbin);
 
   clearReadyMessages(nextbin);
 
