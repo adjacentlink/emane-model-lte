@@ -96,7 +96,7 @@ protected:
   void start(uint32_t nof_advance_sf);
 
   void handle_upstream_msg(const Data & data,
-                           const RxData & rxData,
+                           const RxControl & rxControl,
                            const PHY::OTAInfo & otaInfo,
                            const TxControlMessage & txControl);
 

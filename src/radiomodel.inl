@@ -909,7 +909,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
           pMHAL_->handle_upstream_msg(
             EMANELTE::MHAL::Data{reinterpret_cast<const char *>(pkt.get()), pkt.length()},   // opaque data
 
-            EMANELTE::MHAL::RxData{pktInfo.getSource(),                                      // src nem
+            EMANELTE::MHAL::RxControl{pktInfo.getSource(),                                   // src nem
                 txControl.tx_seqnum(),                                                       // tx seqnum
                 tpToTimeval(tpRxTime),                                                       // clock rx time
                 tpToTimeval(pktInfo.getCreationTime()),                                      // clock tx time

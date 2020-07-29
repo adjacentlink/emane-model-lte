@@ -38,39 +38,48 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 #include <sys/time.h>
 #include "libemanelte/otacommon.pb.h"
 #include "libemanelte/sinrtester.h"
-
 
 namespace EMANELTE {
 
 const uint32_t MAX_CARRIERS = 5;
 
 namespace MHAL {
-  typedef std::string Data;
+  using Data = std::string;
 
-  struct RxData {
-    uint16_t nemId_;        // src nem
-    uint64_t rx_seqnum_;    // seqnum
-    timeval  rx_time_;      // actual rx time
-    timeval  tx_time_;      // actual tx time
-    timeval  sf_time_;      // slot time
-    float    peak_sum_[MAX_CARRIERS];     // sum of power over carriers
+  struct RxControl {
+    // common to all carriers
+    uint16_t nemId_;                      // src nem
+    uint64_t rx_seqnum_;                  // seqnum
+    timeval  rx_time_;                    // actual rx time
+    timeval  tx_time_;                    // actual tx time
+    timeval  sf_time_;                    // slot time
+
+    // unique per carrier index
+    float    peak_sum_   [MAX_CARRIERS];  // sum of power over carriers
     uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
 
-    RxData() {}
+     RxControl() :
+       nemId_{0},
+       rx_seqnum_{0},
+       rx_time_{0,0},
+       tx_time_{0,0},
+       sf_time_{0,0}
+     { }
 
-    RxData(uint16_t nemId,
-           uint64_t rx_seqnum,
-           const timeval & rx_time,
-           const timeval & tx_time,
-           const timeval & sf_time) :
-      nemId_(nemId),
-      rx_seqnum_(rx_seqnum),
-      rx_time_(rx_time),
-      tx_time_(tx_time),
-      sf_time_(sf_time)
+    RxControl(uint16_t nemId,
+              uint64_t rx_seqnum,
+              const timeval & rx_time,
+              const timeval & tx_time,
+              const timeval & sf_time) :
+      nemId_{nemId},
+      rx_seqnum_{rx_seqnum},
+      rx_time_{rx_time},
+      tx_time_{tx_time},
+      sf_time_{sf_time}
     {
       for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
        {
@@ -80,25 +89,15 @@ namespace MHAL {
     }
   };
 
-  struct RxControl {
-    RxData     rxData_;
-    SINRTester SINRTester_;
 
-    RxControl() {}
+#define RxMessage_Data(x)        std::get<0>((x))
+#define RxMessage_RxControl(x)   std::get<1>((x))
+#define RxMessage_SINRTesters(x) std::get<2>((x))
 
-    RxControl(uint16_t nemId,
-              uint64_t rx_seqnum,
-              const timeval & rx_time,
-              const timeval & tx_time,
-              const timeval & sf_time) :
-      rxData_(nemId, rx_seqnum, rx_time, tx_time, sf_time),
-      SINRTester_()
-    { }
-  };
+  using RxMessage = std::tuple<Data, RxControl, SINRTesterImpls>;
 
-  typedef std::pair<Data, RxControl> RxMessage;
-  typedef std::vector<RxMessage>     RxMessages;
-}
+  using RxMessages = std::vector<RxMessage>;
+ }
 }
 
 #endif

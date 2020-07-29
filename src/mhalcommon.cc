@@ -283,7 +283,7 @@ void EMANELTE::MHAL::MHALCommon::noise_worker(const uint32_t bin, const timeval 
 
 void
 EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
-                                                const RxData & rxData,
+                                                const RxControl & rxControl,
                                                 const PHY::OTAInfo & otaInfo,
                                                 const TxControlMessage & txControl)
 {
@@ -295,12 +295,12 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
       const auto dT  = std::chrono::duration_cast<EMANE::Microseconds>(eor.time_since_epoch() - now.time_since_epoch());
 
       // get bin for msg sf_time (tti) this is the sf that the msg is expected to arrive tx/rx
-      const uint32_t bin = getMessageBin(rxData.sf_time_, timing_.ts_sf_interval_usec());
+      const uint32_t bin = getMessageBin(rxControl.sf_time_, timing_.ts_sf_interval_usec());
 
       timeval tv_diff;
 
       // get ota diff
-      timersub(&rxData.rx_time_, &rxData.tx_time_, &tv_diff);
+      timersub(&rxControl.rx_time_, &rxControl.tx_time_, &tv_diff);
 
       statisticManager_.updateRxPacketOtaDelay(bin, tvToSeconds(tv_diff));
 
@@ -313,9 +313,9 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
           pendingMessageBins_[bin].lockBin();
 
           // add to the pending queue for this bin
-          pendingMessageBins_[bin].add(rxData.sf_time_,
+          pendingMessageBins_[bin].add(rxControl.sf_time_,
                                        bin,
-                                       PendingMessage{data, rxData, otaInfo, txControl},
+                                       PendingMessage{data, rxControl, otaInfo, txControl},
                                        statisticManager_);
 
           // unlock bin
@@ -333,7 +333,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
       gettimeofday(&tv_now, NULL);
       logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s seqnum %lu, bin %u, curr_sf %ld:%06ld, now %ld:%06ld, sot %f, span %ld, sor %f, eor %f, dT %ld usec, pending %zu", 
                       __func__,
-                      rxData.rx_seqnum_,
+                      rxControl.rx_seqnum_,
                       bin,
                       tv_curr_sf.tv_sec,
                       tv_curr_sf.tv_usec,

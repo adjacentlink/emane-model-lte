@@ -64,7 +64,7 @@ namespace MHAL {
                          const EMANE::TimePoint & timestamp);
 
     void handle_upstream_msg(const Data & data,
-                             const RxData & rxData,
+                             const RxControl & rxControl,
                              const PHY::OTAInfo & otaInfo,
                              const TxControlMessage & txControl);
 

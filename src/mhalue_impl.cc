@@ -147,7 +147,7 @@ void EMANELTE::MHAL::MHALUEImpl::send_downstream(const Data & data,
 
 
 void EMANELTE::MHAL::MHALUEImpl::handle_upstream_msg(const Data & data,
-                                                     const RxData & rxData,
+                                                     const RxControl & rxControl,
                                                      const PHY::OTAInfo & otaInfo,
                                                      const TxControlMessage & txControl)
 {
@@ -159,7 +159,7 @@ void EMANELTE::MHAL::MHALUEImpl::handle_upstream_msg(const Data & data,
       return;
     }
 
-  MHALCommon::handle_upstream_msg(data, rxData, otaInfo, txControl);
+  MHALCommon::handle_upstream_msg(data, rxControl, otaInfo, txControl);
 }
 
 
@@ -251,18 +251,17 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
   for(auto & msg : pendingMessageBins_[bin].get())
    {
      // get the OTA msg
-     const auto & otaInfo = std::get<2>(msg);
+     const auto & otaInfo = PendingMessage_OtaInfo(msg);
 
      // get the TxControl msg
-     const auto & txControl = std::get<3>(msg);
+     const auto & txControl = PendingMessage_TxControl(msg);
 
      // MUX of all frequency segmenets for all carriers
      const auto & frequencySegments = otaInfo.segments_;
 
-     RxControl rxControl{};
+     auto & rxControl = PendingMessage_RxControl(msg);
 
-     // take over the data
-     rxControl.rxData_ = std::move(std::get<1>(msg));
+     SINRTesterImpls sinrTesterImpls;
 
      std::multimap<std::uint64_t, EMANE::FrequencySegment> frequencySegmentTable;
 
@@ -275,13 +274,11 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
      logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu/%zu",
                  __func__,
-                 rxControl.rxData_.nemId_,
-                 rxControl.rxData_.rx_seqnum_,
+                 rxControl.nemId_,
+                 rxControl.rx_seqnum_,
                  txControl.carriers().size(),
                  frequencySegments.size(),
                  frequencySegmentTable.size());
-
-     bool bHaveValidCarrier = false;
 
      // for each carrier
      for(auto & carrier : txControl.carriers())
@@ -295,7 +292,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
          {
            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
                        __func__,
-                      rxControl.rxData_.nemId_,
+                      rxControl.nemId_,
                       carrierFrequencyHz);
 
            // ignore carriers not of interest
@@ -342,7 +339,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
             logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, bin %u, carrier %lu, freq %lu, offset %lu, duration %lu",
                         __func__,
-                        rxControl.rxData_.nemId_,
+                        rxControl.nemId_,
                         bin,
                         carrierFrequencyHz,
                         frequencyHz,
@@ -353,7 +350,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
              {
                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
                            __func__,
-                           rxControl.rxData_.nemId_,
+                           rxControl.nemId_,
                            bin,
                            frequencyHz);
 
@@ -368,7 +365,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
              {
                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, freq %lu, no noise data",
                            __func__,
-                           rxControl.rxData_.nemId_,
+                           rxControl.nemId_,
                            bin,
                            frequencyHz);
 
@@ -415,9 +412,9 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                         "nf %5.3lf dBm, "
                         "sinr %5.3lf dB",
                         __func__,
-                        rxControl.rxData_.nemId_,
+                        rxControl.nemId_,
                         txControl.tti_tx(),
-                        rxControl.rxData_.rx_seqnum_,
+                        rxControl.rx_seqnum_,
                         inBand,
                         bSignalInNoise,
                         carrierFrequencyHz,
@@ -451,26 +448,26 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                                                            segmentCache,
                                                                            carrierFrequencyHz) : false;
 
-             bHaveValidCarrier = true;
-
-             rxControl.SINRTester_.setImpl(carrierFrequencyHz,
-                  new DownlinkSINRTesterImpl(pRadioModel_, 
-                                             txControl,
-                                             segmentCache, 
-                                             pcfichPass,
-                                             pbchPass,
-                                             signalAvg_dBm - noiseFloorAvg_dBm,
-                                             noiseFloorAvg_dBm,
-                                             carrierFrequencyHz));
+             // XXX TODO possible memory leak if phy layer discards msg before processing it
+             auto pSINRtester = new DownlinkSINRTesterImpl(pRadioModel_, 
+                                                           txControl,
+                                                           segmentCache, 
+                                                           pcfichPass,
+                                                           pbchPass,
+                                                           signalAvg_dBm - noiseFloorAvg_dBm,
+                                                           noiseFloorAvg_dBm,
+                                                           carrierFrequencyHz);
 
 
-             rxControl.rxData_.peak_sum_[carrierIndex]    = peakSum;
-             rxControl.rxData_.num_samples_[carrierIndex] = segmentCacheSize;
+             sinrTesterImpls[carrierFrequencyHz] = pSINRtester;
+
+             rxControl.peak_sum_[carrierIndex]    = peakSum;
+             rxControl.num_samples_[carrierIndex] = segmentCacheSize;
 
              StatisticManager::ReceptionInfoMap receptionInfoMap;
 
              // add entry per src
-             receptionInfoMap[rxControl.rxData_.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
+             receptionInfoMap[rxControl.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
                                                                                               noiseFloorAvg_dBm,
                                                                                               segmentCacheSize};
    
@@ -478,10 +475,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
            }
        } // end each carrier
 
-      if(bHaveValidCarrier)
+      if(! sinrTesterImpls.empty())
        {
-         // lastly, make ready, take ownership of data and control
-         readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
+         // lastly, make ready
+         readyMessageBins_[bin].get().emplace_back(RxMessage{PendingMessage_Data(msg),
+                                                             rxControl,
+                                                             sinrTesterImpls});
        }
     } // end for each msg
 }

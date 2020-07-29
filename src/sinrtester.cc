@@ -37,55 +37,69 @@
 #include "sinrtesterimpl.h"
 #include "utils.h"
 
-
 EMANELTE::MHAL::SINRTester::SINRTester()
+{ }
+
+
+EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
 {
-  init_mutex(&mutex_);
+  impls_ = impls;
 }
 
 
 void
-EMANELTE::MHAL::SINRTester::setImpl(std::uint64_t carrierFrequencyHz, SINRTesterImpl * impl)
+EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 {
-  LOCK_WITH_CHECK(&mutex_);
-  if(impl_.count(carrierFrequencyHz))
-    delete impl_.at(carrierFrequencyHz);
+  release();
 
-  impl_[carrierFrequencyHz] = impl;
-  UNLOCK_WITH_CHECK(&mutex_);
+  impls_ = impls;
+}
+
+
+
+EMANELTE::MHAL::SINRTester::SINRTesterResult
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) const
+{
+  const auto iter = impls_.find(carrierFrequencyHz);
+
+  if(iter != impls_.end())
+   {
+     return iter->second->sinrCheck(ctype);
+   }
+  else
+   {
+     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   }
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) const
 {
-  if(impl_.count(carrierFrequencyHz))
-    return impl_.at(carrierFrequencyHz)->sinrCheck(ctype);
-  else
-    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
-}
+  const auto iter = impls_.find(carrierFrequencyHz);
 
-
-EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz)
-{
-  if(impl_.count(carrierFrequencyHz))
-    return impl_.at(carrierFrequencyHz)->sinrCheck(ctype, rnti);
+  if(iter != impls_.end())
+   {
+     return iter->second->sinrCheck(ctype, rnti);
+   }
   else
-    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   {
+     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   }
 }
 
 
 void
 EMANELTE::MHAL::SINRTester::release()
 {
-  LOCK_WITH_CHECK(&mutex_);
-  for(auto iter = impl_.begin(); iter != impl_.end(); ++iter)
+  for(auto & impl : impls_)
     {
-      delete iter->second;
+      if(impl.second)
+       {
+         delete impl.second;
+       }
     }
 
-  impl_.clear();
-  UNLOCK_WITH_CHECK(&mutex_);
+  impls_.clear();
 }
 
