@@ -43,6 +43,20 @@ EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
   impls_ = std::move(impls);
 }
 
+EMANELTE::MHAL::SINRTester & EMANELTE::MHAL::SINRTester::operator = (const SINRTester & rhs)
+{
+  if(&rhs == this)
+   {
+     return *this;
+   }
+
+  release();
+
+  impls_ = std::move(rhs.impls_);
+
+  return *this;
+}
+
 
 void
 EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
