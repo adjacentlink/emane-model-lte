@@ -59,6 +59,7 @@ namespace MHAL {
     timeval  sf_time_;                    // slot time
 
     // unique per carrier index
+    float    avg_snr_    [MAX_CARRIERS];  // avg snr
     float    peak_sum_   [MAX_CARRIERS];  // sum of power over carriers
     uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
 
@@ -67,7 +68,8 @@ namespace MHAL {
        rx_seqnum_{0},
        rx_time_{0,0},
        tx_time_{0,0},
-       sf_time_{0,0}
+       sf_time_{0,0},
+       avg_snr_{-150}
      { }
 
     RxControl(uint16_t nemId,
@@ -83,7 +85,8 @@ namespace MHAL {
     {
       for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
        {
-         peak_sum_[idx]    = 0.0f;
+         avg_snr_[idx]     = -150.0;
+         peak_sum_[idx]    = 0.0;
          num_samples_[idx] = 0;
        }
     }

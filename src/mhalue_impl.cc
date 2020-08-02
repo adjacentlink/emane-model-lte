@@ -463,6 +463,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
              rxControl.peak_sum_[carrierIndex]    = peakSum;
              rxControl.num_samples_[carrierIndex] = segmentCacheSize;
+             rxControl.avg_snr_[carrierIndex]     = signalAvg_dBm - noiseFloorAvg_dBm;
 
              StatisticManager::ReceptionInfoMap receptionInfoMap;
 

@@ -505,8 +505,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         // now check for number of pass/fail segments
         if(segmentCacheSize > 0)
          {
-           const auto signalAvg_dBm = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
-
+           const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
            const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
 
            // XXX TODO possible memory leak if phy layer discards msg before processing it
@@ -516,9 +515,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
            sinrTesterImpls[carrierFrequencyHz] = pSINRTester;
 
-           rxControl.peak_sum_[carrierIndex] = peakSum;
-
+           rxControl.peak_sum_[carrierIndex]    = peakSum;
            rxControl.num_samples_[carrierIndex] = segmentCacheSize;
+           rxControl.avg_snr_[carrierIndex]     = signalAvg_dBm - noiseFloorAvg_dBm;
 
            if(carrier.second.uplink().has_prach())
             {
