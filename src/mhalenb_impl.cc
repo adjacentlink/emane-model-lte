@@ -355,7 +355,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
        }
 
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
+      logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
                                      __func__,
                                      rxControl.nemId_,
                                      rxControl.rx_seqnum_,
