@@ -204,7 +204,7 @@ message PMCH
  message CarrierMessage
   {
     // tx center freq for this carrier
-    required uint64  center_frequency_hz = 1;
+    required uint64  frequency_hz = 1;
 
     // Physical Cell Id
     // physical layer cell id [0-167] (phy_cell_id / 3)
@@ -233,8 +233,8 @@ message PMCH
     optional PMCH pmch = 9;
   }
 
-  // Center Freq, Carrier
-  map<uint64, CarrierMessage> carriers = 2;
+  // Carrier(s)
+  repeated CarrierMessage carriers = 2;
 }
 
 

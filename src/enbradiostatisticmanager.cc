@@ -135,31 +135,31 @@ EMANE::Models::LTE::ENBRadioStatisticManager::updateTxTableCounts(const EMANELTE
 {
   for(const auto & carrier : txControl.carriers())
    {
-     updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pcfich(), true);
+     updateTableCounts(txControl.tti_tx(), carrier.downlink().pcfich(), true);
 
-     if(carrier.second.downlink().has_pbch())
+     if(carrier.downlink().has_pbch())
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pbch(), true);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pbch(), true);
       }
 
-     for(int i = 0; i < carrier.second.downlink().phich_size(); ++i)
+     for(int i = 0; i < carrier.downlink().phich_size(); ++i)
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().phich(i), true);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().phich(i), true);
       }
 
-     for(int i = 0; i < carrier.second.downlink().pdcch_size(); ++i)
+     for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdcch(i), true);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pdcch(i), true);
       }
 
-     for(int i = 0; i < carrier.second.downlink().pdsch_size(); ++i)
+     for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdsch(i), true);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pdsch(i), true);
       }
 
-     if(carrier.second.downlink().has_pmch())
+     if(carrier.downlink().has_pmch())
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pmch(), true);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pmch(), true);
       }
    }
 }
@@ -170,21 +170,21 @@ EMANE::Models::LTE::ENBRadioStatisticManager::updateRxTableCounts(const EMANELTE
 {
   for(const auto & carrier : txControl.carriers())
    {
-     if(carriersOfInterest.count(carrier.first))
+     if(carriersOfInterest.count(carrier.frequency_hz()))
       {
-        if(carrier.second.uplink().has_prach())
+        if(carrier.uplink().has_prach())
          {
-          updateTableCounts(txControl.tti_tx(), carrier.second.uplink().prach(), false);
+          updateTableCounts(txControl.tti_tx(), carrier.uplink().prach(), false);
          }
 
-        for(int i = 0; i < carrier.second.uplink().pucch_size(); ++i)
+        for(int i = 0; i < carrier.uplink().pucch_size(); ++i)
          {
-           updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pucch(i), false);
+           updateTableCounts(txControl.tti_tx(), carrier.uplink().pucch(i), false);
          }
 
-        for(int i = 0; i < carrier.second.uplink().pusch_size(); ++i)
+        for(int i = 0; i < carrier.uplink().pusch_size(); ++i)
          {
-           updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pusch(i), false);
+           updateTableCounts(txControl.tti_tx(), carrier.uplink().pusch(i), false);
          }
       }
    }

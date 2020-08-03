@@ -214,9 +214,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       bool bFoundPci = false;
  
-      for(auto carrier : txControl.carriers())
+      for(const auto & carrier : txControl.carriers())
        {
-         if(physicalCellIds_.count(carrier.second.phy_cell_id()))
+         if(physicalCellIds_.count(carrier.phy_cell_id()))
            {
              bFoundPci = true;
 
@@ -355,7 +355,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
        }
 
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu/%zu",
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
                                      __func__,
                                      rxControl.nemId_,
                                      rxControl.rx_seqnum_,
@@ -364,10 +364,10 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                      frequencySegmentTable.size());
 
       // for each carrier
-      for(auto & carrier : txControl.carriers())
+      for(const auto & carrier : txControl.carriers())
        {
          // carrier center freq
-         const auto carrierFrequencyHz = carrier.first;
+         const auto carrierFrequencyHz = carrier.frequency_hz();
          const auto carrierIndex       = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
 
          // check carriers of interest
@@ -382,7 +382,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             continue;
           }
 
-        if(physicalCellIds_.count(carrier.second.phy_cell_id()) == 0)
+        if(physicalCellIds_.count(carrier.phy_cell_id()) == 0)
          {
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI not found, ignore", __func__);
 
@@ -394,7 +394,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         EMANE::FrequencySegments segmentsThisCarrier;
 
         // for each sub channel of the carrier
-        for(const auto subChannel : carrier.second.sub_channels())
+        for(const auto subChannel : carrier.sub_channels())
          {
            if(frequencySegmentTable.count(subChannel))
             {
@@ -519,9 +519,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            rxControl.num_samples_[carrierIndex] = segmentCacheSize;
            rxControl.avg_snr_[carrierIndex]     = signalAvg_dBm - noiseFloorAvg_dBm;
 
-           if(carrier.second.uplink().has_prach())
+           if(carrier.uplink().has_prach())
             {
-              const auto & prach = carrier.second.uplink().prach();
+              const auto & prach = carrier.uplink().prach();
 
               putSINRResult(prach,
                             rxControl,
@@ -529,7 +529,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             pRadioModel_->noiseTestChannelMessage(txControl, prach, segmentCache, carrierFrequencyHz));
             }
 
-           for(const auto & pucch : carrier.second.uplink().pucch())
+           for(const auto & pucch : carrier.uplink().pucch())
             {
               putSINRResult(pucch,
                             rxControl,
@@ -537,7 +537,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             pRadioModel_->noiseTestChannelMessage(txControl, pucch, segmentCache, carrierFrequencyHz));
             }
 
-           for(const auto & pusch : carrier.second.uplink().pusch())
+           for(const auto & pusch : carrier.uplink().pusch())
             {
               putSINRResult(pusch,
                             rxControl,

@@ -272,7 +272,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
       }
 
-     logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %lu, segments %zu/%zu",
+     logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
                  __func__,
                  rxControl.nemId_,
                  rxControl.rx_seqnum_,
@@ -281,10 +281,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                  frequencySegmentTable.size());
 
      // for each carrier
-     for(auto & carrier : txControl.carriers())
+     for(const auto & carrier : txControl.carriers())
       {
         // carrier center freq
-        const auto carrierFrequencyHz = carrier.first;
+        const auto carrierFrequencyHz = carrier.frequency_hz();
         const auto carrierIndex       = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
 
         // check carriers of interest
@@ -303,7 +303,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         EMANE::FrequencySegments segmentsThisCarrier;
 
         // for each sub channel of the carrier
-        for(const auto subChannel : carrier.second.sub_channels())
+        for(const auto subChannel : carrier.sub_channels())
          {
            if(frequencySegmentTable.count(subChannel))
             {
@@ -438,13 +438,13 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
              const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
 
              const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, 
-                                                                           carrier.second.downlink().pcfich(), 
+                                                                           carrier.downlink().pcfich(), 
                                                                            segmentCache,
                                                                            carrierFrequencyHz);
 
-             const bool pbchPass = carrier.second.downlink().has_pbch() ?
+             const bool pbchPass = carrier.downlink().has_pbch() ?
                                      pRadioModel_->noiseTestChannelMessage(txControl, 
-                                                                           carrier.second.downlink().pbch(),
+                                                                           carrier.downlink().pbch(),
                                                                            segmentCache,
                                                                            carrierFrequencyHz) : false;
 

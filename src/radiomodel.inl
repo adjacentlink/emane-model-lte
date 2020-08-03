@@ -684,10 +684,11 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
    // MUX all frequency segments for the msg
    EMANE::FrequencySegments frequencySegments;
 
-   // txControl carrier map uses center frequency as the key
-   for(const auto & carrier : txControl.carriers())
+   for(int idx = 0; idx < txControl.carriers().size(); ++idx)
     {
-      const auto carrierFrequencyHz = carrier.first;
+      auto controlCarrier = txControl.mutable_carriers(idx);
+
+      const auto carrierFrequencyHz = controlCarrier->frequency_hz();
 
       const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
 
@@ -701,14 +702,14 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
          // get the all frequency segments for this carrier
          const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl, carrierFrequencyHz);
 
-         for(auto segment : segments)
+         for(const auto & segment : segments)
           {
             const auto frequencyHz = segment.getFrequencyHz();
 
             // unique list of subchannel frequencies
             if(frequenciesThisCarrier.insert(frequencyHz).second)
              {
-               (*txControl.mutable_carriers())[carrierFrequencyHz].add_sub_channels(frequencyHz);
+               controlCarrier->add_sub_channels(frequencyHz);
              }
 
             frequencySegments.push_back(segment);
@@ -871,7 +872,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
           for(auto carrier : txControl.carriers())
             {
               // check the carrier frequencyHz, see if it matches one of our carrier rx freqs
-              if(rxCarriersOfInterest_.count(carrier.first))
+              if(rxCarriersOfInterest_.count(carrier.frequency_hz()))
                {
                  bFoundCarrier = true;
 

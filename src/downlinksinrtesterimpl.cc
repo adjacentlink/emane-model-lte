@@ -50,18 +50,19 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
     }
   else if(ctype == CHAN_PMCH)
     {
-      auto carrier = txControl_.carriers().find(carrierFrequencyHz_);
-
-      if(carrier != txControl_.carriers().end() && carrier->second.downlink().has_pmch())
-        {
-          return SINRTester::SINRTesterResult{
-                   pRadioModel_->noiseTestChannelMessage(txControl_, 
-                                                         carrier->second.downlink().pmch(),
-                                                         segmentCache_,
-                                                         carrierFrequencyHz_),
-                   sinr_dB_,
-                   noiseFloor_dBm_};
-        }
+     for(auto & carrier : txControl_.carriers())
+      {
+        if(carrier.frequency_hz() == carrierFrequencyHz_)
+         {
+           if(carrier.downlink().has_pmch())
+            {
+              return SINRTester::SINRTesterResult{
+                        pRadioModel_->noiseTestChannelMessage(txControl_, 
+                                                              carrier.downlink().pmch(),
+                                                              segmentCache_, carrierFrequencyHz_), sinr_dB_, noiseFloor_dBm_};
+            }
+         }
+      }
     }
 
   return SINRTester::SINRTesterResult{};
@@ -77,45 +78,40 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
       return SINRTester::SINRTesterResult{};
     }
 
-  // For other physical channels, match the specified rnti
-  if(ctype == CHAN_PHICH)
-    {
-      auto carrier = txControl_.carriers().find(carrierFrequencyHz_);
-
-      if(carrier != txControl_.carriers().end())
-        {
-          for(int i = 0; i < carrier->second.downlink().phich_size(); ++i)
+  for(auto & carrier : txControl_.carriers())
+   {
+     if(carrier.frequency_hz() == carrierFrequencyHz_)
+      {
+       // For other physical channels, match the specified rnti
+        if(ctype == CHAN_PHICH)
+         {
+           for(int i = 0; i < carrier.downlink().phich_size(); ++i)
             {
-              if(carrier->second.downlink().phich(i).rnti() != rnti)
+              if(carrier.downlink().phich(i).rnti() != rnti)
                {
                  continue;
                }
 
-             return SINRTester::SINRTesterResult{
-                      pRadioModel_->noiseTestChannelMessage(txControl_,
-                                                            carrier->second.downlink().phich(i),
-                                                            segmentCache_,
-                                                            carrierFrequencyHz_),
-                      sinr_dB_,
-                      noiseFloor_dBm_};
-           }
-        }
-    }
-  else if(ctype == CHAN_PDCCH)
-    {
-      auto carrier = txControl_.carriers().find(carrierFrequencyHz_);
-
-      if(carrier != txControl_.carriers().end())
-        {
-          for(int i = 0; i < carrier->second.downlink().pdcch_size(); ++i)
+              return SINRTester::SINRTesterResult{
+                       pRadioModel_->noiseTestChannelMessage(txControl_,
+                                                             carrier.downlink().phich(i),
+                                                             segmentCache_,
+                                                             carrierFrequencyHz_),
+                       sinr_dB_,
+                       noiseFloor_dBm_};
+            }
+         }
+        else if(ctype == CHAN_PDCCH)
+         {
+           for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
             {
-              if(carrier->second.downlink().pdcch(i).rnti() != rnti)
-                {
-                  continue;
-                }
+              if(carrier.downlink().pdcch(i).rnti() != rnti)
+               {
+                 continue;
+               }
 
               bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_,
-                                                                   carrier->second.downlink().pdcch(i),
+                                                                   carrier.downlink().pdcch(i),
                                                                    segmentCache_,
                                                                    carrierFrequencyHz_)};
 
@@ -123,43 +119,35 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
               pdcchRNTIResults_.emplace(rnti, pdcchPass);
 
               return SINRTester::SINRTesterResult{pdcchPass, sinr_dB_, noiseFloor_dBm_};
-            }
+           }
         }
-    }
-  else if(ctype == CHAN_PDSCH)
-    {
-      auto pdcchIter = pdcchRNTIResults_.find(rnti);
-
-      // PDSCH reception only if corresponding PDCCH was received
-      if(pdcchIter == pdcchRNTIResults_.end() || !pdcchIter->second)
+       else if(ctype == CHAN_PDSCH)
         {
-          return SINRTester::SINRTesterResult{};
-        }
+          auto pdcchIter = pdcchRNTIResults_.find(rnti);
 
-      auto carrier = txControl_.carriers().find(carrierFrequencyHz_);
+          // PDSCH reception only if corresponding PDCCH was received
+          if(pdcchIter == pdcchRNTIResults_.end() || !pdcchIter->second)
+           {
+             return SINRTester::SINRTesterResult{};
+           }
 
-      if(carrier != txControl_.carriers().end())
-        {
-          for(int i = 0; i < carrier->second.downlink().pdsch_size(); ++i)
+          for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
             {
-              if(carrier->second.downlink().pdsch(i).rnti() != rnti)
+              if(carrier.downlink().pdsch(i).rnti() != rnti)
                 {
                   continue;
                 }
 
               return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, 
-                                                                                        carrier->second.downlink().pdsch(i),
+                                                                                        carrier.downlink().pdsch(i),
                                                                                         segmentCache_,
                                                                                         carrierFrequencyHz_), 
                                                   sinr_dB_,
                                                   noiseFloor_dBm_};
-            }
-        }
-    }
-  else
-    {
-      // unexpected channel
-    }
+           }
+         }
+       }
+     } // end for
 
   return SINRTester::SINRTesterResult{};
 }

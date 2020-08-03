@@ -134,19 +134,19 @@ EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE:
 {
   for(const auto & carrier : txControl.carriers())
    {
-     if(carrier.second.uplink().has_prach())
+     if(carrier.uplink().has_prach())
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().prach(), true);
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().prach(), true);
       }
 
-     for(int i = 0; i < carrier.second.uplink().pucch_size(); ++i)
+     for(int i = 0; i < carrier.uplink().pucch_size(); ++i)
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pucch(i), true);
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().pucch(i), true);
       }
 
-     for(int i = 0; i < carrier.second.uplink().pusch_size(); ++i)
+     for(int i = 0; i < carrier.uplink().pusch_size(); ++i)
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.uplink().pusch(i), true);
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().pusch(i), true);
       }
    }
 }
@@ -158,33 +158,33 @@ EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE:
 {
   for(const auto & carrier : txControl.carriers())
    {
-     if(carriersOfInterest.count(carrier.first))
+     if(carriersOfInterest.count(carrier.frequency_hz()))
       {
-        updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pcfich(), false);
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pcfich(), false);
 
-        if(carrier.second.downlink().has_pbch())
+        if(carrier.downlink().has_pbch())
          {
-           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pbch(), false);
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().pbch(), false);
          }
 
-        for(int i = 0; i < carrier.second.downlink().phich_size(); ++i)
+        for(int i = 0; i < carrier.downlink().phich_size(); ++i)
          {
-           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().phich(i), false);
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().phich(i), false);
          }
   
-        for(int i = 0; i < carrier.second.downlink().pdcch_size(); ++i)
+        for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
          {
-           updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdcch(i), false);
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().pdcch(i), false);
          }
 
-       for(int i = 0; i < carrier.second.downlink().pdsch_size(); ++i)
+       for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
         {
-          updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pdsch(i), false);
+          updateTableCounts(txControl.tti_tx(), carrier.downlink().pdsch(i), false);
         }
 
-       if(carrier.second.downlink().has_pmch())
+       if(carrier.downlink().has_pmch())
         {
-         updateTableCounts(txControl.tti_tx(), carrier.second.downlink().pmch(), false);
+         updateTableCounts(txControl.tti_tx(), carrier.downlink().pmch(), false);
         }
       }
    }

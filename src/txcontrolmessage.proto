@@ -44,15 +44,16 @@ option optimize_for = SPEED;
 
 message TxControlCarrierMessage
 {
-  required uint32               phy_cell_id    = 1;
-  repeated uint64               sub_channels   = 2; // sub bands of carrier center freq hz
-  optional DownlinkMessage      downlink       = 3;
-  optional UplinkMessage        uplink         = 4;
+  required uint64               frequency_hz   = 1;
+  required uint32               phy_cell_id    = 2;
+  repeated uint64               sub_channels   = 3; // sub bands of carrier center freq hz
+  optional DownlinkMessage      downlink       = 4;
+  optional UplinkMessage        uplink         = 5;
 }
 
 message TxControlMessage
 {
-  map<uint64, TxControlCarrierMessage> carriers    = 1;   // carrier tx center freq hz, carrier info
+  repeated TxControlCarrierMessage  carriers       = 1;   // carrier tx center freq hz, carrier info
   required uint64       tx_seqnum                  = 2;
   required Timestamp    sf_time                    = 3;   // sf time (tti_time)
   required uint32       tti_tx                     = 4;   // tti when msg is expected to be tx/rx
