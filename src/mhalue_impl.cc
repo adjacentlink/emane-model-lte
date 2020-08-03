@@ -533,7 +533,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
-                  timing_.ts_sf_interval_usec() + abs(dT));
+                  time_t(timing_.ts_sf_interval_usec() + abs(dT)));
         }
     }
 
