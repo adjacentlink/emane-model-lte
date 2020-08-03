@@ -177,9 +177,9 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
         const size_t slot2{slot1 + 1};
 
-        const auto cfi{carrier.downlink().cfi()};
+        const std::uint32_t cfi{carrier.downlink().cfi()};
 
-        auto numResourceBlocks{carrier.downlink().num_resource_blocks()};
+        const std::uint32_t numResourceBlocks{carrier.downlink().num_resource_blocks()};
 
         const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
@@ -189,9 +189,9 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
         EMANELTE::MHAL::MOD_TYPE modType{channel_message.modulation_type()};
 
-        const auto numberOfBits{channel_message.number_of_bits()};
+        const std::uint32_t numberOfBits{channel_message.number_of_bits()};
 
-        const auto numberInfoREs{numberOfBits/modType};
+        const std::uint32_t numberInfoREs{numberOfBits/modType};
 
         std::uint32_t numberMessageREs{0};
 
@@ -321,11 +321,11 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
             continue;
           }
 
-        const auto sinr_dB = segmentIter->second;
+        const float sinr_dB = segmentIter->second;
 
-        const auto por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+        const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-        const auto fRandomValue{RNDZeroToOne_()};
+        const float fRandomValue{RNDZeroToOne_()};
 
         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                                EMANE::DEBUG_LEVEL,
@@ -402,11 +402,11 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
             continue;
           }
 
-         const auto sinr_dB = segmentIter->second;
+         const float sinr_dB = segmentIter->second;
 
-         const auto por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+         const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-         const auto fRandomValue{RNDZeroToOne_()};
+         const float fRandomValue{RNDZeroToOne_()};
 
          LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                                 EMANE::DEBUG_LEVEL,

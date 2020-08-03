@@ -242,8 +242,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       for(const auto & segment : frequencySegments)
         {
-          const auto rxPower_dBm = segment.getRxPowerdBm();
-          const auto rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
+          const float rxPower_dBm = segment.getRxPowerdBm();
+          const float rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
 
           EMANE::Models::LTE::SegmentKey key{segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()};
 
@@ -259,7 +259,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             {
               auto & minSot(std::get<0>(inBandIter->second));
               auto & maxSot(std::get<1>(inBandIter->second));
-              auto & partialRxPower_mW{std::get<2>(inBandIter->second)};
+              float & partialRxPower_mW(std::get<2>(inBandIter->second));
 
               minSot = std::min(minSot, otaInfo.sot_);
               maxSot = std::max(maxSot, otaInfo.sot_);
@@ -640,7 +640,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_
         {
           in_step = false;
 
-          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
+          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %u usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,

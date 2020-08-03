@@ -79,9 +79,9 @@ namespace MHAL {
               const timeval & sf_time) :
       nemId_{nemId},
       rx_seqnum_{rx_seqnum},
-      rx_time_{rx_time},
-      tx_time_{tx_time},
-      sf_time_{sf_time}
+      rx_time_{rx_time.tv_sec, rx_time.tv_usec},
+      tx_time_{tx_time.tv_sec, tx_time.tv_usec},
+      sf_time_{sf_time.tv_sec, sf_time.tv_usec}
     {
       for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
        {
