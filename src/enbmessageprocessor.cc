@@ -446,14 +446,14 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
         }
     }
 
-  std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
+  const std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
 
-  bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
+  const bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
 
   if(!messageReceived)
     {
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::INFO_LEVEL,
+                             EMANE::DEBUG_LEVEL,
                              "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, numberOfBits %d, messageREs %d, infoREs %d, rcvedREs %d",
                              id_,
                              "ENBMessageProcessor",
