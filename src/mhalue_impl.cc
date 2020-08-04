@@ -459,7 +459,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                                            carrierFrequencyHz);
 
 
-             sinrTesterImpls[carrierFrequencyHz] = pSINRtester;
+             sinrTesterImpls[carrierFrequencyHz].reset(pSINRtester);
 
              rxControl.peak_sum_[carrierIndex]    = peakSum;
              rxControl.num_samples_[carrierIndex] = segmentCacheSize;

@@ -103,14 +103,6 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64
 void
 EMANELTE::MHAL::SINRTester::release()
 {
-  for(auto & impl : impls_)
-    {
-      if(impl.second)
-       {
-         delete impl.second;
-       }
-    }
-
   impls_.clear();
 }
 

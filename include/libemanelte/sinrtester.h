@@ -45,7 +45,7 @@ namespace MHAL {
 
 class SINRTesterImpl;
  
-using SINRTesterImpls = std::map<std::uint64_t, SINRTesterImpl*>;
+using SINRTesterImpls = std::map<std::uint64_t, std::shared_ptr<SINRTesterImpl>>;
  
  class SINRTester
   {

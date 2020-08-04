@@ -513,7 +513,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                        noiseFloorAvg_dBm,
                                                        carrierFrequencyHz);
 
-           sinrTesterImpls[carrierFrequencyHz] = pSINRTester;
+           sinrTesterImpls[carrierFrequencyHz].reset(pSINRTester);
 
            rxControl.peak_sum_[carrierIndex]    = peakSum;
            rxControl.num_samples_[carrierIndex] = segmentCacheSize;
@@ -640,11 +640,11 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_
         {
           in_step = false;
 
-          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %u usec",
+          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
-                  timing_.ts_sf_interval_usec() + abs(dT));
+                  (time_t)timing_.ts_sf_interval_usec() + abs(dT));
         }
     }
 
