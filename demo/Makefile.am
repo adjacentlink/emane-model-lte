@@ -1,6 +1,7 @@
-EXTRA_DIST=           \
-  two_ues             \
-  two_ues_otestpoint  \
+EXTRA_DIST=             \
+  two_ues               \
+  two_ues_two_carriers  \
+  two_ues_otestpoint    \
   templates
 
 install-exec-hook:	

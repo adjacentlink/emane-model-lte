@@ -226,8 +226,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       if(! bFoundPci)
         {
+#ifdef ENABLE_INFO_1_LOGS
           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI not found, ignore", __func__);
-
+#endif
           // transmitters on other cells are considered noise
           continue;
         }
@@ -355,13 +356,15 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
        }
 
-      logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
+#ifdef ENABLE_INFO_1_LOGS
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
                                      __func__,
                                      rxControl.nemId_,
                                      rxControl.rx_seqnum_,
                                      txControl.carriers().size(),
                                      frequencySegments.size(),
                                      frequencySegmentTable.size());
+#endif
 
       // for each carrier
       for(const auto & carrier : txControl.carriers())
@@ -373,10 +376,12 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
          // check carriers of interest
          if(carrierIndex < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
           {
-            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
+#ifdef ENABLE_INFO_1_LOGS
+            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
                         __func__,
                        rxControl.nemId_,
                        carrierFrequencyHz);
+#endif
  
             // ignore carriers not of interest
             continue;
@@ -384,8 +389,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
         if(physicalCellIds_.count(carrier.phy_cell_id()) == 0)
          {
+#ifdef ENABLE_INFO_1_LOGS
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s PCI not found, ignore", __func__);
-
+#endif
            // ignore transmitters from other cells
            continue;
          }
@@ -410,9 +416,10 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
        if(segmentsThisCarrier.empty())
         {
+#ifdef ENABLE_INFO_1_LOGS
           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, missing all subChannels, skip carrier %lu",
                       __func__, carrierFrequencyHz);
-
+#endif
           continue;
         }
 
@@ -452,6 +459,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            signalSum_mW     += rxPower_mW;
            noiseFloorSum_mW += noiseFloor_mW;
 
+#ifdef ENABLE_INFO_1_LOGS
            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, freq %lu, offset %lu, duration %lu, rxPower_dBm %0.1f, noisefloor_dbm %0.1f, sinr_dB %0.1f",
                        __func__,
                        rxControl.nemId_,
@@ -461,6 +469,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                        rxPower_dBm,
                        noiseFloor_dBm,
                        sinr_dB);
+#endif
 
            segmentCache.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB);
 
@@ -576,22 +585,26 @@ EMANELTE::MHAL::MHALENBImpl::putSINRResult(const ChannelMessage & channel_messag
 
   if(channel_message.has_rnti())
     {
+#ifdef ENABLE_INFO_1_LOGS
       logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s insert sinr result, src %hu, seqnum %lu, chantype %d, rnti %hu",
                   __func__,
                   rxControl.nemId_,
                   rxControl.rx_seqnum_,
                   ctype,
                   channel_message.rnti());
+#endif
 
       pSINRTester->rntiChannelSINRResults_.emplace(ChannelRNTI(ctype, channel_message.rnti()), received);
     }
   else
     {
+#ifdef ENABLE_INFO_1_LOGS
       logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s insert sinr result, src %hu, seqnum %lu, chantype %d",
                   __func__,
                   rxControl.nemId_,
                   rxControl.rx_seqnum_,
                   ctype);
+#endif
 
       pSINRTester->channelSINRResults_.emplace(ctype, received);
     }
@@ -601,50 +614,45 @@ EMANELTE::MHAL::MHALENBImpl::putSINRResult(const ChannelMessage & channel_messag
 bool
 EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_sor)
 {
-  bool in_step = false;
-
   timing_.lockTime();
 
   const timeval tv_sf_time = timing_.getCurrSfTime();
-  timeval tv_now, tv_delay, tv_process_diff;
+
+  bool bSfTimeInStep = true;
+
+  timeval tv_now, tv_delay, tv_sf_remain;
 
   gettimeofday(&tv_now, NULL);
 
   // get the process time for the calling thread for the time remaining in this subframe
-  timersub(&tv_now, &tv_sf_time, &tv_process_diff);
+  timersub(&tv_now, &tv_sf_time, &tv_sf_remain);
 
-  // get the time till the next subframe
+  // get the delta to the next subframe
   timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
 
-  const time_t dT = tvToUseconds(tv_delay);
+  const time_t dtUsecs = tvToUseconds(tv_delay);
 
   // this is where we set the pace for the system pulse
-  if(dT > 0)
+  if(dtUsecs > 0)
     {
-#if 0
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, wait %ld usec",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  abs(dT));
-#endif
-
-      // next sf is still in the future
+      // next subframe is still in the future
       // wait until next subframe time
       select(0, NULL, NULL, NULL, &tv_delay);
     }
   else
     {
-      // no wait, lets try to catch up
-      if(dT < 0)
+      // missed subframe
+      if(abs(dtUsecs) > timing_.ts_sf_interval_usec())
         {
-          in_step = false;
+          bSfTimeInStep = false;
 
+#ifdef ENABLE_INFO_1_LOGS
           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
-                  (time_t)timing_.ts_sf_interval_usec() + abs(dT));
+                  (time_t)timing_.ts_sf_interval_usec() + abs(dtUsecs));
+#endif
         }
     }
 
@@ -667,7 +675,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_
   // get msgs from the previous subframe
   noise_worker(bin, tv_sf_time);
 
-  // set the sor to the sf time (time aligned via lte time advance)
+  // set the sor to the subframe time (time aligned via lte time advance)
   tv_sor = tv_sf_time;
 
   timing_.unlockTime();
@@ -698,7 +706,7 @@ EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_
 
   statisticManager_.updateHandoffMessages(bin, rxMessages.size());
 
-  statisticManager_.tallySubframeProcessTime(bin, tv_process_diff, !in_step);
+  statisticManager_.tallySubframeProcessTime(bin, tv_sf_remain);
 
-  return in_step;
+  return bSfTimeInStep;
 }

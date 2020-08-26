@@ -174,7 +174,9 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALUEImpl::get_noise(FrequencyHz frequenc
 void
 EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 {
+#ifdef ENABLE_INFO_1_LOGS
   logger_.log(EMANE::INFO_LEVEL, "MHAL %s", __func__);
+#endif
 
   // on cell search, configure for the largest bandwidth to
   // ensure packet reception from any enb (register all possible FOI
@@ -272,13 +274,15 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
       }
 
-     logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
+#ifdef ENABLE_INFO_1_LOGS
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
                  __func__,
                  rxControl.nemId_,
                  rxControl.rx_seqnum_,
                  txControl.carriers().size(),
                  frequencySegments.size(),
                  frequencySegmentTable.size());
+#endif
 
      // for each carrier
      for(const auto & carrier : txControl.carriers())
@@ -290,10 +294,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         // check carriers of interest
         if(carrierIndex < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
          {
-           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
+#ifdef ENABLE_INFO_1_LOGS
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
                        __func__,
                       rxControl.nemId_,
                       carrierFrequencyHz);
+#endif
 
            // ignore carriers not of interest
            continue;
@@ -319,8 +325,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
          if(segmentsThisCarrier.empty())
           {
+#ifdef ENABLE_INFO_1_LOGS
             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, missing all subChannels, skip carrier %lu",
                         __func__, carrierFrequencyHz);
+#endif
 
             continue;
           }
@@ -337,7 +345,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
             const auto frequencyHz    = segment.getFrequencyHz();
             const auto spectrumWindow = spectrumWindowCache.find(frequencyHz);
 
-            logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, bin %u, carrier %lu, freq %lu, offset %lu, duration %lu",
+#ifdef ENABLE_INFO_1_LOGS
+            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, bin %u, carrier %lu, freq %lu, offset %lu, duration %lu",
                         __func__,
                         rxControl.nemId_,
                         bin,
@@ -345,6 +354,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                         frequencyHz,
                         segment.getOffset().count(),
                         segment.getDuration().count());
+#endif
 
             if(spectrumWindow == spectrumWindowCache.end())
              {
@@ -490,50 +500,45 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 bool
 EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor)
 {
-  bool in_step = true;
-
   timing_.lockTime();
 
   const timeval tv_sf_time = timing_.getCurrSfTime();
-  timeval tv_now, tv_delay, tv_process_diff;
+
+  bool bSfTimeInStep = true;
+
+  timeval tv_now, tv_delay, tv_sf_remain;
 
   gettimeofday(&tv_now, NULL);
 
   // get the process time for the calling thread for the time remaining in this subframe
-  timersub(&tv_now, &tv_sf_time, &tv_process_diff);
+  timersub(&tv_now, &tv_sf_time, &tv_sf_remain);
 
-  // get the delta the next subframe
+  // get the delta to the next subframe
   timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
 
-  const time_t dT = tvToUseconds(tv_delay);
+  const time_t dtUsecs = tvToUseconds(tv_delay);
 
   // this is where we set the pace for the system pulse
-  if(dT > 0)
+  if(dtUsecs > 0)
     {
-#if 0
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, wait %ld usec",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  abs(dT));
-#endif
-
-      // next sf is still in the future
+      // next subframe is still in the future
       // wait until next subframe time
       select(0, NULL, NULL, NULL, &tv_delay);
     }
   else
     {
-      // no wait, lets try to catch up
-      if(dT < 0)
+      // missed subframe
+      if(abs(dtUsecs) > timing_.ts_sf_interval_usec())
         {
-          in_step = false;
+          bSfTimeInStep = false;
 
+#ifdef ENABLE_INFO_1_LOGS
           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
                   __func__,
                   timing_.getCurrSfTime().tv_sec,
                   timing_.getCurrSfTime().tv_usec,
-                  time_t(timing_.ts_sf_interval_usec() + abs(dT)));
+                  time_t(timing_.ts_sf_interval_usec() + abs(dtUsecs)));
+#endif
         }
     }
 
@@ -556,7 +561,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
   // get msgs from the previous subframe
   noise_worker(bin, tv_sf_time);
 
-  // set the sor to the sf time (time aligned via lte time advance)
+  // set the sor to the subframe time (time aligned via lte time advance)
   tv_sor = tv_sf_time;
 
   timing_.unlockTime();
@@ -574,7 +579,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
               tv_curr_sf.tv_usec,
               tv_delay.tv_sec,
               tv_delay.tv_usec,
-              dT,
+              dtUsecs,
               pendingMessageBins_[bin].get().size());
 #endif
 
@@ -590,7 +595,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
 
   statisticManager_.updateHandoffMessages(bin, messages.size());
 
-  statisticManager_.tallySubframeProcessTime(bin, tv_process_diff, !in_step);
+  statisticManager_.tallySubframeProcessTime(bin, tv_sf_remain);
 
-  return in_step;
+  return bSfTimeInStep;
 }

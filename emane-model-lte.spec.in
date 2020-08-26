@@ -21,7 +21,7 @@ EMANE MODEL LTE
 %setup -q
 
 %build
-%configure
+%configure --without-verbose-logging
 make
 
 %install

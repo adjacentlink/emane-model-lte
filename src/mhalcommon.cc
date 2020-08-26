@@ -59,7 +59,7 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
   // get caller priority
   pthread_getschedparam(pthread_self(), &parent_policy, &parent_priority);
 
-  // elevate so emane can inherit
+  // elevate so emane child can inherit
   if(parent_policy == SCHED_OTHER)
     {
       set_thread_priority(pthread_self(), SCHED_RR, 50);
@@ -359,10 +359,12 @@ EMANELTE::MHAL::MHALCommon::clearReadyMessages(const uint32_t bin)
 {
   if(auto numOrphans = readyMessageBins_[bin].clearAndCheck())
     {
+#ifdef ENABLE_INFO_1_LOGS                   
       logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, bin %u, purge %zu ready orphans",
                   __func__,
                   bin,
                   numOrphans);
+#endif
 
       statisticManager_.updateOrphanedMessages(bin, numOrphans);
     }
@@ -373,10 +375,12 @@ EMANELTE::MHAL::MHALCommon::clearPendingMessages(const uint32_t bin)
 {
   if(auto numOrphans = pendingMessageBins_[bin].clearAndCheck())
     {
+#ifdef ENABLE_INFO_1_LOGS                   
       logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, bin %u, purge %zu pending orphans",
                   __func__,
                   bin,
                   numOrphans);
+#endif
 
       statisticManager_.updateOrphanedMessages(bin, numOrphans);
     }
