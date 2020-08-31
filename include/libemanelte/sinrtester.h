@@ -37,6 +37,7 @@
 #define EMANELTE_SINRTESTER_H
 
 #include <map>
+#include <memory>
 #include "libemanelte/otacommon.pb.h"
 
 

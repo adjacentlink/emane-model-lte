@@ -71,6 +71,7 @@ AC_DEFINE([__BIG_ENDIAN],4321,[for the places where it is not defined])
 
 PKG_CHECK_MODULES([libemane], libemane)
 PKG_CHECK_MODULES([libostatistic], libostatistic)
+PKG_CHECK_MODULES([libxml2], libxml-2.0)
 
 # compiler options
 CXXFLAGS="$CXXFLAGS -W -Wall -g0 -O3"
