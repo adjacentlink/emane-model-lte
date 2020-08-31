@@ -113,7 +113,7 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
   // a half slot segment for each slot.
   for(int j=0; j<channel_msg.resource_block_frequencies_slot1_size(); ++j)
     {
-      const auto freq{channel_msg.resource_block_frequencies_slot1(j)};
+      const EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot1(j)};
 
       if(txFreqToRBMap_.count(freq))
        {
@@ -176,7 +176,7 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
 
   for(int j=0; j<channel_msg.resource_block_frequencies_slot2_size(); ++j)
     {
-      const auto freq{channel_msg.resource_block_frequencies_slot2(j)};
+      const EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot2(j)};
 
       if(txFreqToRBMap_.count(freq))
        {
