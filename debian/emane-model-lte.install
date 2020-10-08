@@ -6,3 +6,4 @@ usr/share/emane-model-lte/demo/templates/enb/*
 usr/share/emane-model-lte/demo/templates/epc/*
 usr/share/emane-model-lte/demo/templates/host/*
 usr/share/emane-model-lte/demo/templates/ue/*
+usr/share/emane-model-lte/demo/templates/common_radio/*
