@@ -87,7 +87,7 @@ EMANELTE::MHAL::MHALCommon::start(uint32_t nof_advance_sf)
         {
           pendingMessageBins_[bin].lockBin();
           pendingMessageBins_[bin].clear();
-          clearReadyMessages(bin);
+          clearReadyMessages_safe(bin);
           pendingMessageBins_[bin].unlockBin();
         }
 
@@ -221,51 +221,52 @@ EMANELTE::MHAL::MHALCommon::set_thread_priority(pthread_t tid, int policy, int p
 
 
 
-void EMANELTE::MHAL::MHALCommon::noise_worker(const uint32_t bin, const timeval & tv_sf_start __attribute__((unused)))
+void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin, const timeval & tv_sf_start __attribute__((unused)))
 {
   struct timeval tv_in, tv_out, tv_diff;
 
   // track work time
   gettimeofday(&tv_in, NULL);
 
+  const size_t numMessages = pendingMessageBins_[bin].get().size();
+
 #ifdef ENABLE_INFO_2_LOGS                   
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, sf_start %ld:%06ld, bin %u, %zu pending", 
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, sf_start %ld:%06ld, bin %u, %zu messages", 
                   __func__,
                   tv_sf_start.tv_sec, 
                   tv_sf_start.tv_usec,
                   bin,
-                  pendingMessageBins_[bin].get().size());
+                  numMessages);
 #endif
 
-  clearReadyMessages(bin);
+  clearReadyMessages_safe(bin);
 
   // container for all freqs and energy for this subframe
   // allows for consulting the spectrum sevice once and only once for each freq/timerange
   EMANE::Models::LTE::SpectrumWindowCache spectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency
-  for(auto & span : pendingMessageBins_[bin].getSegmentSpans())
+  for(auto & segmentSpan : pendingMessageBins_[bin].getSegmentSpans())
     {
-      const auto & minSor      = std::get<0>(span.second);
-      const auto & maxEor      = std::get<1>(span.second);
-      const auto & frequencyHz = span.first;
-      const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor.time_since_epoch() - minSor.time_since_epoch());
+      const auto & minSor      = SegmentTimeSpan_sor(segmentSpan.second);
+      const auto & maxEor      = SegmentTimeSpan_eor(segmentSpan.second);
+      const auto & frequencyHz = segmentSpan.first;
+      const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
 
 #ifdef ENABLE_INFO_1_LOGS                   
-      auto & numEntries  = std::get<2>(span.second);
       logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, freq %lu, minSor %f, maxEor %f, duration %ld, numEntries %zu", 
                       __func__,
                       frequencyHz,
                       minSor.time_since_epoch().count()/1e9,
                       maxEor.time_since_epoch().count()/1e9,
                       duration.count(),
-                      numEntries);
+                      SegmentTimeSpan_num(segmentSpan.second));
 #endif
 
       spectrumWindowCache[frequencyHz] = get_noise(frequencyHz, duration, minSor);
     }
 
-  statisticManager_.updateDequeuedMessages(bin, pendingMessageBins_[bin].get().size());
+  statisticManager_.updateDequeuedMessages(bin, numMessages);
 
   noise_processor(bin, spectrumWindowCache);
 
@@ -304,6 +305,8 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
       statisticManager_.updateRxPacketOtaDelay(bin, tvToSeconds(tv_diff));
 
+      size_t numMessages = 0;
+
       // eor should be in the future
       if(dT > EMANE::Microseconds{0})
         {
@@ -318,6 +321,8 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
                                        PendingMessage{data, rxControl, otaInfo, txControl},
                                        statisticManager_);
 
+          numMessages = pendingMessageBins_[bin].get().size();
+
           // unlock bin
           pendingMessageBins_[bin].unlockBin();
         }
@@ -331,7 +336,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
       const auto & tv_curr_sf = timing_.getCurrSfTime();
       timeval tv_now;
       gettimeofday(&tv_now, NULL);
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s seqnum %lu, bin %u, curr_sf %ld:%06ld, now %ld:%06ld, sot %f, span %ld, sor %f, eor %f, dT %ld usec, pending %zu", 
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s seqnum %lu, bin %u, curr_sf %ld:%06ld, now %ld:%06ld, sot %f, span %ld, sor %f, eor %f, dT %ld usec, messages %zu", 
                       __func__,
                       rxControl.rx_seqnum_,
                       bin,
@@ -344,7 +349,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
                       sor.time_since_epoch().count()/1e9,
                       eor.time_since_epoch().count()/1e9,
                       dT.count(),
-                      pendingMessageBins_[bin].get().size());
+                      numMessages);
 #endif
     }
   else
@@ -355,7 +360,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
 
 void
-EMANELTE::MHAL::MHALCommon::clearReadyMessages(const uint32_t bin)
+EMANELTE::MHAL::MHALCommon::clearReadyMessages_safe(const uint32_t bin)
 {
   if(auto numOrphans = readyMessageBins_[bin].clearAndCheck())
     {
@@ -371,7 +376,7 @@ EMANELTE::MHAL::MHALCommon::clearReadyMessages(const uint32_t bin)
 }
 
 void
-EMANELTE::MHAL::MHALCommon::clearPendingMessages(const uint32_t bin)
+EMANELTE::MHAL::MHALCommon::clearPendingMessages_safe(const uint32_t bin)
 {
   if(auto numOrphans = pendingMessageBins_[bin].clearAndCheck())
     {

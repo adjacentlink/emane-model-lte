@@ -59,6 +59,10 @@ namespace MHAL {
 
   using PendingMessages = std::list<PendingMessage>;
 
+#define SegmentTimeSpan_sor(x) std::get<0>((x))
+#define SegmentTimeSpan_eor(x) std::get<1>((x))
+#define SegmentTimeSpan_num(x) std::get<2>((x))
+
   using SegmentTimeSpan = std::tuple<EMANE::TimePoint,  // sor
                                      EMANE::TimePoint,  // eor
                                      size_t>;           // num segments

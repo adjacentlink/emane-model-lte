@@ -490,10 +490,11 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
 
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::ERROR_LEVEL,
-                              "%s %03hu %s: now %lf, sor %lf, span %ld, dt %ld usec, %s",
+                              "%s %03hu %s: frequency %lu, now %lf, sor %lf, span %ld, dt %ld usec, %s",
                               pzModuleName_,
                               id_,
                               __func__,
+                              frequency,
                               tp.time_since_epoch().count()  / 1e9,
                               sor.time_since_epoch().count() / 1e9,
                               span.count(),

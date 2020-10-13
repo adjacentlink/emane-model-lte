@@ -552,14 +552,14 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
 
   pendingMessageBins_[nextbin].lockBin();
 
-  clearPendingMessages(nextbin);
+  clearPendingMessages_safe(nextbin);
 
-  clearReadyMessages(nextbin);
+  clearReadyMessages_safe(nextbin);
 
   pendingMessageBins_[nextbin].unlockBin();
 
   // get msgs from the previous subframe
-  noise_worker(bin, tv_sf_time);
+  noiseWorker_safe(bin, tv_sf_time);
 
   // set the sor to the subframe time (time aligned via lte time advance)
   tv_sor = tv_sf_time;

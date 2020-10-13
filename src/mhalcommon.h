@@ -100,11 +100,11 @@ protected:
                            const PHY::OTAInfo & otaInfo,
                            const TxControlMessage & txControl);
 
-  void noise_worker(const uint32_t bin, const timeval & tv_sf_start);
+  void noiseWorker_safe(const uint32_t bin, const timeval & tv_sf_start);
 
-  void clearReadyMessages(const uint32_t bin);
+  void clearReadyMessages_safe(const uint32_t bin);
 
-  void clearPendingMessages(const uint32_t bin);
+  void clearPendingMessages_safe(const uint32_t bin);
 
   virtual void init_emane() = 0;
 
