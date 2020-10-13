@@ -476,6 +476,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
                                                                              const EMANE::Microseconds & span, 
                                                                              const EMANE::TimePoint & sor)
 {
+  const auto tp = EMANE::Clock::now();
+
   EMANE::SpectrumWindow spectrumWindow;
 
   try 
@@ -484,12 +486,18 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
     } 
   catch(EMANE::SpectrumServiceException & exp) 
     {
+      const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tp - sor);
+
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::ERROR_LEVEL,
-                              "%s %03hu %s: %s",
+                              "%s %03hu %s: now %lf, sor %lf, span %ld, dt %ld usec, %s",
                               pzModuleName_,
                               id_,
                               __func__,
+                              tp.time_since_epoch().count()  / 1e9,
+                              sor.time_since_epoch().count() / 1e9,
+                              span.count(),
+                              dt.count(),
                               exp.what());
     }
 
