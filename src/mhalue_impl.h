@@ -68,8 +68,6 @@ namespace MHAL {
                              const PHY::OTAInfo & otaInfo,
                              const TxControlMessage & txControl);
 
-    bool get_messages(RxMessages & messages, timeval & tv_sor);
-
     EMANE::SpectrumWindow get_noise(FrequencyHz frequencyHz,
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);

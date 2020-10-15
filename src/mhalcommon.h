@@ -76,6 +76,8 @@ public:
 
   void send_msg(const Data & data, TxControlMessage & txControl);
 
+  bool get_messages(RxMessages & messages, timeval & rx_time);
+
   virtual std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz) = 0;
 
   void stop();

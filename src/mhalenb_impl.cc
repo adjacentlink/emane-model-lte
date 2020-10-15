@@ -36,6 +36,7 @@
 #include "mhalenb_impl.h"
 #include "configmanager.h"
 
+#undef ENABLE_INFO_1_LOGS
 
 void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
                                              const mhal_config_t & mhal_config,
@@ -475,8 +476,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
            pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
 
-#ifdef ENABLE_INFO_1_LOGS
-           bool inBand = rangeInfo.second;
+#if 0
            const bool & bSignalInNoise{std::get<4>(spectrumWindow->second)};
 
            logger_.log(EMANE::INFO_LEVEL,
@@ -484,7 +484,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                        "src %hu, "
                        "sfIdx=%d, "
                        "seqnum %lu, "
-                       "inband %d, "
                        "siginnoise %d, "
                        "freq %lu, "
                        "offs %lu, "
@@ -496,7 +495,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                        rxControl.nemId_,
                        txControl.tti_tx(),
                        rxControl.rx_seqnum_,
-                       inBand,
                        bSignalInNoise,
                        frequencyHz,
                        segment.getOffset().count(),
@@ -608,105 +606,4 @@ EMANELTE::MHAL::MHALENBImpl::putSINRResult(const ChannelMessage & channel_messag
 
       pSINRTester->channelSINRResults_.emplace(ctype, received);
     }
-}
-
-
-bool
-EMANELTE::MHAL::MHALENBImpl::get_messages(RxMessages & rxMessages, timeval & tv_sor)
-{
-  timing_.lockTime();
-
-  const timeval tv_sf_time = timing_.getCurrSfTime();
-
-  bool bSfTimeInStep = true;
-
-  timeval tv_now, tv_delay, tv_sf_remain;
-
-  gettimeofday(&tv_now, NULL);
-
-  // get the process time for the calling thread for the time remaining in this subframe
-  timersub(&tv_now, &tv_sf_time, &tv_sf_remain);
-
-  // get the delta to the next subframe
-  timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
-
-  const time_t dtUsecs = tvToUseconds(tv_delay);
-
-  // this is where we set the pace for the system pulse
-  if(dtUsecs > 0)
-    {
-      // next subframe is still in the future
-      // wait until next subframe time
-      select(0, NULL, NULL, NULL, &tv_delay);
-    }
-  else
-    {
-      // missed subframe
-      if(abs(dtUsecs) > timing_.ts_sf_interval_usec())
-        {
-          bSfTimeInStep = false;
-
-#ifdef ENABLE_INFO_1_LOGS
-          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  (time_t)timing_.ts_sf_interval_usec() + abs(dtUsecs));
-#endif
-        }
-    }
-
-  // use sf_time for the bin
-  const uint32_t bin = getMessageBin(tv_sf_time, timing_.ts_sf_interval_usec());
-
-  pendingMessageBins_[bin].lockBin();
-
-  // now advance the subframe times, curr -> next, next -> next+1
-  uint32_t nextbin{timing_.stepTime()};
-
-  pendingMessageBins_[nextbin].lockBin();
-
-  clearPendingMessages_safe(nextbin);
-
-  clearReadyMessages_safe(nextbin);
-
-  pendingMessageBins_[nextbin].unlockBin();
-
-  // get msgs from the previous subframe
-  noiseWorker_safe(bin, tv_sf_time);
-
-  // set the sor to the subframe time (time aligned via lte time advance)
-  tv_sor = tv_sf_time;
-
-  timing_.unlockTime();
-
-#ifdef ENABLE_INFO_1_LOGS
-  const timeval tv_curr_sf = timing_.getCurrSfTime();
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s bin %u, sor %ld:%06ld, prev_sf %ld:%06ld, curr_sf %ld:%06ld, %zu msgs ready",
-              __func__,
-              bin,
-              tv_sor.tv_sec,
-              tv_sor.tv_usec,
-              tv_sf_time.tv_sec,
-              tv_sf_time.tv_usec,
-              tv_curr_sf.tv_sec,
-              tv_curr_sf.tv_usec,
-              pendingMessageBins_[bin].getReady().size());
-#endif
-
-  // transfer to caller
-  rxMessages = std::move(readyMessageBins_[bin].get());
-
-  // clear bin
-  pendingMessageBins_[bin].clear();
-
-  readyMessageBins_[bin].clear();
-
-  pendingMessageBins_[bin].unlockBin();
-
-  statisticManager_.updateHandoffMessages(bin, rxMessages.size());
-
-  statisticManager_.tallySubframeProcessTime(bin, tv_sf_remain);
-
-  return bSfTimeInStep;
 }
