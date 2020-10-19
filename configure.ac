@@ -59,9 +59,7 @@ AC_ARG_WITH(debug,
            [  --with-debug            add debug support (off)])
 
 AC_ARG_WITH([verbose-logging],
-           [  --without-verbose-logging  disable verbose logging support (on)],
-           [],
-           [with_verbose_logging=yes])
+           [  --with-verbose-logging  disable verbose logging support (off)])
 
 
 AC_C_BIGENDIAN(AC_DEFINE([__BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),
