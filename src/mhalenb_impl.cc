@@ -575,7 +575,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
 void
 EMANELTE::MHAL::MHALENBImpl::putSINRResult(const ChannelMessage & channel_message,
-                                           RxControl & rxControl,
+                                           RxControl & rxControl __attribute__((unused)),
                                            UplinkSINRTesterImpl * pSINRTester,
                                            bool received)
 {
