@@ -1,5 +1,5 @@
 AC_COPYRIGHT([
-  Copyright (c) 2019 - Adjacent Link LLC, Bridgewater, New Jersey
+  Copyright (c) 2019-2020 - Adjacent Link LLC, Bridgewater, New Jersey
   All rights reserved.
  
   Redistribution and use in source and binary forms, with or without
@@ -113,6 +113,8 @@ AM_CONDITIONAL(HAVE_DEB,$HAVE_DEB)
 
 AC_CHECK_FILE(/etc/debian_version,[DEBIAN_VERSION=`cat /etc/debian_version | awk -F/ '{print $1}'`],)
 AC_SUBST(DEBIAN_VERSION)
+
+AC_SUBST(DATE_RFC2822,`date -R`)
 
 AC_OUTPUT(
  Makefile
