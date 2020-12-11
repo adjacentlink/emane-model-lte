@@ -1,6 +1,5 @@
 EXTRA_DIST=           \
   two_ues             \
-  two_ues_otestpoint  \
   templates
 
 install-exec-hook:	
@@ -12,8 +11,6 @@ install-exec-hook:
 uninstall-local:
 	rm -f $(DESTDIR)$(datadir)/$(PACKAGE)/demo/two_ues/*
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/two_ues
-	rm -f $(DESTDIR)$(datadir)/$(PACKAGE)/demo/two_ues_otestpoint/*
-	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/two_ues_otestpoint
 	rm -f $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/enb/*
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/enb
 	rm -f $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/epc/*
