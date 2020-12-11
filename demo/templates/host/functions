@@ -3,7 +3,7 @@
 set_initial_pathloss()
 {
  path_loss=80
- nems="1:30"
+ nems="1:100"
  device="letce0"
 
  date=`date +%H:%M:%S`
