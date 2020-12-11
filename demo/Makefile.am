@@ -5,7 +5,6 @@ EXTRA_DIST=           \
 install-exec-hook:	
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/$(PACKAGE)/demo
 	cp -R two_ues $(DESTDIR)$(datadir)/$(PACKAGE)/demo
-	cp -R two_ues_otestpoint $(DESTDIR)$(datadir)/$(PACKAGE)/demo
 	cp -R templates $(DESTDIR)$(datadir)/$(PACKAGE)/demo
 
 uninstall-local:
