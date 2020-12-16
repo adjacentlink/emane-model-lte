@@ -15,7 +15,7 @@ not run as a separate application. The
 [emane-embedded-example](https://github.com/adjacentlink/emane-embedded-example)
 project provides a small example, for those interested.
 
-The lastest stable version: 1.0.5.
+The lastest stable version: 1.0.6.
 
 
 ---
@@ -25,8 +25,8 @@ The lastest stable version: 1.0.5.
 
 2. Build and install `emane-model-lte`.
    * [Centos 7](#centos-7)
-   * [Fedora 31](#fedora-31)
-   * [Ubuntu 16.04 and 18.04](#ubuntu-1604-and-1804)
+   * [Fedora 33](#fedora-33)
+   * [Ubuntu 18.04 and 20.04](#ubuntu-1804-and-2004)
 
 3. Build and install [srsLTE-emane](https://github.com/adjacentlink/srsLTE-emane.git).
 
@@ -43,7 +43,7 @@ make rpm
 sudo yum install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
-### Fedora 31
+### Fedora 33
 ```
 sudo dnf install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
 git clone https://github.com/adjacentlink/emane-model-lte.git
@@ -54,7 +54,7 @@ make rpm
 sudo dnf install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
-### Ubuntu 16.04 and 18.04
+### Ubuntu 18.04 and 20.04
 
 ```
 sudo apt-get install gcc g++ autoconf automake libtool libxml2-dev libprotobuf-dev python-protobuf libpcap-dev libpcre3-dev uuid-dev debhelper pkg-config python-setuptools protobuf-compiler git dh-python
@@ -67,24 +67,24 @@ sudo dpkg -i .debbuild/emane-model-lte*.deb
 ```
 
 ---
-## Demonstrations
+## Demonstration
 
-The EMANE LTE demonstrations are written as
-[letce2](https://github.com/adjacentlink/letce2) projects.  If you
-installed the EMANE bundle above, you've already installed the tools
+The EMANE LTE demonstration is written as
+an [letce2](https://github.com/adjacentlink/letce2) project.  If you
+installed the EMANE bundle, you've already installed the tools
 to run the demos.
 
-The demonstrations are contained in the `emane-model-lte/demo`
-subdirectory. They are also installed to `/usr/share/emane-model-lte`
+The demonstration is contained in the `emane-model-lte/demo`
+subdirectory. It is also installed to `/usr/share/emane-model-lte`
 if you installed from a binary package instead of working with the
 github source repository.
 
 
-### Demonstration 1
+### Demonstration
 
-The first demonstration, `emane-model-lte/demo/two_ues`, launches a
-two UE LTE network. The srsLTE-emane applications run inside four [LXC
-Containers](https://linuxcontainers.org/), one for the LTE EPC, one
+The demonstration, `emane-model-lte/demo/two_ues`, launches a
+an LTE network with two UEs and 1 ENB. The srsLTE-emane applications run inside four
+[LXC Containers](https://linuxcontainers.org/), one for the LTE EPC, one
 for the ENB and one for each UE. The containers also run `sshd` and
 are reachable at the backchannel addresses over the `letce0` Linux
 bridge created by the demo:
@@ -93,7 +93,7 @@ bridge created by the demo:
 ```
 # lxc container backchannel addresses
 10.88.1.101 lxc-epc-01
-10.88.1.11  lxc-enb-01
+10.88.1.91  lxc-enb-01
 10.88.1.1   lxc-ue-01
 10.88.1.2   lxc-ue-02
 
@@ -105,14 +105,14 @@ bridge created by the demo:
 
 The `srsepc-emane` and `srsue-emane` applications create Linux tuntap
 devices (the `172.16.0.x` addreses) as IP entry points into the
-LTE network. The console snippets that follow use the hostnames above.
+LTE network. The terminal snippets that follow use the hostnames (above)
+in the prompt to show where the command is executed. `host` means
+the computer host computer where you run the demo.
 
 The ENB and UE radio models running inside the emane instance embedded
-in `srsenb-emane` and `srsue-emane` differ in another notable way
-from radio models that run in `emane`.  They accept emulator,
-radio model and EMANE PHY configuration from a single XML file
-(default name: `emanelte.xml`), rather than the usual hierarchy of `emane`
-configuration files.  Here is `two_ues/ue-01/emanelte.xml`:
+in `srsenb-emane` and `srsue-emane` take a single XML configuration file
+(default name: `emanelte.xml`) instead of the usual hierarchy of XML
+files when running `emane` standalone. Here is `two_ues/ue-01/emanelte.xml`:
 
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -200,8 +200,9 @@ PING epc-01 (172.16.0.101) 56(84) bytes of data.
 ```
 
 All of the srsLTE-emane applications expose shared code statistics at
-an [OpenStatistic](https://github.com/adjacentlink/openstatistic) endpoint. The endpoint default port is 47100. Use
-`ostatistic` to inspect values:
+an [OpenStatistic](https://github.com/adjacentlink/openstatistic)
+endpoint. The endpoint default port is 47100. Use `ostatistic` to
+inspect values:
 
 
 ```
@@ -227,8 +228,8 @@ UplinkTrafficTable
 ```
 
 The embedded EMANE instances running in `srsenb-emane` and
-`srsue-emane` expose radio model statistics via the EMANE Control Port. Access
-these with `emanesh` using the default port, 47000:
+`srsue-emane` expose radio model statistics via the EMANE Control
+Port. Access these with `emanesh` using the default port, 47000:
 
 ```
 [me@host two_ues]$ emanesh lxc-ue-01 get table nems mac UplinkTxPUSCHFrequencyCounts
@@ -251,43 +252,13 @@ nem 1   mac UplinkTxPUSCHFrequencyCounts
 | 2563739936 | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0     | 0     |
 ```
 
-Stop and clean the demo.
+[OpenTestPoint](https://github.com/adjacentlink/opentestpoint-probe-lte.git)
+enables access to both sets of statistics via one uniform data
+stream. [OpenTestpoint LTE probes](https://github.com/adjacentlink/opentestpoint-probe-lte.git)
+defines the probes specific to LTE. Follow the build and install directions
+there if building from source.
 
-```
-[me@host two_ues]$ letce2 lxc stop
-host is not running
-running host stop.local
-[me@host two_ues]$ letce2 lxc clean
-```
-
-
-## Demonstration 2
-
-Demonstration 2 is the same as Demonstration 1 but adds [OpenTestpoint
-LTE](https://github.com/adjacentlink/opentestpoint-probe-lte.git) probes
-to automate statistic collection. Follow the build and install directions
-there. [OpenTestPoint](https://github.com/adjacentlink/opentestpoint.git)
-is also required but is already installed if you installed the EMANE bundle
-in step 1.
-
-Start the `two_ues_otestpoint` demonstration:
-
-```
-[me@host working]$ cd emane-model-lte/demo/two_ues_otestpoint
-[me@host two_ues_otestpoint]$ letce2 lxc build bootstrap.cfg
-[me@host two_ues_otestpoint]$ letce2 lxc start
-host: waiting for letce0
-host: letce0 found
-Cannot change rx-checksumming
-Actual changes:
-tx-checksumming: off
-  ...
-running host start.local
-setting initial pathloss to 200 for 1:30 on device letce0 at 09:42:35
-finished pathloss on device letce0 at 09:42:35
-```
-
-The OpenTestPoint Daemon, `otestpointd` now also runs in each
+The OpenTestPoint Daemon, `otestpointd` runs in each LXC
 container. It takes an XML configuration file, `otestpointd.xml`, that
 lists the probes to load. Here is the file for `enb-01`:
 
@@ -337,7 +308,7 @@ and probes that collect radio model statistics from the Control Port
 Query the `otestpointd` discovery endpoint for a list of running probes:
 
 ```
-[me@host two_ues_otestpoint]$ otestpoint-discover lxc-enb-01:8881
+[me@host two_ues]$ otestpoint-discover lxc-enb-01:8881
 tcp://0.0.0.0:8882
 EMANE.LTE.ENB.Counters.General.enb-01
 EMANE.LTE.ENB.Tables.Counts.enb-01
@@ -352,7 +323,7 @@ SRSLTE.ENB.Tables.Upper.enb-01
 Inspect current probe values from the publish endpoint:
 
 ```
-[me@host two_ues_otestpoint]$ otestpoint-dump lxc-enb-01:8882 SRSLTE.ENB.Tables.RLC
+[me@host two_ues]$ otestpoint-dump lxc-enb-01:8882 SRSLTE.ENB.Tables.RLC
 
 [1548773090] enb-01/0 9fec768d-185d-456e-9a47-b811fa83f234
 otestpoint.lte.srsenb Measurement_srslte_enb_tables_rlc v1 1077 bytes
@@ -376,10 +347,10 @@ SRSLTE.ENB.Tables.RLC.enb-01
 Stop and clean the demo.
 
 ```
-[me@host two_ues_otestpoint]$ letce2 lxc stop
+[me@host two_ues]$ letce2 lxc stop
 host is not running
 running host stop.local
-[me@host two_ues_otestpoint]$ letce2 lxc clean
+[me@host two_ues]$ letce2 lxc clean
 ```
 ---
 

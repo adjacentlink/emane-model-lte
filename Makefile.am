@@ -6,7 +6,8 @@ SUBDIRS= \
   demo
 
 edit = sed                                \
-       -e 's|@VERSION[@]|$(VERSION)|g'      
+       -e 's|@VERSION[@]|$(VERSION)|g'    \
+       -e 's|@DATE_RFC2822[@]|$(DATE_RFC2822)|g'
 
 dist-hook:
 	find $(distdir) -name "*.pb.*" -delete
@@ -56,7 +57,10 @@ deb: dist-gzip
 	cd .debbuild && tar xzf $(PACKAGE)-$(VERSION).tar.gz
 	$(edit) .debbuild/$(PACKAGE)-$(VERSION)/debian/changelog.in > \
           .debbuild/$(PACKAGE)-$(VERSION)/debian/changelog
-	cd .debbuild/$(PACKAGE)-$(VERSION) && dpkg-buildpackage -F -us -uc
+	$(edit) .debbuild/$(PACKAGE)-$(VERSION)/debian/rules.in > \
+          .debbuild/$(PACKAGE)-$(VERSION)/debian/rules
+	chmod u+x .debbuild/$(PACKAGE)-$(VERSION)/debian/rules
+	cd .debbuild/$(PACKAGE)-$(VERSION) && dpkg-source -b . && dpkg-buildpackage -F -us -uc
 	@echo "============================================================"
 	@echo "debs located in .debbuild"
 cleandeb:

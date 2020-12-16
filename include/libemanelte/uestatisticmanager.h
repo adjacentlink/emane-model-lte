@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 #include <map>
 #include <vector>
+#include <string>
 
 namespace UESTATS {
       void initialize(float report_interval_secs);

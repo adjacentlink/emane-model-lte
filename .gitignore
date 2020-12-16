@@ -56,9 +56,3 @@ demo/two_ues/host
 demo/two_ues/manifest
 demo/two_ues/persist
 demo/two_ues/ue-*
-demo/two_ues_otestpoint/enb-*
-demo/two_ues_otestpoint/epc-*
-demo/two_ues_otestpoint/host
-demo/two_ues_otestpoint/manifest
-demo/two_ues_otestpoint/persist
-demo/two_ues_otestpoint/ue-*

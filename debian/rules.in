@@ -16,6 +16,10 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
+override_dh_gencontrol:
+	dh_gencontrol -- -v@VERSION@-1
+
 
 %:
 	dh $@
+

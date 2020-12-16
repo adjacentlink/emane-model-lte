@@ -37,6 +37,7 @@
 #include "configmanager.h"
 #include "segmentmap.h"
 
+#undef ENABLE_INFO_1_LOGS
 
 void EMANELTE::MHAL::MHALUEImpl::initialize(uint32_t sf_interval_msec,
                                             const mhal_config_t & mhal_config)
@@ -184,13 +185,13 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
     {
       pendingMessageBins_[bin].lockBin();
       pendingMessageBins_[bin].clear();
-      readyMessageBins_[bin].clear();
+      readyMessageBins_  [bin].clear();
       pendingMessageBins_[bin].unlockBin();
     }
 
   timing_.lockTime();
 
-  timing_.alignTime(0);
+  timing_.alignTime();
   state_.ue_init(true);
 
   timing_.unlockTime();
@@ -406,42 +407,50 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 bool
 EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor)
 {
-  bool in_step = false;
+  bool in_step = true;
 
   timing_.lockTime();
 
-  timeval tv_now, tv_diff, tv_process_diff, tv_sf_time = timing_.getCurrSfTime();
+  const timeval tv_sf_time = timing_.getCurrSfTime();
+  timeval tv_now, tv_delay, tv_process_diff;
 
   gettimeofday(&tv_now, NULL);
 
   // get the process time for the calling thread for the time remaining in this subframe
   timersub(&tv_now, &tv_sf_time, &tv_process_diff);
 
-  // get the time till the next subframe
-  timersub(&timing_.getNextSfTime(), &tv_now, &tv_diff);
+  // get the delta the next subframe
+  timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
+
+  const time_t dT = tvToUseconds(tv_delay);
 
   // this is where we set the pace for the system pulse
-  if(timercmp(&tv_diff, &tv_zero_, >))
+  if(dT > 0)
     {
+#if 0
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, wait %ld usec",
+                  __func__,
+                  timing_.getCurrSfTime().tv_sec,
+                  timing_.getCurrSfTime().tv_usec,
+                  abs(dT));
+#endif
+
       // next sf is still in the future
       // wait until next subframe time
-      select(0, NULL, NULL, NULL, &tv_diff);
-
-      in_step = true;
+      select(0, NULL, NULL, NULL, &tv_delay);
     }
   else
     {
-      const time_t dT = timing_.ts_sf_interval_usec() + tvToUseconds(tv_diff);
-
+      // no wait, lets try to catch up
       if(dT < 0)
         {
-          // we passed the next sf mark, continue and try to catch up on subsequent call(s)
           in_step = false;
-        }
-      else
-        {
-          // we passed the next sf mark, but are still within the sf window
-          in_step = true;
+
+          logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
+                  __func__,
+                  timing_.getCurrSfTime().tv_sec,
+                  timing_.getCurrSfTime().tv_usec,
+                  timing_.ts_sf_interval_usec() + abs(dT));
         }
     }
 
@@ -482,7 +491,7 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
 
 #ifdef ENABLE_INFO_1_LOGS
   const timeval tv_curr_sf = timing_.getCurrSfTime();
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s bin %u, sor %ld:%06ld, prev_sf %ld:%06ld, curr_sf %ld:%06ld, %zu msgs ready",
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s bin %u, sor %ld:%06ld, prev_sf %ld:%06ld, curr_sf %ld:%06ld, delay %ld:%06ld, dT %ld usec, %zu msgs ready",
               __func__,
               bin,
               tv_sor.tv_sec,
@@ -491,7 +500,10 @@ EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor
               tv_sf_time.tv_usec,
               tv_curr_sf.tv_sec,
               tv_curr_sf.tv_usec,
-              pendingMessageBins_[bin].getReady().size());
+              tv_delay.tv_sec,
+              tv_delay.tv_usec,
+              dT,
+              pendingMessageBins_[bin].get().size());
 #endif
 
   // transfer to caller

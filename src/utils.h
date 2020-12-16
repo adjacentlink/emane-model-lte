@@ -47,23 +47,26 @@ extern EMANE::Application::Logger logger;
 
 void init_mutex(pthread_mutex_t * m);
 
-inline void LOCK_WITH_CHECK(pthread_mutex_t * x)
+#define LOCK_WITH_CHECK(x)      lock_with_check((x), __FILE__, __func__, __LINE__)
+#define UNLOCK_WITH_CHECK(x)  unlock_with_check((x), __FILE__, __func__, __LINE__)
+
+inline void lock_with_check(pthread_mutex_t * x, const char * file, const char * func, int line)
 {
-  const int _rc = pthread_mutex_lock(x);
-  if(_rc) {
-    fprintf(stderr, "lock %s:%s-%d rc %d, %s\n",
-            __FILE__, __func__, __LINE__, _rc, strerror(_rc));
+  const int rc = pthread_mutex_lock(x);
+  if(rc) {
+    fprintf(stderr, "emane-model-lte:%s [%s-%s-%d] rc [%d], reason [%s], exit now !!!\n",
+            __func__, file, func, line, rc, strerror(rc));
     exit(1);
   }
 }
 
 
-inline void UNLOCK_WITH_CHECK(pthread_mutex_t * x)
+inline void unlock_with_check(pthread_mutex_t * x, const char * file, const char * func, int line)
 {
-  const int _rc = pthread_mutex_unlock(x);
-  if(_rc) {
-    fprintf(stderr, "unlock %s:%s-%d rc %d, %s\n",
-            __FILE__, __func__, __LINE__, _rc, strerror(_rc));
+  const int rc = pthread_mutex_unlock(x);
+  if(rc) {
+    fprintf(stderr, "emane-model-lte:%s [%s-%s-%d] rc [%d], reason [%s], exit now !!!\n",
+            __func__, file, func, line, rc, strerror(rc));
     exit(1);
   }
 }

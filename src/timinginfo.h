@@ -127,7 +127,7 @@ namespace MHAL {
     }
 
     // called after lock is set 
-    void alignTime(uint32_t nof_advance_sf)
+    void alignTime(uint32_t nof_advance_sf = 0)
     {
       timeval tv_sos;
 
@@ -220,10 +220,11 @@ namespace MHAL {
     } 
  
   private:
-    struct timeval tv_curr_sf_, tv_next_sf_;
+    timeval tv_curr_sf_;
+    timeval tv_next_sf_;
     timeval tv_sf_interval_;
     timeval tv_slot_interval_;
-    time_t ts_sf_interval_usec_;
+    time_t  ts_sf_interval_usec_;
 
     pthread_mutex_t mutex_;
   };
