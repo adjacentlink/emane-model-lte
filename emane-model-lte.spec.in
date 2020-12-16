@@ -49,7 +49,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc NEWS
 %doc README
 %doc %{_datadir}/emane-model-lte/demo/two_ues/*
-%doc %{_datadir}/emane-model-lte/demo/two_ues_otestpoint/*
 %doc %{_datadir}/emane-model-lte/demo/templates/enb/*
 %doc %{_datadir}/emane-model-lte/demo/templates/epc/*
 %doc %{_datadir}/emane-model-lte/demo/templates/host/*

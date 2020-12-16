@@ -15,7 +15,7 @@ not run as a separate application. The
 [emane-embedded-example](https://github.com/adjacentlink/emane-embedded-example)
 project provides a small example, for those interested.
 
-The lastest stable version: 1.0.5.
+The lastest stable version: 1.0.6.
 
 
 ---
@@ -25,7 +25,7 @@ The lastest stable version: 1.0.5.
 
 2. Build and install `emane-model-lte`.
    * [Centos 7](#centos-7)
-   * [Fedora 31](#fedora-31)
+   * [Fedora 33](#fedora-33)
    * [Ubuntu 18.04 and 20.04](#ubuntu-1804-and-2004)
 
 3. Build and install [srsLTE-emane](https://github.com/adjacentlink/srsLTE-emane.git).
@@ -70,8 +70,8 @@ sudo dpkg -i .debbuild/emane-model-lte*.deb
 ## Demonstration
 
 The EMANE LTE demonstration is written as
-[letce2](https://github.com/adjacentlink/letce2) projects.  If you
-installed the EMANE bundle above, you've already installed the tools
+an [letce2](https://github.com/adjacentlink/letce2) project.  If you
+installed the EMANE bundle, you've already installed the tools
 to run the demos.
 
 The demonstration is contained in the `emane-model-lte/demo`
@@ -83,8 +83,8 @@ github source repository.
 ### Demonstration
 
 The demonstration, `emane-model-lte/demo/two_ues`, launches a
-two UE LTE network. The srsLTE-emane applications run inside four [LXC
-Containers](https://linuxcontainers.org/), one for the LTE EPC, one
+an LTE network with two UEs and 1 ENB. The srsLTE-emane applications run inside four
+[LXC Containers](https://linuxcontainers.org/), one for the LTE EPC, one
 for the ENB and one for each UE. The containers also run `sshd` and
 are reachable at the backchannel addresses over the `letce0` Linux
 bridge created by the demo:
@@ -105,14 +105,14 @@ bridge created by the demo:
 
 The `srsepc-emane` and `srsue-emane` applications create Linux tuntap
 devices (the `172.16.0.x` addreses) as IP entry points into the
-LTE network. The console snippets that follow use the hostnames above.
+LTE network. The terminal snippets that follow use the hostnames (above)
+in the prompt to show where the command is executed. `host` means
+the computer host computer where you run the demo.
 
 The ENB and UE radio models running inside the emane instance embedded
-in `srsenb-emane` and `srsue-emane` differ in another notable way
-from radio models that run in `emane`.  They accept emulator,
-radio model and EMANE PHY configuration from a single XML file
-(default name: `emanelte.xml`), rather than the usual hierarchy of `emane`
-configuration files.  Here is `two_ues/ue-01/emanelte.xml`:
+in `srsenb-emane` and `srsue-emane` take a single XML configuration file
+(default name: `emanelte.xml`) instead of the usual hierarchy of XML
+files when running `emane` standalone. Here is `two_ues/ue-01/emanelte.xml`:
 
 ```XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -252,10 +252,11 @@ nem 1   mac UplinkTxPUSCHFrequencyCounts
 | 2563739936 | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0     | 0     |
 ```
 
-[OpenTestPoint](https://github.com/adjacentlink/opentestpoint-probe-lte.git) enables access to both sets
-of statistics via one data stream. [OpenTestpoint LTE probes](https://github.com/adjacentlink/opentestpoint-probe-lte.git)
-defines the probes for LTE. Follow the build and install directions there if building from source, however bot of these are already installed
-if you installed the EMANE bundle in step 1.
+[OpenTestPoint](https://github.com/adjacentlink/opentestpoint-probe-lte.git)
+enables access to both sets of statistics via one uniform data
+stream. [OpenTestpoint LTE probes](https://github.com/adjacentlink/opentestpoint-probe-lte.git)
+defines the probes specific to LTE. Follow the build and install directions
+there if building from source.
 
 The OpenTestPoint Daemon, `otestpointd` runs in each LXC
 container. It takes an XML configuration file, `otestpointd.xml`, that
