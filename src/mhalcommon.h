@@ -56,8 +56,6 @@
 namespace EMANELTE {
 namespace MHAL {
 
-
-
 class MHALCommon : public EMANELTE::MHAL::PHY::MHALPHY
 {
 public:
@@ -76,34 +74,39 @@ public:
 
   void set_thread_priority(pthread_t tid, int policy, int priority);
 
-  void send_msg(const Data & data, 
-                TxControlMessage & txControl);
+  void send_msg(const Data & data, TxControlMessage & txControl);
 
-  virtual long long unsigned int get_tx_prb_frequency(int prb_index) = 0;
+  bool get_messages(RxMessages & messages, timeval & rx_time);
+
+  virtual std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz) = 0;
 
   void stop();
 
 protected:
   EMANE::Application::Logger logger_;
   StatisticManager statisticManager_;
+
   // rx message bins, 1 for each subframe
   PendingMessageBin pendingMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
-  ReadyMessages readyMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
+  ReadyMessages     readyMessageBins_[EMANELTE::NUM_SF_PER_FRAME];
+
   TimingInfo timing_;
-  StateInfo state_;
+  StateInfo  state_;
   
   void initialize(uint32_t sf_interval_msec, const mhal_config_t & mhal_config);
 
   void start(uint32_t nof_advance_sf);
 
   void handle_upstream_msg(const Data & data,
-                           const RxData & rxData,
+                           const RxControl & rxControl,
                            const PHY::OTAInfo & otaInfo,
                            const TxControlMessage & txControl);
 
-  void noise_worker(const uint32_t bin, const timeval & tv_sf_start);
+  void noiseWorker_safe(const uint32_t bin, const timeval & tv_sf_start);
 
-  void clearReadyMessages(const uint32_t bin);
+  void clearReadyMessages_safe(const uint32_t bin);
+
+  void clearPendingMessages_safe(const uint32_t bin);
 
   virtual void init_emane() = 0;
 

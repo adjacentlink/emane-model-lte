@@ -38,70 +38,71 @@
 #include "utils.h"
 
 
-EMANELTE::MHAL::SINRTester::SINRTester() :
-  impl_{nullptr}
+EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
 {
-  init_mutex(&mutex_);
+  impls_ = std::move(impls);
+}
+
+EMANELTE::MHAL::SINRTester & EMANELTE::MHAL::SINRTester::operator = (const SINRTester & rhs)
+{
+  if(&rhs == this)
+   {
+     return *this;
+   }
+
+  release();
+
+  impls_ = std::move(rhs.impls_);
+
+  return *this;
 }
 
 
 void
-EMANELTE::MHAL::SINRTester::setImpl(SINRTesterImpl * impl)
+EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 {
-  LOCK_WITH_CHECK(&mutex_);
-  impl_ = impl;
-  UNLOCK_WITH_CHECK(&mutex_);
+  release();
+
+  impls_ = std::move(impls);
 }
 
 
-bool
-EMANELTE::MHAL::SINRTester::sinrCheck(CHANNEL_TYPE ctype)
-{
-  if(impl_)
-    return impl_->sinrCheck(ctype);
-  else
-    return false;
-}
-
-
-bool
-EMANELTE::MHAL::SINRTester::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
-{
-  if(impl_)
-    return impl_->sinrCheck(ctype, rnti);
-  else
-    return false;
-}
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) const
 {
-  if(impl_)
-    return impl_->sinrCheck2(ctype);
+  const auto iter = impls_.find(carrierFrequencyHz);
+
+  if(iter != impls_.end())
+   {
+     return iter->second->sinrCheck(ctype);
+   }
   else
-    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   {
+     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   }
 }
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
+EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) const
 {
-  if(impl_)
-    return impl_->sinrCheck2(ctype, rnti);
+  const auto iter = impls_.find(carrierFrequencyHz);
+
+  if(iter != impls_.end())
+   {
+     return iter->second->sinrCheck(ctype, rnti);
+   }
   else
-    return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   {
+     return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
+   }
 }
 
 
 void
 EMANELTE::MHAL::SINRTester::release()
 {
-  LOCK_WITH_CHECK(&mutex_);
-  if(impl_)
-    {
-      delete impl_;
-      impl_ = nullptr;
-    }
-  UNLOCK_WITH_CHECK(&mutex_);
+  impls_.clear();
 }
 

@@ -66,7 +66,7 @@ namespace PHY {
   {
   public:
     virtual void handle_upstream_msg(const EMANELTE::MHAL::Data & data, 
-                                     const EMANELTE::MHAL::RxData & rxData,
+                                     const EMANELTE::MHAL::RxControl & rxControl,
                                      const OTAInfo & otaInfo,
                                      const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
   };

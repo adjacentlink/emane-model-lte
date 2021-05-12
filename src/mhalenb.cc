@@ -40,10 +40,11 @@ namespace {
   EMANELTE::MHAL::MHALENBImpl impl_;
 }
 
-void EMANELTE::MHAL::ENB::initialize(const EMANELTE::MHAL::mhal_config_t & mhal_config,
+void EMANELTE::MHAL::ENB::initialize(uint32_t idx,
+                                     const EMANELTE::MHAL::mhal_config_t & mhal_config,
                                      const mhal_enb_config_t & mhal_enb_config)
 {
-  impl_.initialize(mhal_config, mhal_enb_config);
+  impl_.initialize(idx, mhal_config, mhal_enb_config);
 }
 
 
@@ -78,7 +79,7 @@ bool EMANELTE::MHAL::ENB::get_messages(EMANELTE::MHAL::RxMessages & messages, ti
 }
 
 
-long long unsigned int EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index)
+std::uint64_t EMANELTE::MHAL::ENB::get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz)
 {
-  return impl_.get_tx_prb_frequency(prb_index);
+  return impl_.get_tx_prb_frequency(prb_index, freq_hz);
 }

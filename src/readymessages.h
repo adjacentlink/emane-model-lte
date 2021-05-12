@@ -52,7 +52,7 @@ namespace EMANELTE {
       RxMessages & get();
 
     private:
-      RxMessages                 ready_;
+      RxMessages rxMessages_;
     };
   }
 }

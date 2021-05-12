@@ -147,7 +147,7 @@ void EMANELTE::MHAL::MHALUEImpl::send_downstream(const Data & data,
 
 
 void EMANELTE::MHAL::MHALUEImpl::handle_upstream_msg(const Data & data,
-                                                     const RxData & rxData,
+                                                     const RxControl & rxControl,
                                                      const PHY::OTAInfo & otaInfo,
                                                      const TxControlMessage & txControl)
 {
@@ -159,7 +159,7 @@ void EMANELTE::MHAL::MHALUEImpl::handle_upstream_msg(const Data & data,
       return;
     }
 
-  MHALCommon::handle_upstream_msg(data, rxData, otaInfo, txControl);
+  MHALCommon::handle_upstream_msg(data, rxControl, otaInfo, txControl);
 }
 
 
@@ -174,20 +174,22 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALUEImpl::get_noise(FrequencyHz frequenc
 void
 EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 {
+#ifdef ENABLE_INFO_1_LOGS
   logger_.log(EMANE::INFO_LEVEL, "MHAL %s", __func__);
+#endif
 
   // on cell search, configure for the largest bandwidth to
   // ensure packet reception from any enb (register all possible FOI
   // for the configured receive frequency)
-  pRadioModel_->setNumResourceBlocks(100, true);
+  pRadioModel_->setNumResourceBlocks(100);
 
   for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
-    {
-      pendingMessageBins_[bin].lockBin();
-      pendingMessageBins_[bin].clear();
-      readyMessageBins_  [bin].clear();
-      pendingMessageBins_[bin].unlockBin();
-    }
+   {
+     pendingMessageBins_[bin].lockBin();
+     pendingMessageBins_[bin].clear();
+     readyMessageBins_  [bin].clear();
+     pendingMessageBins_[bin].unlockBin();
+   }
 
   timing_.lockTime();
 
@@ -199,26 +201,45 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_frequencies(float ul_freq, float dl_freq)
+EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz)
 {
-  pRadioModel_->setFrequencies(llroundf(dl_freq),         // rx freq
-                               llroundf(ul_freq));        // tx freq
+  // ue will rotate thru its frequency list using carrierId 0 initially
+  // if/when the carrierIndex is > 0, then accumulate frequencies
+  const bool clearCache = carrierIndex == 0;
+  const bool searchMode = carrierIndex == 0;
 
-  pRadioModel_->setNumResourceBlocks(100, true);
+  pRadioModel_->setFrequencies(carrierIndex,                   // carrier idx
+                               llround(carrierRxFrequencyHz),  // rx freq
+                               llround(carrierTxFrequencyHz),  // tx freq
+                               clearCache);                    // clear cache
+
+  if(carrierIndex == 0)
+   {
+     // when the mib is detected, the bandwidth will be adjusted
+     pRadioModel_->setNumResourceBlocks(100);
+   }
+
+  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
 }
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int num_resource_blocks)
+EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks)
 {
-  pRadioModel_->setNumResourceBlocks(num_resource_blocks);
+  // called when bandwidth is detected
+  const bool clearCache = true;
+  const bool searchMode = false;
+
+  pRadioModel_->setNumResourceBlocks(numResourceBlocks);
+
+  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
 }
 
 
-long long unsigned int
-EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index)
+std::uint64_t
+EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index, std::uint64_t channelFrequencyHz)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index);
+  return pRadioModel_->getTxResourceBlockFrequency(prb_index, channelFrequencyHz);
 }
 
 
@@ -226,299 +247,251 @@ void
 EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                             const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache)
 {
-  // for each pending message
+  const auto carriersOfInterest = pRadioModel_->getCarriersOfInterest();
+
+  // for each pending msg
   for(auto & msg : pendingMessageBins_[bin].get())
-    {
-      // get the ota info
-      const auto & otaInfo = std::get<2>(msg);
+   {
+     // get the OTA msg
+     const auto & otaInfo = PendingMessage_OtaInfo(msg);
 
-      // get the TxControl message
-      const auto & txControl = std::get<3>(msg);
+     // get the TxControl msg
+     const auto & txControl = PendingMessage_TxControl(msg);
 
-      // grab num segments here, some  stl list size() calls are not O(1)
-      const auto numSegments = otaInfo.segments_.size();
+     // MUX of all frequency segmenets for all carriers
+     const auto & frequencySegments = otaInfo.segments_;
 
-      RxControl rxControl {};
+     auto & rxControl = PendingMessage_RxControl(msg);
 
-      // get the rx control info
-      rxControl.rxData_ = std::move(std::get<1>(msg));
+     SINRTesterImpls sinrTesterImpls;
 
-#ifdef ENABLE_INFO_2_LOGS
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, segments %zu",
-                  __func__,
-                  rxControl.rxData_.nemId_,
-                  rxControl.rxData_.rx_seqnum_,
-                  numSegments);
-#endif
-      double signalSum_mW = 0, noiseFloorSum_mW = 0;
+     std::multimap<std::uint64_t, EMANE::FrequencySegment> frequencySegmentTable;
 
-      int segnum = -1;
-
-      double peak_sum = 0.0;
-
-      uint32_t num_samples = 0;
-
-      EMANE::Models::LTE::SegmentMap segmentCache;
-
-      // build segmentCache
-      for(auto & segment : otaInfo.segments_)
-        {
-          const auto frequencyHz    = segment.getFrequencyHz();
-          const auto spectrumWindow = spectrumWindowCache.find(frequencyHz);
-
-          logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, bin %u, freq %lu, offset %lu, duration %lu",
-                      __func__,
-                      rxControl.rxData_.nemId_,
-                      bin,
-                      frequencyHz,
-                      segment.getOffset().count(),
-                      segment.getDuration().count());
-
-          ++segnum;
-
-          if(spectrumWindow == spectrumWindowCache.end())
-            {
-              logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
-                          __func__,
-                          rxControl.rxData_.nemId_,
-                          bin,
-                          frequencyHz);
-
-              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
-
-              continue;
-            }
-
-          const auto & noiseData = std::get<0>(spectrumWindow->second);
-
-          if(noiseData.empty())
-            {
-              logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, freq %lu, no noise data",
-                          __func__,
-                          rxControl.rxData_.nemId_,
-                          bin,
-                          frequencyHz);
-
-              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segment.getFrequencyHz());
-
-              continue;
-            }
-
-          const double rxPower_dBm = segment.getRxPowerdBm();
-          const double rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
-
-          const auto segmentSor = otaInfo.sot_ + segment.getOffset();
-          const auto segmentEor = segmentSor   + segment.getDuration();
-          const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
-
-          double noiseFloor_dBm = rangeInfo.first;
-          double noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
-
-          signalSum_mW     += rxPower_mW;
-          noiseFloorSum_mW += noiseFloor_mW;
-
-          double sinr_dB = rxPower_dBm - noiseFloor_dBm;
-
-          segmentCache.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB);
-
-          pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
+     // track all segments/subchannels by frequency,
+     // may have multiple segments at the same frequency with different slot/offset(s)
+     for(auto & segment : frequencySegments)
+      {
+        frequencySegmentTable.emplace(segment.getFrequencyHz(), segment);
+      }
 
 #ifdef ENABLE_INFO_1_LOGS
-          bool inBand = rangeInfo.second;
-          const bool & bSignalInNoise{std::get<4>(spectrumWindow->second)};
-
-          logger_.log(EMANE::INFO_LEVEL,
-                      "MHAL::PHY %s, "
-                      "src %hu, "
-                      "sfIdx=%d, "
-                      "seqnum %lu, "
-                      "inband %d, "
-                      "siginnoise %d, "
-                      "freq %lu, "
-                      "offs %lu, "
-                      "dur %lu, "
-                      "rxPwr %5.3f dBm, "
-                      "nf %5.3lf dBm, "
-                      "sinr %5.3lf dB",
-                      __func__,
-                      rxControl.rxData_.nemId_,
-                      txControl.tti_tx(),
-                      rxControl.rxData_.rx_seqnum_,
-                      inBand,
-                      bSignalInNoise,
-                      frequencyHz,
-                      segment.getOffset().count(),
-                      segment.getDuration().count(),
-                      rxPower_dBm,
-                      noiseFloor_dBm,
-                      sinr_dB);
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, seqnum %lu, carriers %d, segments %zu/%zu",
+                 __func__,
+                 rxControl.nemId_,
+                 rxControl.rx_seqnum_,
+                 txControl.carriers().size(),
+                 frequencySegments.size(),
+                 frequencySegmentTable.size());
 #endif
 
-          peak_sum += sinr_dB;
+     // for each carrier
+     for(const auto & carrier : txControl.carriers())
+      {
+        // carrier center freq
+        const auto carrierFrequencyHz = carrier.frequency_hz();
+        const auto carrierIndex       = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
 
-          num_samples++;
-        } // end each segment
+        // check carriers of interest
+        if(carrierIndex < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
+         {
+#ifdef ENABLE_INFO_1_LOGS
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, skip carrier %lu",
+                       __func__,
+                      rxControl.nemId_,
+                      carrierFrequencyHz);
+#endif
 
-      // now check for number of pass/fail segments
-      if(numSegments > 0)
-        {
-          const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pcfich(), segmentCache);
+           // ignore carriers not of interest
+           continue;
+         }
 
-          const bool pbchPass = txControl.downlink().has_pbch() ?
-                                  pRadioModel_->noiseTestChannelMessage(txControl, txControl.downlink().pbch(), segmentCache) : 
-                                  false;
+        // DEMUX frequency segments for this carrier
+        EMANE::FrequencySegments segmentsThisCarrier;
 
-          const auto signalAvg_dBm = EMANELTE::MW_TO_DB(signalSum_mW / numSegments);
+        // for each sub channel of the carrier
+        for(const auto subChannel : carrier.sub_channels())
+         {
+           if(frequencySegmentTable.count(subChannel))
+            {
+              const auto range = frequencySegmentTable.equal_range(subChannel);
+ 
+              // get all segment(s) matching this subchannel frequency
+              for(auto iter = range.first; iter != range.second; ++iter)
+               {
+                 segmentsThisCarrier.push_back(iter->second);
+               }
+            }
+         }
 
-          const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / numSegments);
+         if(segmentsThisCarrier.empty())
+          {
+#ifdef ENABLE_INFO_1_LOGS
+            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, missing all subChannels, skip carrier %lu",
+                        __func__, carrierFrequencyHz);
+#endif
 
-          DownlinkSINRTesterImpl * pSINRTester =
-            new DownlinkSINRTesterImpl(pRadioModel_, 
-                                       std::move(txControl), 
-                                       std::move(segmentCache), 
-                                       pcfichPass,
-                                       pbchPass,
-                                       signalAvg_dBm - noiseFloorAvg_dBm,
-                                       noiseFloorAvg_dBm);
+            continue;
+          }
 
-          rxControl.SINRTester_.setImpl(pSINRTester);
+         double signalSum_mW     = 0.0, 
+                noiseFloorSum_mW = 0.0, 
+                peakSum          = 0.0;
 
-          rxControl.rxData_.peak_sum_ = peak_sum;
+         EMANE::Models::LTE::SegmentMap segmentCache;
 
-          rxControl.rxData_.num_samples_ = num_samples;
+         // build segmentCache based on actual received segments for this carrier
+         for(auto & segment : segmentsThisCarrier)
+          {
+            const auto frequencyHz    = segment.getFrequencyHz();
+            const auto spectrumWindow = spectrumWindowCache.find(frequencyHz);
 
-          StatisticManager::ReceptionInfoMap receptionInfoMap;
+#ifdef ENABLE_INFO_1_LOGS
+            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, bin %u, carrier %lu, freq %lu, offset %lu, duration %lu",
+                        __func__,
+                        rxControl.nemId_,
+                        bin,
+                        carrierFrequencyHz,
+                        frequencyHz,
+                        segment.getOffset().count(),
+                        segment.getDuration().count());
+#endif
 
-          // add entry per src
-          receptionInfoMap[rxControl.rxData_.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
-                                                                                           noiseFloorAvg_dBm,
-                                                                                           numSegments};
+            if(spectrumWindow == spectrumWindowCache.end())
+             {
+               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
+                           __func__,
+                           rxControl.nemId_,
+                           bin,
+                           frequencyHz);
+
+               pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
+
+               continue;
+             }
+
+            const auto & noiseData = std::get<0>(spectrumWindow->second);
+
+            if(noiseData.empty())
+             {
+               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, freq %lu, no noise data",
+                           __func__,
+                           rxControl.nemId_,
+                           bin,
+                           frequencyHz);
+
+               pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segment.getFrequencyHz());
+
+               continue;
+             }
+
+            const auto rxPower_dBm = segment.getRxPowerdBm();
+            const auto rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
+
+            const auto segmentSor = otaInfo.sot_ + segment.getOffset();
+            const auto segmentEor = segmentSor   + segment.getDuration();
+            const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
+
+            const auto noiseFloor_dBm = rangeInfo.first;
+            const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+
+            const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
+
+            signalSum_mW     += rxPower_mW;
+            noiseFloorSum_mW += noiseFloor_mW;
+
+            segmentCache.emplace(EMANE::Models::LTE::SegmentKey{frequencyHz, segment.getOffset(), segment.getDuration()}, sinr_dB);
+
+            pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
+
+#ifdef ENABLE_INFO_1_LOGS
+            bool inBand = rangeInfo.second;
+            const bool & bSignalInNoise{std::get<4>(spectrumWindow->second)};
+
+            logger_.log(EMANE::INFO_LEVEL,
+                        "MHAL::PHY %s, "
+                        "src %hu, "
+                        "sfIdx=%d, "
+                        "seqnum %lu, "
+                        "inband %d, "
+                        "siginnoise %d, "
+                        "carrier %lu, "
+                        "freq %lu, "
+                        "offs %lu, "
+                        "dur %lu, "
+                        "rxPwr %5.3f dBm, "
+                        "nf %5.3lf dBm, "
+                        "sinr %5.3lf dB",
+                        __func__,
+                        rxControl.nemId_,
+                        txControl.tti_tx(),
+                        rxControl.rx_seqnum_,
+                        inBand,
+                        bSignalInNoise,
+                        carrierFrequencyHz,
+                        frequencyHz,
+                        segment.getOffset().count(),
+                        segment.getDuration().count(),
+                        rxPower_dBm,
+                        noiseFloor_dBm,
+                        sinr_dB);
+#endif
+
+            peakSum += sinr_dB;
+          } // end each segment
+
+          const auto segmentCacheSize = segmentCache.size();
+
+          // now check for number of pass/fail segments
+          if(segmentCacheSize > 0)
+           {
+             const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW / segmentCacheSize);
+             const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
+
+             const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, 
+                                                                           carrier.downlink().pcfich(), 
+                                                                           segmentCache,
+                                                                           carrierFrequencyHz);
+
+             const bool pbchPass = carrier.downlink().has_pbch() ?
+                                     pRadioModel_->noiseTestChannelMessage(txControl, 
+                                                                           carrier.downlink().pbch(),
+                                                                           segmentCache,
+                                                                           carrierFrequencyHz) : false;
+
+             // XXX TODO possible memory leak if phy layer discards msg before processing it
+             auto pSINRtester = new DownlinkSINRTesterImpl(pRadioModel_, 
+                                                           txControl,
+                                                           segmentCache, 
+                                                           pcfichPass,
+                                                           pbchPass,
+                                                           signalAvg_dBm - noiseFloorAvg_dBm,
+                                                           noiseFloorAvg_dBm,
+                                                           carrierFrequencyHz);
+
+
+             sinrTesterImpls[carrierFrequencyHz].reset(pSINRtester);
+
+             rxControl.peak_sum_[carrierIndex]    = peakSum;
+             rxControl.num_samples_[carrierIndex] = segmentCacheSize;
+             rxControl.avg_snr_[carrierIndex]     = signalAvg_dBm - noiseFloorAvg_dBm;
+
+             StatisticManager::ReceptionInfoMap receptionInfoMap;
+
+             // add entry per src
+             receptionInfoMap[rxControl.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
+                                                                                              noiseFloorAvg_dBm,
+                                                                                              segmentCacheSize};
    
-          statisticManager_.updateReceptionTable(receptionInfoMap);
+             statisticManager_.updateReceptionTable(receptionInfoMap);
+           }
+       } // end each carrier
 
-          // lastly, make ready, take ownership of data and control
-          readyMessageBins_[bin].get().push_back(RxMessage{std::move(std::get<0>(msg)), std::move(rxControl)});
-
-        }
+      if(! sinrTesterImpls.empty())
+       {
+         // lastly, make ready
+         readyMessageBins_[bin].get().emplace_back(RxMessage{PendingMessage_Data(msg),
+                                                             rxControl,
+                                                             sinrTesterImpls});
+       }
     } // end for each msg
-}
-
-
-bool
-EMANELTE::MHAL::MHALUEImpl::get_messages(RxMessages & messages, timeval & tv_sor)
-{
-  bool in_step = true;
-
-  timing_.lockTime();
-
-  const timeval tv_sf_time = timing_.getCurrSfTime();
-  timeval tv_now, tv_delay, tv_process_diff;
-
-  gettimeofday(&tv_now, NULL);
-
-  // get the process time for the calling thread for the time remaining in this subframe
-  timersub(&tv_now, &tv_sf_time, &tv_process_diff);
-
-  // get the delta the next subframe
-  timersub(&timing_.getNextSfTime(), &tv_now, &tv_delay);
-
-  const time_t dT = tvToUseconds(tv_delay);
-
-  // this is where we set the pace for the system pulse
-  if(dT > 0)
-    {
-#if 0
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, wait %ld usec",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  abs(dT));
-#endif
-
-      // next sf is still in the future
-      // wait until next subframe time
-      select(0, NULL, NULL, NULL, &tv_delay);
-    }
-  else
-    {
-      // no wait, lets try to catch up
-      if(dT < 0)
-        {
-          in_step = false;
-
-          logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, late by %ld usec",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  timing_.ts_sf_interval_usec() + abs(dT));
-        }
-    }
-
-  // use sf_time for the bin
-  const uint32_t bin = getMessageBin(tv_sf_time, timing_.ts_sf_interval_usec());
-
-  pendingMessageBins_[bin].lockBin();
-
-  // now advance the subframe times, curr -> next, next -> next+1
-  uint32_t nextbin{timing_.stepTime()};
-
-  pendingMessageBins_[nextbin].lockBin();
-
-  // check for orphans
-  if(size_t orphaned = pendingMessageBins_[nextbin].clearAndCheck())
-    {
-      logger_.log(EMANE::ERROR_LEVEL, "MHAL::RADIO %s curr_sf %ld:%06ld, bin %u, purge %zu pending orphans",
-                  __func__,
-                  timing_.getCurrSfTime().tv_sec,
-                  timing_.getCurrSfTime().tv_usec,
-                  nextbin,
-                  orphaned);
-
-      statisticManager_.updateOrphanedMessages(nextbin, orphaned);
-    }
-
-  clearReadyMessages(nextbin);
-
-  pendingMessageBins_[nextbin].unlockBin();
-
-  // get msgs from the previous subframe
-  noise_worker(bin, tv_sf_time);
-
-  // set the sor to the sf time (time aligned via lte time advance)
-  tv_sor = tv_sf_time;
-
-  timing_.unlockTime();
-
-#ifdef ENABLE_INFO_1_LOGS
-  const timeval tv_curr_sf = timing_.getCurrSfTime();
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s bin %u, sor %ld:%06ld, prev_sf %ld:%06ld, curr_sf %ld:%06ld, delay %ld:%06ld, dT %ld usec, %zu msgs ready",
-              __func__,
-              bin,
-              tv_sor.tv_sec,
-              tv_sor.tv_usec,
-              tv_sf_time.tv_sec,
-              tv_sf_time.tv_usec,
-              tv_curr_sf.tv_sec,
-              tv_curr_sf.tv_usec,
-              tv_delay.tv_sec,
-              tv_delay.tv_usec,
-              dT,
-              pendingMessageBins_[bin].get().size());
-#endif
-
-  // transfer to caller
-  messages = std::move(readyMessageBins_[bin].get());
-
-  // clear bin
-  pendingMessageBins_[bin].clear();
-
-  readyMessageBins_[bin].clear();
-
-  pendingMessageBins_[bin].unlockBin();
-
-  statisticManager_.updateHandoffMessages(bin, messages.size());
-
-  statisticManager_.tallySubframeProcessTime(bin, tv_process_diff, !in_step);
-
-  return in_step;
 }

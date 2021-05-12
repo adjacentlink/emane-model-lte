@@ -68,7 +68,8 @@ namespace LTE
 
       virtual void updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
 
-      virtual void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
+      virtual void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl, 
+                                       const EMANELTE::FrequencySet & carriersOfInterest) = 0;
 
       void updateFrequencies(const EMANE::FrequencySet & rx, const EMANE::FrequencySet & tx);
 

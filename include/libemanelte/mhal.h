@@ -38,64 +38,83 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 #include <sys/time.h>
 #include "libemanelte/otacommon.pb.h"
 #include "libemanelte/sinrtester.h"
 
-
 namespace EMANELTE {
+
+const uint32_t MAX_CARRIERS = 5;
+
 namespace MHAL {
-  typedef std::string Data;
-
-  struct RxData {
-    uint16_t nemId_;        // src nem
-    uint64_t rx_seqnum_;    // seqnum
-    timeval  rx_time_;      // actual rx time
-    timeval  tx_time_;      // actual tx time
-    timeval  sf_time_;      // slot time
-    float peak_sum_;        // sum of power over whole message
-    uint32_t num_samples_;  // number of segments in peak_sum
-
-    RxData() {}
-
-    RxData(uint16_t nemId,
-           uint64_t rx_seqnum,
-           const timeval & rx_time,
-           const timeval & tx_time,
-           const timeval & sf_time,
-           const float & peak_sum,
-           const uint32_t & num_samples) :
-      nemId_(nemId),
-      rx_seqnum_(rx_seqnum),
-      rx_time_(rx_time),
-      tx_time_(tx_time),
-      sf_time_(sf_time),
-      peak_sum_(peak_sum),
-      num_samples_(num_samples)
-    {}
-  };
+  using Data = std::string;
 
   struct RxControl {
-    RxData rxData_;
-    SINRTester SINRTester_;
+    // common to all carriers
+    uint16_t nemId_;                      // src nem
+    uint64_t rx_seqnum_;                  // seqnum
+    timeval  rx_time_;                    // actual rx time
+    timeval  tx_time_;                    // actual tx time
+    timeval  sf_time_;                    // slot time
 
-    RxControl() {}
+    // unique per carrier index
+    float    avg_snr_    [MAX_CARRIERS];  // avg snr
+    float    peak_sum_   [MAX_CARRIERS];  // sum of power over carriers
+    uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
+
+     RxControl() :
+       nemId_{0},
+       rx_seqnum_{0},
+       rx_time_{0,0},
+       tx_time_{0,0},
+       sf_time_{0,0},
+       avg_snr_{-150}
+     { }
 
     RxControl(uint16_t nemId,
               uint64_t rx_seqnum,
               const timeval & rx_time,
               const timeval & tx_time,
-              const timeval & sf_time,
-              const float & peak_sum,
-              const uint32_t & num_samples) :
-      rxData_(nemId, rx_seqnum, rx_time, tx_time, sf_time, peak_sum, num_samples),
-      SINRTester_()
-    { }
+              const timeval & sf_time) :
+      nemId_{nemId},
+      rx_seqnum_{rx_seqnum},
+      rx_time_{rx_time.tv_sec, rx_time.tv_usec},
+      tx_time_{tx_time.tv_sec, tx_time.tv_usec},
+      sf_time_{sf_time.tv_sec, sf_time.tv_usec}
+    {
+      for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
+       {
+         avg_snr_[idx]     = -150.0;
+         peak_sum_[idx]    = 0.0;
+         num_samples_[idx] = 0;
+       }
+    }
   };
 
-  typedef std::pair<Data, RxControl> RxMessage;
-  typedef std::vector<RxMessage>     RxMessages;
-}
+
+#define RxMessage_Data(x)        (x).data_
+#define RxMessage_RxControl(x)   (x).rxControl_
+#define RxMessage_SINRTesters(x) (x).sinrTesters_
+
+  struct RxMessage {
+    Data            data_;
+    RxControl       rxControl_;
+    SINRTesterImpls sinrTesters_;
+
+    void release()
+     {
+       SINRTester tester(sinrTesters_);
+
+       tester.release();
+
+       sinrTesters_.clear();
+     }
+  };
+
+
+  using RxMessages = std::vector<RxMessage>;
+ }
 }
 
 #endif

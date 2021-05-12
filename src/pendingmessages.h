@@ -35,6 +35,8 @@
 #ifndef EMANELTE_MHAL_PENDINGMESSAGEBIN_H
 #define EMANELTE_MHAL_PENDINGMESSAGEBIN_H
 
+#include <tuple>
+#include <list>
 
 #include "libemanelte/mhal.h"
 #include "mhalphy.h"
@@ -45,12 +47,21 @@
 namespace EMANELTE {
 namespace MHAL {
   // pending rx message, moves to ready after noise processing
+#define PendingMessage_Data(x)      std::get<0>((x))
+#define PendingMessage_RxControl(x) std::get<1>((x))
+#define PendingMessage_OtaInfo(x)   std::get<2>((x))
+#define PendingMessage_TxControl(x) std::get<3>((x))
+
   using PendingMessage = std::tuple<Data,              // opaque data
-                                    RxData,            // rx control
+                                    RxControl,         // rx control
                                     PHY::OTAInfo,      // emane ota info
                                     TxControlMessage>; // tx control
 
   using PendingMessages = std::list<PendingMessage>;
+
+#define SegmentTimeSpan_sor(x) std::get<0>((x))
+#define SegmentTimeSpan_eor(x) std::get<1>((x))
+#define SegmentTimeSpan_num(x) std::get<2>((x))
 
   using SegmentTimeSpan = std::tuple<EMANE::TimePoint,  // sor
                                      EMANE::TimePoint,  // eor
@@ -60,7 +71,7 @@ namespace MHAL {
   using SegmentSpans = std::map<std::uint64_t, SegmentTimeSpan>;
 
   class PendingMessageBin {
-  public:
+   public:
     PendingMessageBin() :
       binTime_{0,0}
     {
@@ -89,9 +100,9 @@ namespace MHAL {
     void lockBin();
 
   private:
-    pthread_mutex_t            mutex_;
-    PendingMessages            pending_;
-    timeval                    binTime_;
+    pthread_mutex_t   mutex_;
+    PendingMessages   pending_;
+    timeval           binTime_;
   };
 }
 }

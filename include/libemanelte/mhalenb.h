@@ -50,8 +50,8 @@ namespace ENB {
     uint32_t physical_cell_id_;
     uint32_t subframe_interval_msec_;
     uint32_t symbols_per_slot_;
-    float uplink_frequency_hz_;
-    float downlink_frequency_hz_;
+    double uplink_frequency_hz_;
+    double downlink_frequency_hz_;
     int num_resource_blocks_;
     float pdsch_rs_power_milliwatt_;
     float pdsch_rho_b_over_rho_a_;
@@ -59,8 +59,8 @@ namespace ENB {
     mhal_enb_config_t(uint32_t physical_cell_id,
                       uint32_t subframe_interval_msec,
                       uint32_t symbols_per_slot,
-                      float uplink_frequency_hz,
-                      float downlink_frequency_hz,
+                      double uplink_frequency_hz,
+                      double downlink_frequency_hz,
                       int num_resource_blocks,
                       float pdsch_rs_power_milliwatt,
                       float pdsch_rho_b_over_rho_a) :
@@ -75,7 +75,8 @@ namespace ENB {
     {}
   };
 
-  void initialize(const EMANELTE::MHAL::mhal_config_t & mhal_config,
+  void initialize(uint32_t idx,
+                  const EMANELTE::MHAL::mhal_config_t & mhal_config,
                   const mhal_enb_config_t & mhal_enb_config);
 
   void start();
@@ -88,7 +89,7 @@ namespace ENB {
 
   bool get_messages(RxMessages & messages, timeval & rx_time);
 
-  long long unsigned int get_tx_prb_frequency(int prb_index);
+  std::uint64_t get_tx_prb_frequency(int prb_index, uint64_t freq_hz);
 
 }
 }

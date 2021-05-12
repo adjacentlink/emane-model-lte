@@ -18,5 +18,7 @@ uninstall-local:
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/host
 	rm -f $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/ue/*
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/ue
+	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/common_radio/*
+	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates/common_radio
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo/templates
 	rmdir $(DESTDIR)$(datadir)/$(PACKAGE)/demo

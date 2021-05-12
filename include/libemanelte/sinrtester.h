@@ -36,7 +36,8 @@
 #ifndef EMANELTE_SINRTESTER_H
 #define EMANELTE_SINRTESTER_H
 
-#include <pthread.h>
+#include <map>
+#include <memory>
 #include "libemanelte/otacommon.pb.h"
 
 
@@ -44,47 +45,45 @@ namespace EMANELTE {
 namespace MHAL {
 
 class SINRTesterImpl;
-  
+ 
+using SINRTesterImpls = std::map<std::uint64_t, std::shared_ptr<SINRTesterImpl>>;
+ 
+ class SINRTester
+  {
+    public:
+     SINRTester(const SINRTesterImpls & impls);
 
-class SINRTester
-{
-public:
-  SINRTester();
+     SINRTester & operator = (const SINRTester & rhs);
 
-  struct SINRTesterResult {
-    bool bPassed_;
-    double sinr_dB_;
-    double noiseFloor_dBm_;
+     struct SINRTesterResult {
+       bool   bPassed_;
+       double sinr_dB_;
+       double noiseFloor_dBm_;
 
-    SINRTesterResult() :
-      bPassed_{false},
-      sinr_dB_{0.0},
-      noiseFloor_dBm_{0.0}
-    { }
+     SINRTesterResult() :
+       bPassed_{false},
+       sinr_dB_{0.0},
+       noiseFloor_dBm_{0.0}
+     { }
 
-    SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
-      bPassed_{bPassed},
-      sinr_dB_{sinr},
-      noiseFloor_dBm_{noiseFloor}
-    { }
-  };
+     SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
+       bPassed_{bPassed},
+       sinr_dB_{sinr},
+       noiseFloor_dBm_{noiseFloor}
+     { }
+    };
     
-  void setImpl(SINRTesterImpl * impl);
+   void release();
+  
+   void reset(const SINRTesterImpls & impls);
 
-  bool sinrCheck(CHANNEL_TYPE ctype);
+   SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrrierFrequencyHz) const;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);
+   SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrrierFrequencyHz) const;
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype);
-
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti);
-
-  void release();
-
-private:
-  SINRTesterImpl * impl_;
-  pthread_mutex_t mutex_;
-};
+  private:
+    SINRTesterImpls impls_;
+ };
 
 }
 }

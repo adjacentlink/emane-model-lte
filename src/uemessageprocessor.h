@@ -72,7 +72,7 @@ namespace LTE
       RNDZeroToOne_{0.0f, 1.0f}
     {
       EMANELTE::FrequencyResourceBlockMap rbm{};
-      downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(6, DownlinkParams(rbm, new DownlinkResourceGridParams(6, 7))));
+      downlinkMap_.emplace(6, DownlinkParams(rbm, new DownlinkResourceGridParams(6, 7)));
     }
 
     const EMANELTE::MHAL::MESSAGE_TYPE receiveMessageType_{EMANELTE::MHAL::DOWNLINK};
@@ -89,11 +89,12 @@ namespace LTE
                                  EMANELTE::FrequencyResourceBlockMap & txFreqToRBMap);
 
     EMANE::FrequencySegments buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                    uint32_t symbolsPerSlot);
+                                                    uint64_t carrierFreqHz);
 
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                          const EMANELTE::MHAL::ChannelMessage & channel_msg,
-                                          EMANE::Models::LTE::SegmentMap & segmentCache);
+                                 const EMANELTE::MHAL::ChannelMessage & channel_msg,
+                                 EMANE::Models::LTE::SegmentMap & segmentCache,
+                                 std::uint64_t carrierFrequencyHz);
 
   private:
     struct DownlinkParams

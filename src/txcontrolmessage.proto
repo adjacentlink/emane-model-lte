@@ -42,18 +42,22 @@ option optimize_for = SPEED;
 
 // ********** BEGIN MSG DEFS ***********
 
+message TxControlCarrierMessage
+{
+  required uint64               frequency_hz   = 1;
+  required uint32               phy_cell_id    = 2;
+  repeated uint64               sub_channels   = 3; // sub bands of carrier center freq hz
+  optional DownlinkMessage      downlink       = 4;
+  optional UplinkMessage        uplink         = 5;
+}
+
 message TxControlMessage
 {
-  required uint32  phy_cell_id                    = 1;
-
-  required uint64 tx_seqnum                       = 2;
-  required uint64 tx_frequency_hz                 = 3;
-  required Timestamp sf_time                      = 4;     // sf time (tti_time)
-  required uint32 tti_tx                          = 5;     // tti when msg is expected to be tx/rx
-  required uint32 subframe_duration_microsecs     = 6;
-  optional float reference_signal_power_milliwatt = 7;
-
-  required MESSAGE_TYPE message_type              = 8;
-  optional DownlinkMessage downlink               = 9;
-  optional UplinkMessage uplink                   = 10;
+  repeated TxControlCarrierMessage  carriers       = 1;   // carrier tx center freq hz, carrier info
+  required uint64       tx_seqnum                  = 2;
+  required Timestamp    sf_time                    = 3;   // sf time (tti_time)
+  required uint32       tti_tx                     = 4;   // tti when msg is expected to be tx/rx
+  required MESSAGE_TYPE message_type               = 5;
+  required uint32 subframe_duration_microsecs      = 6;
+  optional float  reference_signal_power_milliwatt = 7;
 }

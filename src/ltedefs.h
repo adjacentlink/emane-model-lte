@@ -36,6 +36,7 @@
 #define EMANELTE_LTEDEFS_H
 
 #include <map>
+#include <set>
 #include <cstdint>
 #include <sys/time.h>
 #include <pthread.h>
@@ -69,6 +70,7 @@ const size_t NUM_SLOTS_PER_FRAME = NUM_SF_PER_FRAME * NUM_SLOTS_PER_SF;
 
 const timeval tv_zero_ = {0,0};
 
+using FrequencySet = std::set<std::uint64_t>;
 
 // tx timestamp adjust knob for the ota tx_timestamp, NOT the msg tti_time
 const int TX_TIME_ADJUST = 0;

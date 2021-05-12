@@ -35,6 +35,7 @@
 #ifndef EMANELTE_UESTATISTICMANAGER_H
 #define EMANELTE_UESTATISTICMANAGER_H
 
+#include <string>
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <map>

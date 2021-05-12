@@ -192,7 +192,6 @@ message PMCH
    required uint32 rnti = 4;
 }
 
-
 // ********** END MSG DEFS ***********
 
  // Transmit Time Index [0-10240]
@@ -202,31 +201,40 @@ message PMCH
  //  Sub Frame           (sf)  = tti % 10
  required uint32  tti = 1;
 
- // Physical Cell Id
- // physical layer cell id [0-167] (phy_cell_id / 3)
- // physical layer cell id [0-2    (phy_cell_id % 3)
- required uint32  phy_cell_id = 2;
+ message CarrierMessage
+  {
+    // tx center freq for this carrier
+    required uint64  frequency_hz = 1;
 
- // control format indicator [1-3]
- required uint32  cfi = 3;
+    // Physical Cell Id
+    // physical layer cell id [0-167] (phy_cell_id / 3)
+    // physical layer cell id [0-2    (phy_cell_id % 3)
+    required uint32  phy_cell_id = 2;
 
- // optional pss_sss sent on selected subframes
- optional PSS_SSS pss_sss = 4;
+    // control format indicator [1-3]
+    required uint32  cfi = 3;
 
- // optional pbch sent on selected subframes
- optional PBCH pbch = 5;
+    // optional pss_sss sent on selected subframes
+    optional PSS_SSS pss_sss = 4;
 
- // repeated pdsch
- repeated PDCCH pdcch = 6;
+    // optional pbch sent on selected subframes
+    optional PBCH pbch = 5;
 
- // optional 
- optional PDSCH pdsch = 7;
+    // repeated pdsch
+    repeated PDCCH pdcch = 6;
 
- // optional phich
- optional PHICH phich = 8;
+    // optional 
+    optional PDSCH pdsch = 7;
 
- // repeated pmch
- optional PMCH pmch = 9;
+    // optional phich
+    optional PHICH phich = 8;
+
+    // repeated pmch
+    optional PMCH pmch = 9;
+  }
+
+  // Carrier(s)
+  repeated CarrierMessage carriers = 2;
 }
 
 

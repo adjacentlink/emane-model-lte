@@ -59,8 +59,7 @@ EMANE::Models::LTE::UEMessageProcessor::swapFrequencyMaps(EMANELTE::FrequencyRes
 
   size_t numResourceBlocks{rxFreqToRBMap.size()};
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxFreqToRBMap, new DownlinkResourceGridParams(rxFreqToRBMap.size(), 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxFreqToRBMap, new DownlinkResourceGridParams(rxFreqToRBMap.size(), 7)));
 
   txFreqToRBMap_.swap(txFreqToRBMap);
 }
@@ -75,15 +74,11 @@ EMANE::Models::LTE::UEMessageProcessor::swapSearchFrequencyMaps(EMANELTE::Freque
 
   size_t numResourceBlocks{rxEvenFreqToRBMap.size()};
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxEvenFreqToRBMap,
-                                                                              new DownlinkResourceGridParams(numResourceBlocks, 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxEvenFreqToRBMap, new DownlinkResourceGridParams(numResourceBlocks, 7)));
 
   numResourceBlocks = rxOddFreqToRBMap.size();
 
-  downlinkMap_.insert(std::pair<std::uint32_t, DownlinkParams>(numResourceBlocks,
-                                                               DownlinkParams(rxOddFreqToRBMap,
-                                                                              new DownlinkResourceGridParams(numResourceBlocks, 7))));
+  downlinkMap_.emplace(numResourceBlocks, DownlinkParams(rxOddFreqToRBMap, new DownlinkResourceGridParams(numResourceBlocks, 7)));
 
   txFreqToRBMap_.swap(txFreqToRBMap);
 }
@@ -125,7 +120,7 @@ EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::Chan
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                               uint32_t)
+                                                               uint64_t frequencyHz)
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
@@ -133,307 +128,328 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   const EMANE::Microseconds slotDuration = sfDuration/2;
 
-  statisticManager_.updateTxTableCounts(txControl);
+  EMANE::FrequencySegments result;
 
-  if(txControl.uplink().has_prach())
-    {
-      addTxSegments(txControl.uplink().prach(), tti_tx);
-    }
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carrier.frequency_hz() == frequencyHz)
+      {       
+        statisticManager_.updateTxTableCounts(txControl);
 
-    for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
-    {
-      addTxSegments(txControl.uplink().pucch(i), tti_tx);
-    }
+        if(carrier.uplink().has_prach())
+         {
+           addTxSegments(carrier.uplink().prach(), tti_tx);
+         }
 
-  for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
-    {
-      addTxSegments(txControl.uplink().pusch(i), tti_tx);
-    }
+        for(int i = 0; i < carrier.uplink().pucch_size(); ++i)
+         {
+           addTxSegments(carrier.uplink().pucch(i), tti_tx);
+         }
 
-  return segmentBuilder_.build(slotDuration);
+        for(int i = 0; i < carrier.uplink().pusch_size(); ++i)
+         {
+           addTxSegments(carrier.uplink().pusch(i), tti_tx);
+         }
+
+        result = segmentBuilder_.build(slotDuration);
+
+        break;
+      }
+   }
+
+  return result;
 }
 
 
 bool
 EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                         const EMANELTE::MHAL::ChannelMessage & channel_message,
-                                                                         EMANE::Models::LTE::SegmentMap & segmentCache)
+                                                                const EMANELTE::MHAL::ChannelMessage & channel_message,
+                                                                EMANE::Models::LTE::SegmentMap & segmentCache,
+                                                                std::uint64_t frequencyHz)
 {
-  size_t sfIdx{txControl.tti_tx() % 10};
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carrier.frequency_hz() == frequencyHz)
+      {
+        const size_t sfIdx{txControl.tti_tx() % 10};
 
-  size_t slot1{2 * sfIdx};
+        const size_t slot1{2 * sfIdx};
 
-  size_t slot2{slot1 + 1};
+        const size_t slot2{slot1 + 1};
 
-  std::uint32_t cfi{txControl.downlink().cfi()};
+        const std::uint32_t cfi{carrier.downlink().cfi()};
 
-  std::uint32_t numResourceBlocks{txControl.downlink().num_resource_blocks()};
+        const std::uint32_t numResourceBlocks{carrier.downlink().num_resource_blocks()};
 
-  const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
+        const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
-  const EMANE::Microseconds slotDuration = sfDuration/2;
+        const EMANE::Microseconds slotDuration = sfDuration/2;
 
-  EMANELTE::MHAL::CHANNEL_TYPE type{channel_message.channel_type()};
+        EMANELTE::MHAL::CHANNEL_TYPE type{channel_message.channel_type()};
 
-  EMANELTE::MHAL::MOD_TYPE modType{channel_message.modulation_type()};
+        EMANELTE::MHAL::MOD_TYPE modType{channel_message.modulation_type()};
 
-  std::uint32_t numberOfBits{channel_message.number_of_bits()};
+        const std::uint32_t numberOfBits{channel_message.number_of_bits()};
 
-  std::uint32_t numberInfoREs{numberOfBits/modType};
+        const std::uint32_t numberInfoREs{numberOfBits/modType};
 
-  std::uint32_t numberMessageREs{0};
+        std::uint32_t numberMessageREs{0};
 
-  std::uint32_t numberReceivedREs{0};
+        std::uint32_t numberReceivedREs{0};
 
-  EMANE::Microseconds offset;
+        EMANE::Microseconds offset;
 
-  EMANE::Microseconds duration;
+        EMANE::Microseconds duration;
 
-  std::uint32_t rxNumResourceBlocks{numResourceBlocks};
+        std::uint32_t rxNumResourceBlocks{numResourceBlocks};
 
-  auto bwIter = downlinkMap_.find(rxNumResourceBlocks);
+        auto bwIter = downlinkMap_.find(rxNumResourceBlocks);
 
-  if(bwIter == downlinkMap_.end())
-    {
-      if(rxNumResourceBlocks % 2)
-        {
-          bwIter = downlinkMap_.find(75);
+        if(bwIter == downlinkMap_.end())
+         {
+          if(rxNumResourceBlocks % 2)
+           {
+             bwIter = downlinkMap_.find(75);
 
-          if(bwIter == downlinkMap_.end())
-            {
-              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                      EMANE::ERROR_LEVEL,
-                                      "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
-                                      id_,
-                                      "UEMessageProcessor",
-                                      __func__,
-                                      75);
+             if(bwIter == downlinkMap_.end())
+              {
+                LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                        EMANE::ERROR_LEVEL,
+                                        "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
+                                        id_,
+                                        "UEMessageProcessor",
+                                        __func__,
+                                        75);
 
-              return false;
-            }
-        }
-      else
-        {
-          bwIter = downlinkMap_.find(100);
+                return false;
+              }
+          }
+         else
+          {
+            bwIter = downlinkMap_.find(100);
 
-          if(bwIter == downlinkMap_.end())
-            {
-              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                      EMANE::ERROR_LEVEL,
-                                      "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
-                                      id_,
-                                      "UEMessageProcessor",
-                                      __func__,
-                                      100);
+            if(bwIter == downlinkMap_.end())
+              {
+                LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                        EMANE::ERROR_LEVEL,
+                                        "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
+                                        id_,
+                                        "UEMessageProcessor",
+                                        __func__,
+                                        100);
 
-              return false;
-            }
-        }
-    }
+                return false;
+              }
+          }
+       }
 
-  DownlinkParams & downlinkParams(bwIter->second);
+      DownlinkParams & downlinkParams(bwIter->second);
 
-  DownlinkChannelRBParams & chanParams(downlinkParams.pRBParams_->params.find(type)->second);
+      DownlinkChannelRBParams & chanParams(downlinkParams.pRBParams_->params.find(type)->second);
 
-  SlotRBParams & slot1Params(chanParams.slotParams(cfi, slot1));
-  SlotRBParams & slot2Params(chanParams.slotParams(cfi, slot2));
+      SlotRBParams & slot1Params(chanParams.slotParams(cfi, slot1));
+      SlotRBParams & slot2Params(chanParams.slotParams(cfi, slot2));
 
-  // determine pass/fail on channel_message
-  // 1. figure out how many segments are needed to be successfully
-  //    received based on channel_message.number_of_bits and by
-  //    the number of resource elements contained in the resource
-  //    blocks occupied by the message (based on type)
-  // 2. determine pass/fail on each message segment based on
-  //    por test and channel_message.modulation_type. Use
-  //    the segment cache for the noise floor for the resource
-  //    block noise information, also, store information there.
-  // 3. Message passes if 2 >= 1
+      // determine pass/fail on channel_message
+      // 1. figure out how many segments are needed to be successfully
+      //    received based on channel_message.number_of_bits and by
+      //    the number of resource elements contained in the resource
+      //    blocks occupied by the message (based on type)
+      // 2. determine pass/fail on each message segment based on
+      //    por test and channel_message.modulation_type. Use
+      //    the segment cache for the noise floor for the resource
+      //    block noise information, also, store information there.
+      // 3. Message passes if 2 >= 1
 
-  for(int j=0; j<channel_message.resource_block_frequencies_slot1_size(); ++j)
-    {
-      EMANELTE::FrequencyHz freq{channel_message.resource_block_frequencies_slot1(j)};
+     for(int j=0; j<channel_message.resource_block_frequencies_slot1_size(); ++j)
+      {
+        EMANELTE::FrequencyHz freq{channel_message.resource_block_frequencies_slot1(j)};
 
-      auto freqIter = downlinkParams.rxFreqToMap_.find(freq);
+        auto freqIter = downlinkParams.rxFreqToMap_.find(freq);
 
-      // frequency is not found, should not happen
-      if(freqIter == downlinkParams.rxFreqToMap_.end())
-        {
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                  EMANE::ERROR_LEVEL,
-                                  "MACI %03hu %s::%s: type %d, cannot find resource block for frequency %lu",
+        // frequency is not found, should not happen
+        if(freqIter == downlinkParams.rxFreqToMap_.end())
+         {
+           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                   EMANE::ERROR_LEVEL,
+                                   "MACI %03hu %s::%s: type %d, cannot find resource block for frequency %lu",
+                                   id_,
+                                   "UEMessageProcessor",
+                                   __func__,
+                                   type,
+                                   freq);
+
+           continue;
+         }
+
+        uint32_t rb{freqIter->second};
+
+        ResourceBlockParams & rbParams(slot1Params[rb]);
+
+        numberMessageREs += rbParams.res_;
+
+        std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot1, rbParams.first_, rbParams.last_, slotDuration);
+
+        auto segmentIter = segmentCache.find(SegmentKey{freq, offset, duration});
+
+        if(segmentIter == segmentCache.end())
+         {
+           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                                  EMANE::DEBUG_LEVEL,
+                                  "MACI %03hu %s::%s: "
+                                  "type %d, "
+                                  "slot1 segment cache miss, "
+                                  "slotDuration=%lu, "
+                                  "freq=%lu, "
+                                  "startSymb=%d, "
+                                  "stopSymb=%d, "
+                                  "offs=%lu, "
+                                  "dur=%lu, "
+                                  "rb=%d",
                                   id_,
                                   "UEMessageProcessor",
                                   __func__,
                                   type,
-                                  freq);
+                                  slotDuration.count(),
+                                  freq,
+                                  rbParams.first_,
+                                  rbParams.last_,
+                                  offset.count(),
+                                  duration.count(),
+                                  rb);
 
-          continue;
-        }
+            continue;
+          }
 
-      uint32_t rb{freqIter->second};
+        const float sinr_dB = segmentIter->second;
 
-      ResourceBlockParams & rbParams(slot1Params[rb]);
+        const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-      numberMessageREs += rbParams.res_;
+        const float fRandomValue{RNDZeroToOne_()};
 
-      std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot1, rbParams.first_, rbParams.last_, slotDuration);
+        LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                               EMANE::DEBUG_LEVEL,
+                               "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
+                               id_,
+                               "UEMessageProcessor",
+                               __func__,
+                               modType,
+                               sinr_dB,
+                               por,
+                               fRandomValue,
+                               rbParams.res_);
 
-      auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
+        if(por >= fRandomValue)
+         {
+           numberReceivedREs += rbParams.res_;
 
-      if(segmentIter == segmentCache.end())
-        {
+           statisticManager_.updateRxFrequencyPass(freq);
+         }
+        else
+         {
+           statisticManager_.updateRxFrequencyDrop(freq);
+         }
+       }
+
+      for(int j=0; j<channel_message.resource_block_frequencies_slot2_size(); ++j)
+       {
+         EMANELTE::FrequencyHz freq{channel_message.resource_block_frequencies_slot2(j)};
+
+         auto freqIter = downlinkParams.rxFreqToMap_.find(freq);
+
+         // frequency is not found, should not happen
+         if(freqIter == downlinkParams.rxFreqToMap_.end())
+          {
+            continue;
+          }
+
+         uint32_t rb{freqIter->second};
+  
+         ResourceBlockParams & rbParams(slot2Params[rb]);
+
+         numberMessageREs += rbParams.res_;
+
+         std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot2, rbParams.first_, rbParams.last_, slotDuration);
+
+         auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
+
+         if(segmentIter == segmentCache.end())
+          {
+            LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                                   EMANE::DEBUG_LEVEL,
+                                   "MACI %03hu %s::%s: "
+                                   "type %d, "
+                                   "slot2 segment cache miss, "
+                                   "slotDuration=%lu, "
+                                   "freq=%lu, "
+                                   "startSymb=%d, "
+                                   "stopSymb=%d, "
+                                   "offs=%lu, "
+                                   "dur=%lu, "
+                                   "rb=%d",
+                                   id_,
+                                   "UEMessageProcessor",
+                                   __func__,
+                                   type,
+                                   slotDuration.count(),
+                                   freq,
+                                   rbParams.first_,
+                                   rbParams.last_,
+                                   offset.count(),
+                                   duration.count(),
+                                   rb);
+
+            continue;
+          }
+
+         const float sinr_dB = segmentIter->second;
+
+         const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+
+         const float fRandomValue{RNDZeroToOne_()};
+
+         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                                EMANE::DEBUG_LEVEL,
+                                "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
+                                id_,
+                                "UEMessageProcessor",
+                                __func__,
+                                modType,
+                                sinr_dB,
+                                por,
+                                fRandomValue,
+                                rbParams.res_);
+
+         if(por >= fRandomValue)
+          {
+            numberReceivedREs += rbParams.res_;
+          }
+       } // end for
+
+      std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
+
+      bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
+
+      if(!messageReceived)
+       {
           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                                  EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: "
-                                 "type %d, "
-                                 "slot1 segment cache miss, "
-                                 "slotDuration=%lu, "
-                                 "freq=%lu, "
-                                 "startSymb=%d, "
-                                 "stopSymb=%d, "
-                                 "offs=%lu, "
-                                 "dur=%lu, "
-                                 "rb=%d",
+                                 "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
                                  id_,
                                  "UEMessageProcessor",
                                  __func__,
+                                 messageReceived ? "PASS" : "FAIL",
+                                 sfIdx,
                                  type,
-                                 slotDuration.count(),
-                                 freq,
-                                 rbParams.first_,
-                                 rbParams.last_,
-                                 offset.count(),
-                                 duration.count(),
-                                 rb);
-
-          continue;
+                                 modType,
+                                 numberMessageREs,
+                                 numberInfoREs,
+                                 numberReceivedREs);
         }
 
-      float sinr_dB = segmentIter->second;
-
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
-
-      float fRandomValue{RNDZeroToOne_()};
-
-      LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
-                             id_,
-                             "UEMessageProcessor",
-                             __func__,
-                             modType,
-                             sinr_dB,
-                             por,
-                             fRandomValue,
-                             rbParams.res_);
-
-      if(por >= fRandomValue)
-        {
-          numberReceivedREs += rbParams.res_;
-
-          statisticManager_.updateRxFrequencyPass(freq);
-        }
-      else
-        {
-          statisticManager_.updateRxFrequencyDrop(freq);
-        }
+      return messageReceived;
     }
+  } // end for
 
-  for(int j=0; j<channel_message.resource_block_frequencies_slot2_size(); ++j)
-    {
-      EMANELTE::FrequencyHz freq{channel_message.resource_block_frequencies_slot2(j)};
-
-      auto freqIter = downlinkParams.rxFreqToMap_.find(freq);
-
-      // frequency is not found, should not happen
-      if(freqIter == downlinkParams.rxFreqToMap_.end())
-        {
-          continue;
-        }
-
-      uint32_t rb{freqIter->second};
-
-      ResourceBlockParams & rbParams(slot2Params[rb]);
-
-      numberMessageREs += rbParams.res_;
-
-      std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot2, rbParams.first_, rbParams.last_, slotDuration);
-
-      auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
-
-      if(segmentIter == segmentCache.end())
-        {
-          LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                 EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: "
-                                 "type %d, "
-                                 "slot2 segment cache miss, "
-                                 "slotDuration=%lu, "
-                                 "freq=%lu, "
-                                 "startSymb=%d, "
-                                 "stopSymb=%d, "
-                                 "offs=%lu, "
-                                 "dur=%lu, "
-                                 "rb=%d",
-                                 id_,
-                                 "UEMessageProcessor",
-                                 __func__,
-                                 type,
-                                 slotDuration.count(),
-                                 freq,
-                                 rbParams.first_,
-                                 rbParams.last_,
-                                 offset.count(),
-                                 duration.count(),
-                                 rb);
-
-          continue;
-        }
-
-      float sinr_dB = segmentIter->second;
-
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
-
-      float fRandomValue{RNDZeroToOne_()};
-
-      LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
-                             id_,
-                             "UEMessageProcessor",
-                             __func__,
-                             modType,
-                             sinr_dB,
-                             por,
-                             fRandomValue,
-                             rbParams.res_);
-
-      if(por >= fRandomValue)
-        {
-          numberReceivedREs += rbParams.res_;
-        }
-    }
-
-  std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
-
-  bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
-
-  if(!messageReceived)
-    {
-      LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::DEBUG_LEVEL,
-                             "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
-                             id_,
-                             "UEMessageProcessor",
-                             __func__,
-                             messageReceived ? "PASS" : "FAIL",
-                             sfIdx,
-                             type,
-                             modType,
-                             numberMessageREs,
-                             numberInfoREs,
-                             numberReceivedREs);
-    }
-
-  return messageReceived;
+  return false;
 }

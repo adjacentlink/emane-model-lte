@@ -133,49 +133,59 @@ EMANE::Models::LTE::ENBRadioStatisticManager::registerStatistics(EMANE::Registra
 void
 EMANE::Models::LTE::ENBRadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  updateTableCounts(txControl.tti_tx(), txControl.downlink().pcfich(), true);
+  for(const auto & carrier : txControl.carriers())
+   {
+     updateTableCounts(txControl.tti_tx(), carrier.downlink().pcfich(), true);
 
-  if(txControl.downlink().has_pbch())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pbch(), true);
-    }
+     if(carrier.downlink().has_pbch())
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pbch(), true);
+      }
 
-  for(int i = 0; i < txControl.downlink().phich_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().phich(i), true);
-    }
+     for(int i = 0; i < carrier.downlink().phich_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().phich(i), true);
+      }
 
-  for(int i = 0; i < txControl.downlink().pdcch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdcch(i), true);
-    }
+     for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pdcch(i), true);
+      }
 
-  for(int i = 0; i < txControl.downlink().pdsch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdsch(i), true);
-    }
+     for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pdsch(i), true);
+      }
 
-  if(txControl.downlink().has_pmch())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pmch(), true);
-    }
+     if(carrier.downlink().has_pmch())
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pmch(), true);
+      }
+   }
 }
 
 void
-EMANE::Models::LTE::ENBRadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
+EMANE::Models::LTE::ENBRadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl,
+                                                                  const EMANELTE::FrequencySet & carriersOfInterest)
 {
-  if(txControl.uplink().has_prach())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().prach(), false);
-    }
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carriersOfInterest.count(carrier.frequency_hz()))
+      {
+        if(carrier.uplink().has_prach())
+         {
+          updateTableCounts(txControl.tti_tx(), carrier.uplink().prach(), false);
+         }
 
-  for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pucch(i), false);
-    }
+        for(int i = 0; i < carrier.uplink().pucch_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.uplink().pucch(i), false);
+         }
 
-  for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pusch(i), false);
-    }
+        for(int i = 0; i < carrier.uplink().pusch_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.uplink().pusch(i), false);
+         }
+      }
+   }
 }

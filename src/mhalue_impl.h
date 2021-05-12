@@ -64,19 +64,17 @@ namespace MHAL {
                          const EMANE::TimePoint & timestamp);
 
     void handle_upstream_msg(const Data & data,
-                             const RxData & rxData,
+                             const RxControl & rxControl,
                              const PHY::OTAInfo & otaInfo,
                              const TxControlMessage & txControl);
-
-    bool get_messages(RxMessages & messages, timeval & tv_sor);
 
     EMANE::SpectrumWindow get_noise(FrequencyHz frequencyHz,
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
-    long long unsigned int get_tx_prb_frequency(int prb_index);
+    std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
 
-    void set_frequencies(float ul_freq, float dl_freq);
+    void set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz);
 
     void set_num_resource_blocks(int num_resource_blocks);
 

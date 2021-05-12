@@ -1,4 +1,4 @@
-<probe-srslte-enb address="127.0.0.1" port="47100">
+<probe-srslte-enb address="127.0.0.1" port="47001">
   <probes>
     <SRSLTE.ENB.Tables.Counts enable="yes"/>
     <SRSLTE.ENB.Tables.MAC enable="yes"/>

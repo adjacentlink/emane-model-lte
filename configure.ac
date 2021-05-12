@@ -59,14 +59,7 @@ AC_ARG_WITH(debug,
            [  --with-debug            add debug support (off)])
 
 AC_ARG_WITH([verbose-logging],
-           [  --without-verbose-logging  disable verbose logging support (on)],
-           [],
-           [with_verbose_logging=yes])
-
-
-
-
-
+           [  --with-verbose-logging  disable verbose logging support (off)])
 
 
 AC_C_BIGENDIAN(AC_DEFINE([__BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),
@@ -76,6 +69,7 @@ AC_DEFINE([__BIG_ENDIAN],4321,[for the places where it is not defined])
 
 PKG_CHECK_MODULES([libemane], libemane)
 PKG_CHECK_MODULES([libostatistic], libostatistic)
+PKG_CHECK_MODULES([libxml2], libxml-2.0)
 
 # compiler options
 CXXFLAGS="$CXXFLAGS -W -Wall -g0 -O3"
@@ -90,7 +84,7 @@ fi
 # options for use with debug
 if test "$with_debug" = "yes"
 then
-CPPFLAGS="$CPPFLAGS -g -O0 -DDEBUG"
+CXXFLAGS="$CXXFLAGS -g3 -O0 -DDEBUG"
 LDFLAGS="$LDFLAGS -g -O0"
 fi
 

@@ -60,6 +60,8 @@ namespace EMANE {
 namespace Models {
 namespace LTE {
 
+// relative rx/tx per node type ue/enb
+using FrequencyPair = std::pair<std::uint64_t, std::uint64_t>;
 
 // frequency, spectrum window
 using SpectrumWindowCache = std::map<std::uint64_t, EMANE::SpectrumWindow>;
@@ -122,14 +124,16 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setSymbolsPerSlot(std::uint32_t symbolsPerSlot);
 
-      void setFrequencies(EMANELTE::FrequencyHz rxFrequency,
-                          EMANELTE::FrequencyHz txFrequency);
+      void setFrequencies(uint32_t carrierIndex,
+                          EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                          EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                          bool clearCache);
 
-      void setNumResourceBlocks(std::uint32_t numResourceBlocks, bool search=false);
+      void setNumResourceBlocks(std::uint32_t numResourceBlocks);
 
-      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const;
+      EMANELTE::FrequencyHz getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
-      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const;
+      EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
       EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
@@ -140,8 +144,15 @@ class RadioModel : public EMANE::MACLayerImplementor
       EMANE::FrequencySet getFrequencies();
 
       bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                            const EMANELTE::MHAL::ChannelMessage & channel_msg,
-                                            SegmentMap & segmentCache);
+                                   const EMANELTE::MHAL::ChannelMessage & channel_msg,
+                                   SegmentMap & segmentCache,
+                                   std::uint64_t carrierFrequencyHz);
+
+      void setFrequenciesOfInterest(bool searchMode, bool clearCache);
+
+      EMANELTE::FrequencySet getCarriersOfInterest() const;
+
+      int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
 
     private:
       bool bRunning_;
@@ -151,14 +162,31 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
 
+      // <carrierIndex, <rx/tx freq>>
+      using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;
+
+      // <carierCenterFreq, carrierIndex>
+      using CarrierFrequencyToIndexTable = std::map<std::uint64_t, std::uint32_t>;
+
+      // rx carriers of interest
+      EMANELTE::FrequencySet rxCarriersOfInterest_;
+
+      // track rx/tx freq by carrier
+      FrequencyTable frequencyTable_;
+
+      // track carrier index by freq 
+      CarrierFrequencyToIndexTable   txCarrierFrequencyToIndexTable_;
+      CarrierFrequencyToIndexTable   rxCarrierFrequencyToIndexTable_;
+
+      EMANE::FrequencySet rxFrequenciesHz_;
+      EMANE::FrequencySet txFrequenciesHz_;
+
       std::uint64_t u64TxSeqNum_;
-      std::uint64_t u64RxFrequencyHz_;
-      std::uint64_t u64TxFrequencyHz_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
 
       RadioStatManager statisticManager_;
-      MessageProcessor messageProcessor_;
+      MessageProcessor *messageProcessor_[EMANELTE::MAX_CARRIERS];
 
       EMANELTE::MHAL::PHY::MHALPHY * pMHAL_;
 
@@ -166,11 +194,12 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       // NumPass, DropPropDelay, DropFreqMismatch, DropDirection
       using SubframeReceiveCountEntry = std::tuple<size_t, size_t, size_t, size_t>;
+
       // NEMId key
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;
+
       SubframeReceiveCountDB subframeReceiveCountDB_;
 
-      void setFrequenciesOfInterest(bool search);
 
       EMANELTE::FrequencyHz getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
                                                       EMANELTE::FrequencyHz centerFreq,

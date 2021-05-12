@@ -76,17 +76,17 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
                                                        const EMANE::Microseconds sfDuration,
                                                        const std::uint32_t cfi)
 {
-  size_t sfIdx  = tti_tx % 10;
+  const size_t sfIdx = tti_tx % 10;
 
-  size_t slot1 = 2 * sfIdx;
+  const size_t slot1 = 2 * sfIdx;
 
-  size_t slot2 = slot1 + 1;
+  const size_t slot2 = slot1 + 1;
 
   EMANELTE::MHAL::CHANNEL_TYPE type{channel_msg.channel_type()};
 
   DownlinkChannelRBParams & chanParams(pDownlinkRBParams_->params.find(type)->second);
 
-  float fSegmentPowerdBm = resourceBlockTxPowerdBm_ + channel_msg.tx_power_scale_db();
+  const float fSegmentPowerdBm = resourceBlockTxPowerdBm_ + channel_msg.tx_power_scale_db();
 
   LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                          EMANE::DEBUG_LEVEL,
@@ -113,117 +113,201 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
   // a half slot segment for each slot.
   for(int j=0; j<channel_msg.resource_block_frequencies_slot1_size(); ++j)
     {
-      EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot1(j)};
+      const EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot1(j)};
 
-      uint32_t rb{txFreqToRBMap_[freq]};
+      if(txFreqToRBMap_.count(freq))
+       {
+         const uint32_t rb{txFreqToRBMap_[freq]};
 
-      ResourceBlockParams & rbParams(slot1Params[rb]);
+         if(rb < slot1Params.size())
+          {
+            const auto & rbParams(slot1Params[rb]);
 
-      // ignore empty
-      if(rbParams.first_ >= rbParams.last_)
-        {
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                  EMANE::ERROR_LEVEL,
-                                  "%s %03hu %s: "
-                                  "Unexpected segment on empty downlink RB: chantype=%d slot=%lu rb=%d freq=%lu",
-                                  "RadioModel",
-                                  id_,
-                                  __func__,
-                                  type,
-                                  slot1,
-                                  rb,
-                                  freq);
-          continue;
-        }
-
-      segmentBuilder_.insert(FrequencySegmentKey(freq, slot1, rbParams.first_, rbParams.last_), fSegmentPowerdBm);
+            // ignore empty
+            if(rbParams.first_ >= rbParams.last_)
+              {
+                LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                        EMANE::ERROR_LEVEL,
+                                        "%s %03hu %s: "
+                                        "Unexpected segment on empty downlink RB: chantype=%d slot=%lu rb=%d freq=%lu",
+                                        "RadioModel",
+                                        id_,
+                                        __func__,
+                                        type,
+                                        slot1,
+                                        rb,
+                                        freq);
+              }
+             else
+              {
+                segmentBuilder_.insert(FrequencySegmentKey(freq, slot1, rbParams.first_, rbParams.last_), fSegmentPowerdBm);
+              }
+           }
+          else
+           {
+              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                       EMANE::ERROR_LEVEL,
+                                       "%s %03hu %s: "
+                                       "Unexpected segment downlink RB: chantype=%d slot=%lu freq=%lu, rb %u > numParams %zu",
+                                       "RadioModel",
+                                       id_,
+                                        __func__,
+                                       type,
+                                       slot1,
+                                       freq,
+                                       rb,
+                                       slot1Params.size());
+           }
+         }
+        else
+         {
+           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                   EMANE::ERROR_LEVEL,
+                                    "%s %03hu %s: "
+                                    "Unexpected segment downlink RB: chantype=%d slot=%lu freq=%lu",
+                                    "RadioModel",
+                                    id_,
+                                    __func__,
+                                    type,
+                                    slot1,
+                                    freq);
+          }
     }
 
   for(int j=0; j<channel_msg.resource_block_frequencies_slot2_size(); ++j)
     {
-      EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot2(j)};
+      const EMANELTE::FrequencyHz freq{channel_msg.resource_block_frequencies_slot2(j)};
 
-      uint32_t rb{txFreqToRBMap_[freq]};
+      if(txFreqToRBMap_.count(freq))
+       {
+         const uint32_t rb{txFreqToRBMap_[freq]};
 
-      ResourceBlockParams & rbParams(slot2Params[rb]);
+         if(rb < slot2Params.size())
+          {
+            const auto & rbParams(slot2Params[rb]);
 
-      // ignore empty
-      if(rbParams.first_ >= rbParams.last_)
-        {
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                  EMANE::ERROR_LEVEL,
-                                  "%s %03hu %s: "
-                                  "Unexpected segment on empty downlink RB: chantype=%d slot=%lu rb=%d freq=%lu",
-                                  "RadioModel",
-                                  id_,
-                                  __func__,
-                                  type,
-                                  slot2,
-                                  rb,
-                                  freq);
-          continue;
-        }
-
-      segmentBuilder_.insert(FrequencySegmentKey(freq, slot2, rbParams.first_, rbParams.last_), fSegmentPowerdBm);
+            // ignore empty
+            if(rbParams.first_ >= rbParams.last_)
+             {
+               LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                       EMANE::ERROR_LEVEL,
+                                       "%s %03hu %s: "
+                                       "Unexpected segment on empty downlink RB: chantype=%d slot=%lu rb=%d freq=%lu",
+                                       "RadioModel",
+                                       id_,
+                                       __func__,
+                                       type,
+                                       slot2,
+                                       rb,
+                                       freq);
+             }
+            else
+             {
+               segmentBuilder_.insert(FrequencySegmentKey(freq, slot2, rbParams.first_, rbParams.last_), fSegmentPowerdBm);
+             }
+           }
+          else
+           {
+              LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                       EMANE::ERROR_LEVEL,
+                                       "%s %03hu %s: "
+                                       "Unexpected segment downlink RB: chantype=%d slot=%lu freq=%lu, rb %u > numParams %zu",
+                                       "RadioModel",
+                                       id_,
+                                        __func__,
+                                       type,
+                                       slot2,
+                                       freq,
+                                       rb,
+                                       slot2Params.size());
+           }
+         }
+        else
+         {
+           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                   EMANE::ERROR_LEVEL,
+                                   "%s %03hu %s: "
+                                   "Unexpected segment downlink RB: chantype=%d slot=%lu freq=%lu",
+                                   "RadioModel",
+                                   id_,
+                                   __func__,
+                                   type,
+                                   slot2,
+                                   freq);
+          }
     }
 }
 
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                uint32_t)
+                                                                uint64_t frequencyHz)
 {
-  std::uint32_t tti_tx = txControl.tti_tx();
+  EMANE::FrequencySegments result;
 
-  std::uint32_t cfi = txControl.downlink().cfi();
+  for(const auto & carrier : txControl.carriers())
+   {
+    if(carrier.frequency_hz() == frequencyHz)
+      {
+        const auto tti_tx = txControl.tti_tx();
 
-  const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
+        const auto cfi = carrier.downlink().cfi();
 
-  const EMANE::Microseconds slotDuration = sfDuration / 2;
+        const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
-  statisticManager_.updateTxTableCounts(txControl);
+        const EMANE::Microseconds slotDuration = sfDuration / 2;
 
-  addTxSegments(txControl.downlink().pcfich(), tti_tx, sfDuration, cfi);
+        statisticManager_.updateTxTableCounts(txControl);
 
-  if(txControl.downlink().has_pbch())
-    {
-      addTxSegments(txControl.downlink().pbch(), tti_tx, sfDuration, cfi);
+        addTxSegments(carrier.downlink().pcfich(), tti_tx, sfDuration, cfi);
+
+        if(carrier.downlink().has_pbch())
+         {
+           addTxSegments(carrier.downlink().pbch(), tti_tx, sfDuration, cfi);
+         }
+
+        if(carrier.downlink().has_pmch())
+         {
+           addTxSegments(carrier.downlink().pmch(), tti_tx, sfDuration, cfi);
+         }
+
+        for(int i = 0; i < carrier.downlink().phich_size(); ++i)
+         {
+           addTxSegments(carrier.downlink().phich(i), tti_tx, sfDuration, cfi);
+         }
+
+        for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
+         {
+           addTxSegments(carrier.downlink().pdcch(i), tti_tx, sfDuration, cfi);
+         }
+
+        for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
+         {
+           addTxSegments(carrier.downlink().pdsch(i), tti_tx, sfDuration, cfi);
+         }
+
+        result = segmentBuilder_.build(slotDuration);
+      }
     }
 
-  if(txControl.downlink().has_pmch())
-    {
-      addTxSegments(txControl.downlink().pmch(), tti_tx, sfDuration, cfi);
-    }
-
-  for(int i = 0; i < txControl.downlink().phich_size(); ++i)
-    {
-      addTxSegments(txControl.downlink().phich(i), tti_tx, sfDuration, cfi);
-    }
-
-  for(int i = 0; i < txControl.downlink().pdcch_size(); ++i)
-    {
-      addTxSegments(txControl.downlink().pdcch(i), tti_tx, sfDuration, cfi);
-    }
-
-  for(int i = 0; i < txControl.downlink().pdsch_size(); ++i)
-    {
-      addTxSegments(txControl.downlink().pdsch(i), tti_tx, sfDuration, cfi);
-    }
-
-  return segmentBuilder_.build(slotDuration);
+   return result;
 }
 
 
 bool
 EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                          const EMANELTE::MHAL::ChannelMessage & channel_message,
-                                                                          EMANE::Models::LTE::SegmentMap & segmentCache)
+                                                                 const EMANELTE::MHAL::ChannelMessage & channel_message,
+                                                                 EMANE::Models::LTE::SegmentMap & segmentCache,
+                                                                 std::uint64_t frequencyHz)
 {
-  size_t sfIdx{txControl.tti_tx() % 10};
+  const size_t sfIdx{txControl.tti_tx() % 10};
 
-  size_t slot1{2 * sfIdx};
+  const size_t slot1{2 * sfIdx};
 
-  size_t slot2{slot1 + 1};
+  const size_t slot2{slot1 + 1};
+
+  // XXX_CC TODO ???
+  (void) frequencyHz;
 
   const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
@@ -282,7 +366,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot1, rbParams.first_, rbParams.last_, slotDuration);
 
-      auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
+      const auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
 
       if(segmentIter == segmentCache.end())
         {
@@ -311,11 +395,11 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
           continue;
         }
 
-      float sinr_dB = segmentIter->second;
+      const float sinr_dB = segmentIter->second;
 
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+      const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-      float fRandomValue{RNDZeroToOne_()};
+      const float fRandomValue{RNDZeroToOne_()};
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
@@ -364,7 +448,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
       std::tie(offset, duration) = segmentBuilder_.calcSegmentBoundary(slot2, rbParams.first_, rbParams.last_, slotDuration);
 
-      auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
+      const auto segmentIter = segmentCache.find(SegmentKey(freq, offset, duration));
 
       if(segmentIter == segmentCache.end())
         {
@@ -393,11 +477,11 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
           continue;
         }
 
-      float sinr_dB = segmentIter->second;
+      const float sinr_dB = segmentIter->second;
 
-      float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
+      const float por = porManager_.getDedicatedChannelPOR(modType, sinr_dB);
 
-      float fRandomValue{RNDZeroToOne_()};
+      const float fRandomValue{RNDZeroToOne_()};
 
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
@@ -432,14 +516,14 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
         }
     }
 
-  std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
+  const std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
 
-  bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
+  const bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
 
   if(!messageReceived)
     {
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                             EMANE::INFO_LEVEL,
+                             EMANE::DEBUG_LEVEL,
                              "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, numberOfBits %d, messageREs %d, infoREs %d, rcvedREs %d",
                              id_,
                              "ENBMessageProcessor",

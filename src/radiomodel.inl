@@ -47,7 +47,7 @@
 #include "emane/configureexception.h"
 #include "emane/utils/parameterconvert.h"
 
-
+#undef ENABLE_INFO_1_LOGS
 
 namespace {
   const char * pzModuleName_ = "RadioModel";
@@ -77,13 +77,16 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
   pcrCurveURI_{},
   maxPropagationDelay_{},
   u64TxSeqNum_{},
-  u64RxFrequencyHz_{},
-  u64TxFrequencyHz_{},
   u32NumResourceBlocks_{},
   u32SymbolsPerSlot_{},
-  statisticManager_{id, pPlatformService},
-  messageProcessor_(id, pPlatformService, statisticManager_)
-{}
+  statisticManager_{id, pPlatformService}
+{
+  // create message processor per carrier
+  for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
+   {
+     messageProcessor_[idx] = new MessageProcessor{id, pPlatformService, statisticManager_};
+   }
+}
 
 
 template <class RadioStatManager, class MessageProcessor>
@@ -188,13 +191,19 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.first.c_str(),
                                   pcrCurveURI_.c_str());
 
-          messageProcessor_.loadPCRFile(pcrCurveURI_);
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->loadPCRFile(pcrCurveURI_);
+           }
         }
       else if(item.first == "resourceblocktxpower")
         {
           float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
 
-          messageProcessor_.setTxPower(resourceBlockTxPowerdBm);
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->setTxPower(resourceBlockTxPowerdBm);
+           }
 
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
@@ -357,66 +366,95 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setSymb
 
 
 template <class RadioStatManager, class MessageProcessor>
-void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setNumResourceBlocks(std::uint32_t numResourceBlocks, bool search)
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setNumResourceBlocks(std::uint32_t numResourceBlocks)
 {
   EMANELTE::FrequencyHz halfChannelBandwidthHz{
     numResourceBlocks * EMANELTE::ResourceBlockBandwidthHz + EMANELTE::HalfResourceBlockBandwidthHz};
 
-  // Don't allow configured channel to have negative frequencies
-  if(halfChannelBandwidthHz > u64RxFrequencyHz_ || halfChannelBandwidthHz > u64TxFrequencyHz_)
-    {
-      throw EMANE::makeException<EMANE::ConfigureException>("Invalid configuration, first resource block crosses 0 Hz.");
-    }
+  for(const auto & entry : frequencyTable_)
+   {
+     const auto rxFreqHz = entry.second.first;
+     const auto txFreqHz = entry.second.second;
 
-  LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                          EMANE::INFO_LEVEL,
-                          "%s %03hu %s: numResourceBlocks %d, search %d",
-                          pzModuleName_,
-                          id_,
-                          __func__,
-                          numResourceBlocks,
-                          search);
+     const auto carrierIndex = entry.first;
+
+     LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                             EMANE::INFO_LEVEL,
+                             "%s %03hu %s: carrierIndex=%u, numResourceBlocks=%d, rbBandwidth=%lu, 1/2rbBndwidth=%lu, 1/2chanBandwdith=%lu, rxFreq=%lu Hz, txFreq=%lu Hz",
+                             pzModuleName_,
+                             id_,
+                             __func__,
+                             carrierIndex,
+                             numResourceBlocks,
+                             EMANELTE::ResourceBlockBandwidthHz,
+                             EMANELTE::HalfResourceBlockBandwidthHz,
+                             halfChannelBandwidthHz,
+                             rxFreqHz,
+                             txFreqHz);
+
+     // Don't allow configured channel to have negative frequencies
+     if(halfChannelBandwidthHz > rxFreqHz || halfChannelBandwidthHz > txFreqHz)
+      {
+        throw EMANE::makeException<EMANE::ConfigureException>("Invalid configuration, first resource block crosses 0 Hz.");
+      }
+   }
 
   u32NumResourceBlocks_ = numResourceBlocks;
-
-  setFrequenciesOfInterest(search);
 }
 
 
 
 template <class RadioStatManager, class MessageProcessor>
-void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(EMANELTE::FrequencyHz rxFrequency,
-                                                                                        EMANELTE::FrequencyHz txFrequency)
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(uint32_t carrierIndex,
+                                                                                        EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                                                                                        EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                                                                                        bool clearCache)
 {
+  if(clearCache)
+   {
+     frequencyTable_.clear();
+     rxCarrierFrequencyToIndexTable_.clear();
+     txCarrierFrequencyToIndexTable_.clear();
+     rxCarriersOfInterest_.clear();
+   }
+
+  // save rx/tx frequencyHz per carrier id
+  frequencyTable_[carrierIndex] = FrequencyPair{carrierRxFrequencyHz, carrierTxFrequencyHz};
+
+  // save carrier id per frequencyHz pair 
+  rxCarrierFrequencyToIndexTable_[carrierRxFrequencyHz] = carrierIndex;
+  txCarrierFrequencyToIndexTable_[carrierTxFrequencyHz] = carrierIndex;
+
+  rxCarriersOfInterest_.insert(carrierRxFrequencyHz);
+
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: rx_freq %lu, tx_freq %lu",
+                          "%s %03hu %s: numCarriers=%zu, carrierIndex=%u, rxFreq=%lu MHz, txFreq=%lu MHz",
                           pzModuleName_,
                           id_,
                           __func__,
-                          rxFrequency,
-                          txFrequency);
-
-  u64RxFrequencyHz_ = rxFrequency;
-  u64TxFrequencyHz_ = txFrequency;
+                          frequencyTable_.size(),
+                          carrierIndex,
+                          carrierRxFrequencyHz/1000000,
+                          carrierTxFrequencyHz/1000000);
 }
 
 
 
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t rx_freq_hz)
 {
-  return getResourceBlockFrequency(resourceBlockIndex, u64RxFrequencyHz_, u32NumResourceBlocks_);
+  return getResourceBlockFrequency(resourceBlockIndex, rx_freq_hz, u32NumResourceBlocks_);
 }
 
 
 
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex) const
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t tx_freq_hz)
 {
-  return getResourceBlockFrequency(resourceBlockIndex, u64TxFrequencyHz_, u32NumResourceBlocks_);
+  return getResourceBlockFrequency(resourceBlockIndex, tx_freq_hz, u32NumResourceBlocks_);
 }
 
 
@@ -424,8 +462,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxResourc
 template <class RadioStatManager, class MessageProcessor>
 EMANELTE::FrequencyHz
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
-                                                                        EMANELTE::FrequencyHz centerFreq,
-                                                                        std::uint64_t numResourceBlocks) const
+                                                                                              EMANELTE::FrequencyHz centerFreq,
+                                                                                              std::uint64_t numResourceBlocks) const
 {
   return centerFreq + ((resourceBlockIndex - numResourceBlocks/2) * 180000) + (((numResourceBlocks + 1) % 2) * 90000);
 }
@@ -438,6 +476,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
                                                                              const EMANE::Microseconds & span, 
                                                                              const EMANE::TimePoint & sor)
 {
+  const auto tp = EMANE::Clock::now();
+
   EMANE::SpectrumWindow spectrumWindow;
 
   try 
@@ -446,12 +486,19 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
     } 
   catch(EMANE::SpectrumServiceException & exp) 
     {
+      const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tp - sor);
+
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::ERROR_LEVEL,
-                              "%s %03hu %s: %s",
+                              "%s %03hu %s: frequency %lu, now %lf, sor %lf, span %ld, dt %ld usec, reason %s",
                               pzModuleName_,
                               id_,
                               __func__,
+                              frequency,
+                              tp.time_since_epoch().count()  / 1e9,
+                              sor.time_since_epoch().count() / 1e9,
+                              span.count(),
+                              dt.count(),
                               exp.what());
     }
 
@@ -478,107 +525,149 @@ EMANE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProc
 
 template <class RadioStatManager, class MessageProcessor>
 void
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(bool search)
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(bool searchMode, bool clearCache)
 {
-  LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                          EMANE::INFO_LEVEL,
-                          "MACI %03hu %s::%s: search=%d.",
-                          id_,
-                          pzModuleName_,
-                          __func__,
-                          search);
+  if(clearCache)
+   {
+     rxFrequenciesHz_.clear();
+     txFrequenciesHz_.clear();
+   }
 
-  EMANE::FrequencySet rxFrequencies{};
-  EMANELTE::FrequencyResourceBlockMap rxFreqToRBMap{};
+  for(const auto & entry : frequencyTable_)
+   {
+     const auto rxFreqHz = entry.second.first;
+     const auto txFreqHz = entry.second.second;
 
-  EMANE::FrequencySet txFrequencies{};
-  EMANELTE::FrequencyResourceBlockMap txFreqToRBMap{};
+     const auto carrierIndex = entry.first;
 
-  EMANELTE::FrequencyHz freq;
+     LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                             EMANE::INFO_LEVEL,
+                             "MACI %03hu %s::%s: carrierIndex=%u, searchMode=%d, rxFreq=%lu Hz, txFreq=%lu Hz",
+                             id_,
+                             pzModuleName_,
+                             __func__,
+                             carrierIndex,
+                             searchMode,
+                             rxFreqHz,
+                             txFreqHz);
 
-  for(uint32_t rbidx=0; rbidx<u32NumResourceBlocks_; ++rbidx)
-    {
-      freq = getTxResourceBlockFrequency(rbidx);
+     EMANELTE::FrequencyResourceBlockMap txFreqToRBMap{};
+     EMANELTE::FrequencyResourceBlockMap rxFreqToRBMap{};
 
-      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                              EMANE::DEBUG_LEVEL,
-                              "%s %03hu %s: rbidx=%d txfreq=%lu",
-                              pzModuleName_,
-                              id_,
-                              __func__,
-                              rbidx,
-                              freq);
+     for(uint32_t rbidx = 0; rbidx < u32NumResourceBlocks_; ++rbidx)
+      {
+        const auto frequencyHz = getTxResourceBlockFrequency(rbidx, txFreqHz); // tx frequencyHz
 
-      txFreqToRBMap.insert(std::pair<EMANELTE::FrequencyHz, uint32_t>(freq, rbidx));
-      txFrequencies.insert(getTxResourceBlockFrequency(rbidx));
-    }
+        LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                EMANE::DEBUG_LEVEL,
+                                "%s %03hu %s: carrierIndex=%u, rbidx=%d txfreq=%lu",
+                                pzModuleName_,
+                                id_,
+                                __func__,
+                                carrierIndex,
+                                rbidx,
+                                frequencyHz);
 
-  for(uint32_t rbidx=0; rbidx<u32NumResourceBlocks_; ++rbidx)
-    {
-      freq = getRxResourceBlockFrequency(rbidx);
+        txFreqToRBMap.emplace(frequencyHz, rbidx);
+        txFrequenciesHz_.emplace(frequencyHz);
+      }
 
-      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                              EMANE::DEBUG_LEVEL,
-                              "%s %03hu %s: rbidx=%d rxfreq=%lu",
-                              pzModuleName_,
-                              id_,
-                              __func__,
-                              rbidx,
-                              freq);
+     for(uint32_t rbidx = 0; rbidx < u32NumResourceBlocks_; ++rbidx)
+      {
+        const auto frequencyHz = getRxResourceBlockFrequency(rbidx, rxFreqHz); // rx frequencyHz
 
-      rxFreqToRBMap.insert(std::pair<EMANELTE::FrequencyHz, uint32_t>(freq, rbidx));
-      rxFrequencies.insert(freq);
-    }
+        LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                EMANE::DEBUG_LEVEL,
+                                "%s %03hu %s: carrierIndex=%u, rbidx=%d rxfreq=%lu",
+                                pzModuleName_,
+                                id_,
+                                __func__,
+                                carrierIndex,
+                                rbidx,
+                                frequencyHz);
 
-  // During cell search the ue doesn't know the enb bandwidth or the frequencies
-  // which the enb is transmitting on. The enb may be configured for a bandwidth
-  // that contains an even or an odd number of resource blocks. When told to
-  // search, register FOI for the largest even (100) and odd (75) resource block
-  // bandwidths to ensure receipt of enb packets from the phy for any enb.
-  if(search)
-    {
-      if(u32NumResourceBlocks_ != 100)
-        {
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                  EMANE::ERROR_LEVEL,
-                                  "%s %03hu %s: Attempt to do cell search with numResourceBlocks set to %d. Ignoring.",
-                                  pzModuleName_,
-                                  id_,
-                                  __func__,
-                                  u32NumResourceBlocks_);
-          return;
-        }
+        rxFreqToRBMap.emplace(frequencyHz, rbidx);
+        rxFrequenciesHz_.emplace(frequencyHz);
+      }
 
-      EMANELTE::FrequencyResourceBlockMap rx75FreqToRBMap{};
+    // During cell searchMode the ue doesn't know the enb bandwidth or the frequencies
+    // which the enb is transmitting on. The enb may be configured for a bandwidth
+    // that contains an even or an odd number of resource blocks. When told to
+    // search, register FOI for the largest even (100) and odd (75) resource block
+    // bandwidths to ensure receipt of enb packets from the phy for any enb.
+    if(searchMode)
+      {
+        if(u32NumResourceBlocks_ != 100)
+          {
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::ERROR_LEVEL,
+                                    "%s %03hu %s: Attempt to do cell search with numResourceBlocks set to %d. Ignoring.",
+                                    pzModuleName_,
+                                   id_,
+                                   __func__,
+                                   u32NumResourceBlocks_);
+           return;
+         }
 
-      for(uint32_t rbidx=0; rbidx<75; ++rbidx)
-        {
-          freq = getResourceBlockFrequency(rbidx, u64RxFrequencyHz_, 75);
+        EMANELTE::FrequencyResourceBlockMap rx75FreqToRBMap{};
 
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                  EMANE::DEBUG_LEVEL,
-                                  "%s %03hu %s: rbidx=%d rxfreq=%lu",
-                                  pzModuleName_,
-                                  id_,
-                                  __func__,
-                                  rbidx,
-                                  freq);
+        for(uint32_t rbidx = 0; rbidx < 75; ++rbidx)
+          {
+            const auto frequencyHz = getResourceBlockFrequency(rbidx, rxFreqHz, 75); // rx frequencyHz
+ 
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::DEBUG_LEVEL,
+                                    "%s %03hu %s: rbidx=%d rxfreq=%lu",
+                                    pzModuleName_,
+                                    id_,
+                                    __func__,
+                                    rbidx,
+                                    frequencyHz);
 
-          rx75FreqToRBMap.insert(std::pair<EMANELTE::FrequencyHz, uint32_t>(freq, rbidx));
-          rxFrequencies.insert(freq);
-        }
+            rx75FreqToRBMap.emplace(frequencyHz, rbidx);
+            rxFrequenciesHz_.emplace(frequencyHz);
+          }
 
-      messageProcessor_.swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
+      messageProcessor_[carrierIndex]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
     }
   else
     {
-      messageProcessor_.swapFrequencyMaps(rxFreqToRBMap, txFreqToRBMap);
+      messageProcessor_[carrierIndex]->swapFrequencyMaps(rxFreqToRBMap, txFreqToRBMap);
     }
+  }
 
-  statisticManager_.updateFrequencies(rxFrequencies, txFrequencies);
+#if 0 
+  size_t idx = 0; 
+  for(const auto & frequencyHz : rxFrequenciesHz_)
+   {
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "%s %03hu %s: idx %zu, rxfreq=%lu",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              idx++,
+                              frequencyHz);
+   }
+
+  idx = 0; 
+  for(const auto & frequencyHz : txFrequenciesHz_)
+   {
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "%s %03hu %s: idx %zu, txfreq=%lu",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              idx++,
+                              frequencyHz);
+   }
+#endif
+
+  statisticManager_.updateFrequencies(rxFrequenciesHz_, txFrequenciesHz_);
 
   sendDownstreamControl({EMANE::Controls::FrequencyOfInterestControlMessage::create(EMANELTE::ResourceBlockBandwidthHz,
-                                                                                    rxFrequencies)});
+                                                                                    rxFrequenciesHz_)});
 }
 
 
@@ -589,28 +678,74 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                                                                                           EMANELTE::MHAL::TxControlMessage & txControl,
                                                                                           const EMANE::TimePoint & timestamp)
 {
+#ifdef ENABLE_INFO_1_LOGS
+  const auto tp_now = EMANE::Clock::now(); 
+  const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(timestamp - tp_now);
+
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                          EMANE::DEBUG_LEVEL,
-                          "%s %03hu %s data_len %3zu, tti_tx %05u, sf_time %d:%06d, timestamp %f",
+                          EMANE::INFO_LEVEL,
+                          "%s %03hu %s data_len %3zu, tti_tx %05u, curr_time %f, timestamp %f, dt %ld usec",
                           pzModuleName_,
                           id_,
                           __func__,
                           data.length(),
                           txControl.tti_tx(),
-                          txControl.sf_time().ts_sec(),
-                          txControl.sf_time().ts_usec(),
-                          timestamp.time_since_epoch().count()/1e9);
+                          tp_now.time_since_epoch().count()/1e9,
+                          timestamp.time_since_epoch().count()/1e9,
+                          dt.count());
+#endif
 
-   EMANE::FrequencySegments frequencySegments{
-     messageProcessor_.buildFrequencySegments(txControl, u32SymbolsPerSlot_)};
+   // MUX all frequency segments for the msg
+   EMANE::FrequencySegments frequencySegments;
+
+   for(int idx = 0; idx < txControl.carriers().size(); ++idx)
+    {
+      auto controlCarrier = txControl.mutable_carriers(idx);
+
+      const auto carrierFrequencyHz = controlCarrier->frequency_hz();
+
+      const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+
+      EMANELTE::FrequencySet frequenciesThisCarrier;
+
+      // sanity check
+      if(iter != txCarrierFrequencyToIndexTable_.end())
+       {
+         const auto carrierIndex = iter->second;
+
+         // get the all frequency segments for this carrier
+         const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl, carrierFrequencyHz);
+
+         for(const auto & segment : segments)
+          {
+            const auto frequencyHz = segment.getFrequencyHz();
+
+            // unique list of subchannel frequencies
+            if(frequenciesThisCarrier.insert(frequencyHz).second)
+             {
+               controlCarrier->add_sub_channels(frequencyHz);
+             }
+
+            frequencySegments.push_back(segment);
+          }
+       }
+      else
+       {
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                 EMANE::ERROR_LEVEL,
+                                 "MACI %03hu %s::%s: skip carrier %lu Hz, no matching carriers",
+                                 id_,
+                                 pzModuleName_,
+                                 __func__,
+                                 carrierFrequencyHz);
+       }
+    }
 
    const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
 
-   txControl.set_tx_frequency_hz(u64TxFrequencyHz_);
-
    const EMANE::ControlMessages msgs = 
-     {EMANE::Controls::FrequencyControlMessage::create(EMANELTE::ResourceBlockBandwidthHz, frequencySegments),
-      EMANE::Controls::TimeStampControlMessage::create(timestamp)};     // sot
+      {EMANE::Controls::FrequencyControlMessage::create(EMANELTE::ResourceBlockBandwidthHz, frequencySegments),
+       EMANE::Controls::TimeStampControlMessage::create(timestamp)};     // ota tx timestamp aka sot
 
    std::string sSerialization{};
 
@@ -636,7 +771,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                                                                          EMANE::UpstreamPacket & pkt,
                                                                          const EMANE::ControlMessages & controlMessages)
 {
-  const EMANE::TimePoint tpRxTime = EMANE::Clock::now();
+  const EMANE::TimePoint tp_now = EMANE::Clock::now();
 
   if(commonMACHeader.getRegistrationId() != u16SubId_)
     {
@@ -658,7 +793,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
   const EMANE::Controls::FrequencyControlMessage * pFrequencyControlMessage = NULL;
 
-  for(EMANE::ControlMessages::const_iterator iter = controlMessages.begin(); iter != controlMessages.end(); ++iter)
+  for(auto iter = controlMessages.begin(); iter != controlMessages.end(); ++iter)
     {
       switch((*iter)->getId())
         {
@@ -692,11 +827,12 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
       return;
     }
 
+  const auto timestamp = pReceivePropertiesControlMessage->getTxTime();
+
   const uint16_t prefixLength{pkt.stripLengthPrefixFraming()};
 
   if(prefixLength && (pkt.length() >= prefixLength))
     {
-      // start of reception w/o segment offset info
       const std::string sSerialization{reinterpret_cast<const char*>(pkt.get()), prefixLength};
 
       pkt.strip(prefixLength);
@@ -705,18 +841,30 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
       if(txControl.ParseFromString(sSerialization))
         {
+#ifdef ENABLE_INFO_1_LOGS
+          const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(timestamp - tp_now);
+
           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                 EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: src %hu, cell 0x%x, seqnum %lu, span %lu, prop_delay %lu, max_delay %lu",
+                                 EMANE::INFO_LEVEL,
+                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, span %lu, prop_delay %lu, curr_time %f, timestamp %f, dt %ld usec",
                                  id_,
                                  pzModuleName_,
                                  __func__,
                                  pktInfo.getSource(),
-                                 txControl.phy_cell_id(),
                                  txControl.tx_seqnum(),
                                  pReceivePropertiesControlMessage->getSpan().count(),
                                  pReceivePropertiesControlMessage->getPropagationDelay().count(),
-                                 maxPropagationDelay_.count());
+                                 tp_now.time_since_epoch().count()/1e9,
+                                 timestamp.time_since_epoch().count()/1e9,
+                                 dt.count());
+#endif
+         // check for up/down link type
+         if(txControl.message_type() != messageProcessor_[0]->receiveMessageType_)
+          {
+            updateSubframeDropDirection_i(pktInfo.getSource());
+
+            return;
+          }
 
           // if enabled (!=0) check propagation delay limit
           const bool bPassPropagationDelay = maxPropagationDelay_.count() > 0 ?
@@ -725,41 +873,56 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
           if(!bPassPropagationDelay)
             {
               updateSubframeDropPropagationDelay_i(pktInfo.getSource());
+
               return;
             }
 
-          if(txControl.tx_frequency_hz() != u64RxFrequencyHz_)
+          bool bFoundCarrier = false;
+
+          // must have at least 1 matching carrier to pass this message
+          for(auto carrier : txControl.carriers())
             {
+              // check the carrier frequencyHz, see if it matches one of our carrier rx freqs
+              if(rxCarriersOfInterest_.count(carrier.frequency_hz()))
+               {
+                 bFoundCarrier = true;
+
+                 break;
+               }
+            }
+
+          if(! bFoundCarrier)
+           {
+             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                     EMANE::INFO_LEVEL,
+                                     "MACI %03hu %s::%s: drop msg from %hu, no matching carriers",
+                                     id_,
+                                     pzModuleName_,
+                                     __func__,
+                                     pktInfo.getSource());
+
               updateSubframeDropFrequencyMismatch_i(pktInfo.getSource());
-              return;
-            }
 
-          if(txControl.message_type() != messageProcessor_.receiveMessageType_)
-            {
-              updateSubframeDropDirection_i(pktInfo.getSource());
               return;
-            }
+           }
 
-          statisticManager_.updateRxTableCounts(txControl);
+          statisticManager_.updateRxTableCounts(txControl, rxCarriersOfInterest_);
 
           pMHAL_->handle_upstream_msg(
             EMANELTE::MHAL::Data{reinterpret_cast<const char *>(pkt.get()), pkt.length()},   // opaque data
 
-            EMANELTE::MHAL::RxData{pktInfo.getSource(),                                      // src nem
+            EMANELTE::MHAL::RxControl{pktInfo.getSource(),                                   // src nem
                 txControl.tx_seqnum(),                                                       // tx seqnum
-                tpToTimeval(tpRxTime),                                                       // clock rx time
+                tpToTimeval(tp_now),                                                         // clock rx time
                 tpToTimeval(pktInfo.getCreationTime()),                                      // clock tx time
-                timeval{txControl.sf_time().ts_sec(),                                        // sf time
-                        txControl.sf_time().ts_usec()},
-                0.0,                                                                         // peak sum
-                0},                                                                          // num samples
+                timeval{txControl.sf_time().ts_sec(),                                        // sf time / timestamp
+                        txControl.sf_time().ts_usec()}},
 
-            EMANELTE::MHAL::PHY::OTAInfo{pReceivePropertiesControlMessage->getTxTime(),      // emulation sot
+            EMANELTE::MHAL::PHY::OTAInfo{timestamp,                                          // emulation sot / timestamp
                 pReceivePropertiesControlMessage->getPropagationDelay(),                     // propagation delay
                 pReceivePropertiesControlMessage->getSpan(),                                 // span
-                pFrequencyControlMessage->getFrequencySegments()},                           // freq segments
-
-            txControl);                                                                      // txControl
+                pFrequencyControlMessage->getFrequencySegments()},                           // frequency segments
+                txControl);                                                                  // txControl
 
           updateSubframePass_i(pktInfo.getSource());
         }
@@ -922,9 +1085,42 @@ template <class RadioStatManager, class MessageProcessor>
 bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTestChannelMessage(
    const EMANELTE::MHAL::TxControlMessage & txControl,
    const EMANELTE::MHAL::ChannelMessage & channel_msg,
-   SegmentMap & segmentCache)
+   SegmentMap & segmentCache,
+   std::uint64_t carrierFrequencyHz)
 {
-  return messageProcessor_.noiseTestChannelMessage(txControl, channel_msg, segmentCache);
+  // check rx carrier table for tx frequencyHz
+  const auto index = getRxCarrierIndex(carrierFrequencyHz);
+
+  if(index >= 0)
+   {
+     return messageProcessor_[index]->noiseTestChannelMessage(txControl, channel_msg, segmentCache, carrierFrequencyHz);
+   }
+  else
+   {
+     return false;
+   }
+}
+
+
+template <class RadioStatManager, class MessageProcessor>
+EMANELTE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getCarriersOfInterest() const
+{
+  return rxCarriersOfInterest_;
+}
+
+template <class RadioStatManager, class MessageProcessor>
+int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCarrierIndex(std::uint64_t carrierFrequencyHz) const
+{
+  const auto iter = rxCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+
+  if(iter !=  rxCarrierFrequencyToIndexTable_.end())
+   {
+     return iter->second;
+   }
+  else
+   {
+     return -1;
+   }
 }
 
 

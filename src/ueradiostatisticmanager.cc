@@ -132,50 +132,60 @@ EMANE::Models::LTE::UERadioStatisticManager::registerStatistics(EMANE::Registrar
 void
 EMANE::Models::LTE::UERadioStatisticManager::updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
 {
-  if(txControl.uplink().has_prach())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().prach(), true);
-    }
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carrier.uplink().has_prach())
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().prach(), true);
+      }
 
-  for(int i = 0; i < txControl.uplink().pucch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pucch(i), true);
-    }
+     for(int i = 0; i < carrier.uplink().pucch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().pucch(i), true);
+      }
 
-  for(int i = 0; i < txControl.uplink().pusch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.uplink().pusch(i), true);
-    }
+     for(int i = 0; i < carrier.uplink().pusch_size(); ++i)
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.uplink().pusch(i), true);
+      }
+   }
 }
 
 
 void
-EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl)
+EMANE::Models::LTE::UERadioStatisticManager::updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl,
+                                                                 const EMANELTE::FrequencySet & carriersOfInterest)
 {
-  updateTableCounts(txControl.tti_tx(), txControl.downlink().pcfich(), false);
+  for(const auto & carrier : txControl.carriers())
+   {
+     if(carriersOfInterest.count(carrier.frequency_hz()))
+      {
+        updateTableCounts(txControl.tti_tx(), carrier.downlink().pcfich(), false);
 
-  if(txControl.downlink().has_pbch())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pbch(), false);
-    }
+        if(carrier.downlink().has_pbch())
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().pbch(), false);
+         }
 
-  for(int i = 0; i < txControl.downlink().phich_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().phich(i), false);
-    }
+        for(int i = 0; i < carrier.downlink().phich_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().phich(i), false);
+         }
+  
+        for(int i = 0; i < carrier.downlink().pdcch_size(); ++i)
+         {
+           updateTableCounts(txControl.tti_tx(), carrier.downlink().pdcch(i), false);
+         }
 
-  for(int i = 0; i < txControl.downlink().pdcch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdcch(i), false);
-    }
+       for(int i = 0; i < carrier.downlink().pdsch_size(); ++i)
+        {
+          updateTableCounts(txControl.tti_tx(), carrier.downlink().pdsch(i), false);
+        }
 
-  for(int i = 0; i < txControl.downlink().pdsch_size(); ++i)
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pdsch(i), false);
-    }
-
-  if(txControl.downlink().has_pmch())
-    {
-      updateTableCounts(txControl.tti_tx(), txControl.downlink().pmch(), false);
-    }
+       if(carrier.downlink().has_pmch())
+        {
+         updateTableCounts(txControl.tti_tx(), carrier.downlink().pmch(), false);
+        }
+      }
+   }
 }

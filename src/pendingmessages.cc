@@ -46,7 +46,7 @@ void EMANELTE::MHAL::PendingMessageBin::clear()
 
 size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 {
-  size_t size(pending_.size());
+  const size_t size(pending_.size());
 
   if(size)
     {
@@ -60,7 +60,7 @@ size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 // purge and msgs that have expired.
 void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
                 uint32_t bin,
-                const PendingMessage & msg,
+                const PendingMessage & pendingMsg,
                 StatisticManager & statisticManager)
 {
   if(pending_.empty())
@@ -77,11 +77,11 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
         }
     }
 
-  pending_.push_back(msg);
+  pending_.emplace_back(pendingMsg);
 }
 
 
-// a msg is composed of multiple segments each with a unique frequency
+// a pendingMsg is composed of multiple segments each with a unique frequency
 // find the min sor and max eor for each frequency
 // this will be used to consult the spectrum monitor later
 EMANELTE::MHAL::SegmentSpans
@@ -89,30 +89,29 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
 {
   SegmentSpans segmentSpans;
 
-  for(auto msg_iter = pending_.begin(); msg_iter != pending_.end(); ++msg_iter)
+  for(const auto & pendingMsg : pending_)
     {
-      const auto & otaInfo = std::get<2>(*msg_iter);
+      const auto & otaInfo = PendingMessage_OtaInfo(pendingMsg);
 
       for(auto & segment : otaInfo.segments_)
         {
           const auto frequencyHz = segment.getFrequencyHz();
 
-          // sor = sot + offset + propagation delay
-          //const auto sor = otaInfo.sot_ + segment.getOffset() + otaInfo.propDelay_;
+          // sor = sot + offset, LTE timinging advance accounts for propagation delay
           const auto sor = otaInfo.sot_ + segment.getOffset();
           const auto eor = sor + segment.getDuration();
 
-          auto span = segmentSpans.find(frequencyHz);
+          // check for matching frequency
+          const auto iter = segmentSpans.find(frequencyHz);
 
-          if(span != segmentSpans.end())
+          if(iter != segmentSpans.end())
             {
-              auto & min        = std::get<0>(span->second);
-              auto & max        = std::get<1>(span->second);
-              auto & numEntries = std::get<2>(span->second);
+              auto & min = SegmentTimeSpan_sor(iter->second);
+              auto & max = SegmentTimeSpan_eor(iter->second);
 
               min = std::min(min, sor);
               max = std::max(max, eor);
-              numEntries += 1;
+              ++SegmentTimeSpan_num(iter->second);
             }
           else
             {

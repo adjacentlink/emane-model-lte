@@ -47,12 +47,13 @@ class DownlinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
   DownlinkSINRTesterImpl(EMANE::Models::LTE::UERadioModel * pRadioModel,
-                         TxControlMessage txControl,
-                         EMANE::Models::LTE::SegmentMap segmentCache,
+                         const TxControlMessage & txControl,
+                         const EMANE::Models::LTE::SegmentMap & segmentCache,
                          bool pcfichPass,
                          bool pbchPass,
                          double sinr,
-                         double noiseFloor) :
+                         double noiseFloor,
+                         std::uint64_t carrierFrequencyHz) :
     pRadioModel_{pRadioModel},
     txControl_{txControl},
     segmentCache_{segmentCache},
@@ -60,25 +61,24 @@ public:
     pbchPass_{pbchPass},
     sinr_dB_{sinr},
     noiseFloor_dBm_{noiseFloor},
+    carrierFrequencyHz_{carrierFrequencyHz},
     pdcchRNTIResults_{}
   {}
 
-  bool sinrCheck(CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;
+  SINRTester::SINRTesterResult sinrCheck(CHANNEL_TYPE ctype) override;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
-
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+  SINRTester::SINRTesterResult sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;  
 
 private:
   EMANE::Models::LTE::UERadioModel * const pRadioModel_;
   const TxControlMessage txControl_;
   EMANE::Models::LTE::SegmentMap segmentCache_;
-  const bool pcfichPass_;
-  const bool pbchPass_;
+  const bool   pcfichPass_;
+  const bool   pbchPass_;
   const double sinr_dB_;
   const double noiseFloor_dBm_;
+  const std::uint64_t carrierFrequencyHz_;
   std::map<std::uint32_t, bool> pdcchRNTIResults_;
 };
 

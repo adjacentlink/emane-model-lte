@@ -37,6 +37,7 @@
 
 #include <emane/application/logger.h>
 #include <string.h>
+#include <unistd.h>
 #include <pthread.h>
 
 
@@ -56,6 +57,8 @@ inline void lock_with_check(pthread_mutex_t * x, const char * file, const char *
   if(rc) {
     fprintf(stderr, "emane-model-lte:%s [%s-%s-%d] rc [%d], reason [%s], exit now !!!\n",
             __func__, file, func, line, rc, strerror(rc));
+
+    sleep(1);
     exit(1);
   }
 }
@@ -67,6 +70,8 @@ inline void unlock_with_check(pthread_mutex_t * x, const char * file, const char
   if(rc) {
     fprintf(stderr, "emane-model-lte:%s [%s-%s-%d] rc [%d], reason [%s], exit now !!!\n",
             __func__, file, func, line, rc, strerror(rc));
+
+    sleep(1);
     exit(1);
   }
 }
