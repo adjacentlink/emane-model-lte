@@ -8,7 +8,6 @@
       <param name="eventservicedevice"        value="${control_interface}"/>
   </emulator>
   <physical-layer>
-    <param name="bandwidth"                   value="${bandwidth}"/>
     <param name="propagationmodel"            value="precomputed"/>
     <param name="fixedantennagainenable"      value="${fixedantennagainenable}"/>
   </physical-layer>

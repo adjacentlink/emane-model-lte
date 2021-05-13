@@ -9,7 +9,8 @@ then
 fi
 
 emane-spectrum-analyzer \
-    $1:8883 \
     --hz-min 2500000000 \
     --hz-max 2700000000 \
-    --subid-name 12,LTE
+    --subid-name 12,LTE \
+    $1:8883 \
+    -110
