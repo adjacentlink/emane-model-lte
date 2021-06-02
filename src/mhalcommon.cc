@@ -56,6 +56,8 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
 
   timing_.set_ts_sf_interval_usec(sf_interval_msec * 1000);
 
+  nof_advance_sf_ = 0;
+
   int parent_policy = 0;
   struct sched_param parent_priority = {0};
 
@@ -80,9 +82,18 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
   set_thread_priority(pthread_self(), parent_policy, parent_priority.sched_priority);
 }
 
-
 void
 EMANELTE::MHAL::MHALCommon::start(uint32_t nof_advance_sf)
+{
+  // save no of advance frames for later,
+  // we will not go into start state until the stack
+  // actually begins the rx threads
+  nof_advance_sf_ = nof_advance_sf;
+}
+
+
+void
+EMANELTE::MHAL::MHALCommon::start_rx_i()
 {
   if(! state_.isStarted())
     {
@@ -94,22 +105,15 @@ EMANELTE::MHAL::MHALCommon::start(uint32_t nof_advance_sf)
           pendingMessageBins_[bin].unlockBin();
         }
 
-      timing_.lockTime();
-
-      timing_.alignTime(nof_advance_sf);
+      // timing info must be locked by caller
+      timing_.alignTime(nof_advance_sf_);
 
       const auto & tv_curr_sf = timing_.getCurrSfTime();
 
       logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf_time %ld:%06ld", 
                   __func__, tv_curr_sf.tv_sec, tv_curr_sf.tv_usec);
 
-      timing_.unlockTime();
-
       state_.start();
-    }
-  else
-    {
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s already running", __func__);
     }
 }
 
@@ -340,7 +344,9 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & r_tv_s
 {
   timing_.lockTime();
 
-  const timeval tv_curr_sf      = timing_.getCurrSfTime();
+  start_rx_i();
+
+  const timeval tv_curr_sf = timing_.getCurrSfTime();
 
   const timeval tv_next_sf_time = timing_.getNextSfTime();
 
@@ -409,8 +415,6 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & r_tv_s
    }
 
 #ifdef ENABLE_INFO_1_LOGS                   
-  if(not messages.empty())
-   {
      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, sor %ld:%06ld, curr_sf %ld:%06ld, delay %ld usec, %zu msgs ready",
                  __func__,
                  bin,
@@ -420,7 +424,6 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & r_tv_s
                  tv_curr_sf.tv_usec,
                  time_to_wait_usec,
                  messages.size());
-   }
 #endif
 
   // clear bin for this subframe

@@ -120,6 +120,11 @@ protected:
 
   virtual void noise_processor(const uint32_t bin,
                                const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache) = 0;
+
+ private:
+  uint32_t nof_advance_sf_;
+
+  void start_rx_i(); 
 };
 
 }
