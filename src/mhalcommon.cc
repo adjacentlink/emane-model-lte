@@ -35,14 +35,10 @@
 
 #include "mhalcommon.h"
 #include "configmanager.h"
-
+#include <math.h>
 
 #undef ENABLE_INFO_1_LOGS
 #undef ENABLE_INFO_2_LOGS
-
-namespace {
-   const auto ZERO_USEC = EMANE::Microseconds{0};
-}
 
 void
 EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_config_t & mhal_config)
@@ -55,8 +51,6 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
   timing_.set_tv_slot_interval(0, sf_interval_msec * 1000/2);
 
   timing_.set_ts_sf_interval_usec(sf_interval_msec * 1000);
-
-  nof_advance_sf_ = 0;
 
   int parent_policy = 0;
   struct sched_param parent_priority = {0};
@@ -85,36 +79,21 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
 void
 EMANELTE::MHAL::MHALCommon::start(uint32_t nof_advance_sf)
 {
-  // save no of advance frames for later,
-  // we will not go into start state until the stack
-  // actually begins the rx threads
-  nof_advance_sf_ = nof_advance_sf;
-}
-
-
-void
-EMANELTE::MHAL::MHALCommon::start_rx_i()
-{
   if(! state_.isStarted())
-    {
-      for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
-        {
-          pendingMessageBins_[bin].lockBin();
-          pendingMessageBins_[bin].clear();
-          clearReadyMessages_safe(bin);
-          pendingMessageBins_[bin].unlockBin();
-        }
+   {
+     clearBins_i();
 
-      // timing info must be locked by caller
-      timing_.alignTime(nof_advance_sf_);
+     timing_.lockTime();
 
-      const auto & tv_curr_sf = timing_.getCurrSfTime();
+     timing_.alignTime(nof_advance_sf);
 
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf_time %ld:%06ld", 
-                  __func__, tv_curr_sf.tv_sec, tv_curr_sf.tv_usec);
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf_time %ld:%06ld, nof_advance %u", 
+                  __func__, timing_.getCurrSfTime().tv_sec, timing_.getCurrSfTime().tv_usec, nof_advance_sf);
 
-      state_.start();
-    }
+     timing_.unlockTime();
+
+     state_.start();
+   }
 }
 
 
@@ -170,19 +149,19 @@ void
 EMANELTE::MHAL::MHALCommon::send_msg(const Data & data,
                                      TxControlMessage & txControl)
 {
-  txControl.set_subframe_duration_microsecs(timing_.ts_sf_interval_usec());
+  txControl.set_subframe_duration_microsecs(timing_.tsSfIntervalUsec());
 
-  timeval tv_sf_time{txControl.sf_time().ts_sec(), txControl.sf_time().ts_usec()};
+  timeval tvSfTime{txControl.sf_time().ts_sec(), txControl.sf_time().ts_usec()};
 
   if(TX_TIME_ADJUST > 0)
     {
       // pull back tx timestamp to allow for greater processing time on at the receiver
-      timeval tv_adjust = tsToTv(timing_.ts_sf_interval_usec() * TX_TIME_ADJUST);
+      timeval tvAdjust = tsToTv(timing_.tsSfIntervalUsec() * TX_TIME_ADJUST);
 
-      timersub(&tv_sf_time, &tv_adjust, &tv_sf_time);
+      timersub(&tvSfTime, &tvAdjust, &tvSfTime);
     }
  
-  send_downstream(data, txControl, EMANE::TimePoint(EMANE::Microseconds(tvToUseconds(tv_sf_time))));
+  send_downstream(data, txControl, EMANE::TimePoint(EMANE::Microseconds(tvToUseconds(tvSfTime))));
 }
 
 
@@ -217,17 +196,17 @@ EMANELTE::MHAL::MHALCommon::set_thread_priority(pthread_t tid, int policy, int p
 
 void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin, const timeval & tv_sf_start __attribute__((unused)))
 {
-  struct timeval tv_in, tv_out, tv_in_out_diff;
+  struct timeval tvIn, tvOut, tvDiff;
 
-  // track work time
-  gettimeofday(&tv_in, NULL);
+  // track work time start
+  gettimeofday(&tvIn, NULL);
 
   const size_t numMessages = pendingMessageBins_[bin].get().size();
 
   clearReadyMessages_safe(bin);
 
   // container for all freqs and energy for this subframe
-  // allows for consulting the spectrum sevice once and only once for each freq/timerange
+  // allows for consulting the spectrum sevice once and only once for each freq/timerange later
   EMANE::Models::LTE::SpectrumWindowCache spectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency in this msg
@@ -255,17 +234,18 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin, const time
 
   statisticManager_.updateDequeuedMessages(bin, numMessages);
 
+  // load up the ready messages
   noise_processor(bin, spectrumWindowCache);
 
   // done with pending msgs
   pendingMessageBins_[bin].clear();
 
-  gettimeofday(&tv_out, NULL);
+  gettimeofday(&tvOut, NULL);
 
-  timersub(&tv_out, &tv_in, &tv_in_out_diff);
+  timersub(&tvOut, &tvIn, &tvDiff);
 
   // update process time
-  statisticManager_.updateNoiseProcessDelay(bin, tvToSeconds(tv_in_out_diff));
+  statisticManager_.updateNoiseProcessDelay(bin, tvToSeconds(tvDiff));
 }
 
 
@@ -286,17 +266,17 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
       const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(eor.time_since_epoch() - tp_now.time_since_epoch());
 
       // get bin for msg sf_time (tti) this is the sf that the msg is expected to arrive tx/rx
-      const uint32_t bin = getMessageBin(rxControl.sf_time_, timing_.ts_sf_interval_usec());
+      const uint32_t bin = getMessageBin(rxControl.sf_time_, timing_.tsSfIntervalUsec());
 
-      timeval tv_ota_diff;
+      timeval tvDiff;
 
       // get ota diff
-      timersub(&rxControl.rx_time_, &rxControl.tx_time_, &tv_ota_diff);
+      timersub(&rxControl.rx_time_, &rxControl.tx_time_, &tvDiff);
 
-      statisticManager_.updateRxPacketOtaDelay(bin, tvToSeconds(tv_ota_diff));
+      statisticManager_.updateRxPacketOtaDelay(bin, tvToSeconds(tvDiff));
 
-      // eor should be in the future
-      if(dt >= ZERO_USEC)
+      // eor should be now or in the future
+      if(dt >= EMANE::Microseconds::zero())
         {
           statisticManager_.updateEnqueuedMessages(bin);
 
@@ -318,19 +298,20 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
           statisticManager_.updateLateMessages(bin);
         }
 
-#ifdef ENABLE_INFO_1_LOGS
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s seqnum %lu, bin %u, curr_time %f, sot %f, span %ld, sor %f, eor %f, dt %ld usec, msgs %zu", 
-                      __func__,
-                      rxControl.rx_seqnum_,
-                      bin,
-                      tp_now.time_since_epoch().count()/1e9,
-                      otaInfo.sot_.time_since_epoch().count()/1e9,
-                      otaInfo.span_.count(),
-                      sor.time_since_epoch().count()/1e9,
-                      eor.time_since_epoch().count()/1e9,
-                      dt.count(),
-                      pendingMessageBins_[bin].get().size());
-#endif
+      if(pendingMessageBins_[bin].get().size() > 1)
+       {
+         logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s seqnum %lu, bin %u, curr_time %f, sot %f, span %ld, sor %f, eor %f, dt %ld usec, msgs %zu", 
+                     __func__,
+                     rxControl.rx_seqnum_,
+                     bin,
+                     tp_now.time_since_epoch().count()/1e9,
+                     otaInfo.sot_.time_since_epoch().count()/1e9,
+                     otaInfo.span_.count(),
+                     sor.time_since_epoch().count()/1e9,
+                     eor.time_since_epoch().count()/1e9,
+                     dt.count(),
+                     pendingMessageBins_[bin].get().size());
+       }
     }
   else
     {
@@ -339,110 +320,117 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 }
 
 
-bool
-EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & r_tv_sor)
+void
+EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & tvSor)
 {
   timing_.lockTime();
 
-  start_rx_i();
+  // subframe start time since we were here last
+  const timeval tvLastSfBegin = timing_.getCurrSfTime();
 
-  const timeval tv_curr_sf = timing_.getCurrSfTime();
+  // subframe end time
+  const timeval tvLastSfEnd = timing_.getNextSfTime();
 
-  const timeval tv_next_sf_time = timing_.getNextSfTime();
+  timeval tvNow, tvDiff;
 
-  timeval tv_now, tv_delay;
+  // actual time now
+  gettimeofday(&tvNow, NULL);
 
-  gettimeofday(&tv_now, NULL);
+  // deltaT the next subframe (end of last sub frame) and now
+  timersub(&tvLastSfEnd, &tvNow, &tvDiff);
 
-  // get the delta to the begin next subframe (end of this sub frame)
-  timersub(&tv_next_sf_time, &tv_now, &tv_delay);
+  time_t timeToWaitUsec = tvToUseconds(tvDiff), overRunUsec = 0;
 
-  const time_t time_to_wait_usec = tvToUseconds(tv_delay);
-
-  bool bSfTimeInStep = true;
-
-  // this is where we set the pace for the system pulse
-  if(time_to_wait_usec > 0)
+  // this is where we set the pace for the system pulse/tti
+  // wait for the end of the subframe and return any rx messages
+  if(timeToWaitUsec > 0)
     {
-      // end of this subframe time is in the future
-      select(0, NULL, NULL, NULL, &tv_delay);
+      // good, the end of this subframe time is still in the future
+      //             
+      //   |         |        |        |
+      //   ^    ^    ^
+      // begin now  end
+      //
+      select(0, NULL, NULL, NULL, &tvDiff);
     }
-  // need to play catchup, run w/o delay
   else
     {
-      bSfTimeInStep = false;
-#ifdef ENABLE_INFO_1_LOGS
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s curr_sf_time %ld:%06ld, off by %ld usec",
+      // running late
+      overRunUsec = abs(timeToWaitUsec);      
+
+      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s last_sf_time %ld:%06ld, late by %ld usec",
                   __func__,
-                  tv_curr_sf.tv_sec,
-                  tv_curr_sf.tv_usec,
-                  time_to_wait_usec);
-#endif
+                  tvLastSfBegin.tv_sec,
+                  tvLastSfBegin.tv_usec,
+                  overRunUsec);
+
+      // a frame behind or more
+      if(overRunUsec >= (10 * timing_.tsSfIntervalUsec()))
+       {
+         // lets jump ahead
+         while(overRunUsec > 0)
+          {
+            timing_.stepTime();
+
+            overRunUsec -= timing_.tsSfIntervalUsec();
+          }
+
+         // clear all stale messages
+         clearBins_i();
+
+         timing_.unlockTime();
+
+         // done, we'll be bac
+         return;
+       }
     }
 
-  // use sf_time for the bin
-  const uint32_t bin = getMessageBin(tv_curr_sf, timing_.ts_sf_interval_usec());
+  // select bin based on the current subframe time
+  const auto bin = getMessageBin(tvLastSfBegin, timing_.tsSfIntervalUsec());
 
-  // now advance the subframe times, curr -> next, next -> next+1
-  const uint32_t nextbin{timing_.stepTime()};
-
-  // clear next subrame stale data
-  pendingMessageBins_[nextbin].lockBin();
-
-  clearPendingMessages_safe(nextbin);
-
-  clearReadyMessages_safe(nextbin);
-
-  pendingMessageBins_[nextbin].unlockBin();
-
-  // process this subframe bin now
+  // work this subframe bin
   pendingMessageBins_[bin].lockBin();
 
-  noiseWorker_safe(bin, tv_curr_sf);
-
-  // set the sor to the subframe time (time aligned via lte time advance)
-  r_tv_sor = tv_curr_sf;
-
-  timing_.unlockTime();
-
-  const auto offset_usec = timing_.ts_sf_interval_usec() - time_to_wait_usec;
-
-  // dont bother with stale data
-  if(not (offset_usec > timing_.ts_sf_interval_usec()))
+  // only process current data
+  if(overRunUsec <= timing_.tsSfIntervalUsec())
    {
-     // transfer to caller, all done with bin data
+     noiseWorker_safe(bin, tvLastSfBegin);
+
+     // transfer to caller, done with all bin data
      messages = std::move(readyMessageBins_[bin].get());
    }
 
-#ifdef ENABLE_INFO_1_LOGS                   
-     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, sor %ld:%06ld, curr_sf %ld:%06ld, delay %ld usec, %zu msgs ready",
-                 __func__,
-                 bin,
-                 r_tv_sor.tv_sec,
-                 r_tv_sor.tv_usec,
-                 tv_curr_sf.tv_sec,
-                 tv_curr_sf.tv_usec,
-                 time_to_wait_usec,
-                 messages.size());
-#endif
-
-  // clear bin for this subframe
+  // clear messages for this subframe
   pendingMessageBins_[bin].clear();
-
   readyMessageBins_[bin].clear();
 
   pendingMessageBins_[bin].unlockBin();
 
+  // set the sor to the subframe time regardless on how late we are, caller will catch up
+  // but needs to stay in sync with its internal state
+  tvSor = tvLastSfBegin;
+
+#ifdef ENABLE_INFO_1_LOGS
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, sf %ld:%06ld, %zu msgs ready",
+              __func__,
+              bin,
+              tvLastSfBegin.tv_sec,
+              tvLastSfBegin.tv_usec,
+              messages.size());
+#endif
+
   statisticManager_.updateHandoffMessages(bin, messages.size());
 
+  // now advance the subframe times, curr -> next, next -> next+1
+  // and clear any stale data for the next subframe rx bin
+  clearBin_i(timing_.stepTime());
+
   // get the process time for the calling thread for the time remaining in this subframe
-  timeval tv_curr_sf_remain;
+  timersub(&tvNow, &tvLastSfBegin, &tvDiff);
 
-  timersub(&tv_now, &tv_curr_sf, &tv_curr_sf_remain);
+  statisticManager_.tallySubframeProcessTime(bin, tvDiff);
 
-  statisticManager_.tallySubframeProcessTime(bin, tv_curr_sf_remain);
-
-  return bSfTimeInStep;
+  timing_.unlockTime();
 }
 
 void
@@ -475,4 +463,23 @@ EMANELTE::MHAL::MHALCommon::clearPendingMessages_safe(const uint32_t bin)
 
       statisticManager_.updateOrphanedMessages(bin, numOrphans);
     }
+}
+
+
+void
+EMANELTE::MHAL::MHALCommon::clearBins_i()
+{
+  for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
+   {
+     clearBin_i(bin);
+   }
+}
+
+void
+EMANELTE::MHAL::MHALCommon::clearBin_i(size_t bin)
+{
+   pendingMessageBins_[bin].lockBin();
+   pendingMessageBins_[bin].clear();
+   clearReadyMessages_safe(bin);
+   pendingMessageBins_[bin].unlockBin();
 }

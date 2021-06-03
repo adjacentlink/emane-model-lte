@@ -55,7 +55,7 @@ namespace UE {
 
   void send_msg(const Data & data, EMANELTE::MHAL::TxControlMessage & control);
 
-  bool get_messages(RxMessages & messages, timeval & rx_time);
+  void get_messages(RxMessages & messages, timeval & rx_time);
 
   std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
   

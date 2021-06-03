@@ -73,9 +73,9 @@ void EMANELTE::MHAL::ENB::send_msg(const EMANELTE::MHAL::Data & data,
 }
 
 
-bool EMANELTE::MHAL::ENB::get_messages(EMANELTE::MHAL::RxMessages & messages, timeval & tv_rx_timestamp)
+void EMANELTE::MHAL::ENB::get_messages(EMANELTE::MHAL::RxMessages & messages, timeval & tv_rx_timestamp)
 {
-  return impl_.get_messages(messages, tv_rx_timestamp);
+  impl_.get_messages(messages, tv_rx_timestamp);
 }
 
 

@@ -72,10 +72,10 @@ void EMANELTE::MHAL::UE::send_msg(const EMANELTE::MHAL::Data & data,
 }
 
 
-bool
+void
 EMANELTE::MHAL::UE::get_messages(EMANELTE::MHAL::RxMessages & messages, timeval & tv_rx_timestamp)
 {
-  return impl_.get_messages(messages, tv_rx_timestamp);
+  impl_.get_messages(messages, tv_rx_timestamp);
 }
 
 
