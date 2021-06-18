@@ -525,6 +525,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            rxControl.peak_sum_[carrierIndex]    = peakSum;
            rxControl.num_samples_[carrierIndex] = segmentCacheSize;
            rxControl.avg_snr_[carrierIndex]     = signalAvg_dBm - noiseFloorAvg_dBm;
+           rxControl.avg_nf_[carrierIndex]      = noiseFloorAvg_dBm;
 
            if(carrier.uplink().has_prach())
             {

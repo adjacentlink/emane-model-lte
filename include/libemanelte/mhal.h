@@ -60,6 +60,7 @@ namespace MHAL {
 
     // unique per carrier index
     float    avg_snr_    [MAX_CARRIERS];  // avg snr
+    float    avg_nf_     [MAX_CARRIERS];  // avg noise floor
     float    peak_sum_   [MAX_CARRIERS];  // sum of power over carriers
     uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
 
@@ -69,7 +70,8 @@ namespace MHAL {
        rx_time_{0,0},
        tx_time_{0,0},
        sf_time_{0,0},
-       avg_snr_{-150}
+       avg_snr_{-150},
+       avg_nf_{-150}
      { }
 
     RxControl(uint16_t nemId,
