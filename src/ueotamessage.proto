@@ -86,15 +86,18 @@ message UE_UL_Message
  // 1 to 5 carriers [0-4]
  message CarrierMessage
   {
+    // carried id used to map to antenna id
+    required uint32 carrier_id = 1;
+
     // tx center freq for this carrier
-    required uint64 frequency_hz = 1;
+    required uint64 frequency_hz = 2;
 
     // Physical Cell Id
-    required uint32  phy_cell_id = 2;
+    required uint32  phy_cell_id = 3;
 
-    optional PRACH   prach       = 3;
-    optional PUCCH   pucch       = 4;
-    optional PUSCH   pusch       = 5;
+    optional PRACH   prach       = 4;
+    optional PUCCH   pucch       = 5;
+    optional PUSCH   pusch       = 6;
   }
 
 // ********** END MSG DEFS ***********

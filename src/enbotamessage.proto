@@ -203,34 +203,37 @@ message PMCH
 
  message CarrierMessage
   {
+    // carrier id used to map to antenna index
+    required uint32 carrier_id = 1;
+
     // tx center freq for this carrier
-    required uint64  frequency_hz = 1;
+    required uint64  frequency_hz = 2;
 
     // Physical Cell Id
     // physical layer cell id [0-167] (phy_cell_id / 3)
-    // physical layer cell id [0-2    (phy_cell_id % 3)
-    required uint32  phy_cell_id = 2;
+    // physical layer cell id [0-2]   (phy_cell_id % 3)
+    required uint32  phy_cell_id = 3;
 
     // control format indicator [1-3]
-    required uint32  cfi = 3;
+    required uint32  cfi = 4;
 
     // optional pss_sss sent on selected subframes
-    optional PSS_SSS pss_sss = 4;
+    optional PSS_SSS pss_sss = 5;
 
     // optional pbch sent on selected subframes
-    optional PBCH pbch = 5;
+    optional PBCH pbch = 6;
 
     // repeated pdsch
-    repeated PDCCH pdcch = 6;
+    repeated PDCCH pdcch = 7;
 
     // optional 
-    optional PDSCH pdsch = 7;
+    optional PDSCH pdsch = 8;
 
     // optional phich
-    optional PHICH phich = 8;
+    optional PHICH phich = 9;
 
     // repeated pmch
-    optional PMCH pmch = 9;
+    optional PMCH pmch = 10;
   }
 
   // Carrier(s)

@@ -700,9 +700,9 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 
    for(int idx = 0; idx < txControl.carriers().size(); ++idx)
     {
-      auto controlCarrier = txControl.mutable_carriers(idx);
+      auto control = txControl.mutable_carriers(idx);
 
-      const auto carrierFrequencyHz = controlCarrier->frequency_hz();
+      const auto carrierFrequencyHz = control->frequency_hz();
 
       const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
 
@@ -723,7 +723,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
             // unique list of subchannel frequencies
             if(frequenciesThisCarrier.insert(frequencyHz).second)
              {
-               controlCarrier->add_sub_channels(frequencyHz);
+               control->add_sub_channels(frequencyHz);
              }
 
             frequencySegments.push_back(segment);
