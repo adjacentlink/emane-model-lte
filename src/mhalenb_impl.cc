@@ -63,7 +63,7 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierIndex,
 
   pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
+  pRadioModel_->setFrequenciesOfInterest(searchMode);
 }
 
 
@@ -112,7 +112,8 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
                                               {"noisemode",              {phyConfig.sNoiseMode_}},
                                               {"propagationmodel",       {phyConfig.sPropagationModel_}},
                                               {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
-                                              {"subid",                  {phyConfig.sSubId_}}
+                                              {"subid",                  {phyConfig.sSubId_}},
+                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
                                             },
                                             false)); // skip config
 

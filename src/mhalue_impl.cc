@@ -92,7 +92,8 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
                                               {"noisemode",              {phyConfig.sNoiseMode_}},
                                               {"propagationmodel",       {phyConfig.sPropagationModel_}},
                                               {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
-                                              {"subid",                  {phyConfig.sSubId_}}
+                                              {"subid",                  {phyConfig.sSubId_}},
+                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
                                             },
                                             false)); // skip config
 
@@ -219,7 +220,7 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrie
      pRadioModel_->setNumResourceBlocks(100);
    }
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
+  pRadioModel_->setFrequenciesOfInterest(searchMode);
 }
 
 
@@ -227,12 +228,9 @@ void
 EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks)
 {
   // called when bandwidth is detected
-  const bool clearCache = true;
-  const bool searchMode = false;
-
   pRadioModel_->setNumResourceBlocks(numResourceBlocks);
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode, clearCache);
+  pRadioModel_->setFrequenciesOfInterest(false);
 }
 
 

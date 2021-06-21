@@ -42,6 +42,7 @@
 
 #include "libemanelte/mhal.h"
 
+#include "emane/antenna.h"
 #include "emane/maclayerimpl.h"
 #include "emane/types.h"
 #include "emane/application/logger.h"
@@ -148,7 +149,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                                    SegmentMap & segmentCache,
                                    std::uint64_t carrierFrequencyHz);
 
-      void setFrequenciesOfInterest(bool searchMode, bool clearCache);
+      void setFrequenciesOfInterest(bool searchMode);
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 
@@ -178,12 +179,12 @@ class RadioModel : public EMANE::MACLayerImplementor
       CarrierFrequencyToIndexTable   txCarrierFrequencyToIndexTable_;
       CarrierFrequencyToIndexTable   rxCarrierFrequencyToIndexTable_;
 
-      EMANE::FrequencySet rxFrequenciesHz_;
-      EMANE::FrequencySet txFrequenciesHz_;
-
       std::uint64_t u64TxSeqNum_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
+      std::uint32_t u32NumAntennas_;
+
+      bool bAntennaInit_;
 
       RadioStatManager statisticManager_;
       MessageProcessor *messageProcessor_[EMANELTE::MAX_CARRIERS];
@@ -194,6 +195,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       // NumPass, DropPropDelay, DropFreqMismatch, DropDirection
       using SubframeReceiveCountEntry = std::tuple<size_t, size_t, size_t, size_t>;
+
+      Antennas txAntennas_;
 
       // NEMId key
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;

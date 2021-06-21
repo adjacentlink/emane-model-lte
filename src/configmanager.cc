@@ -85,6 +85,7 @@ namespace {
                    <xs:attribute name='propagationmodel'        type='xs:string' use='optional'/>\
                    <xs:attribute name='systemnoisefigure'       type='xs:string' use='optional'/>\
                    <xs:attribute name='subid'                   type='xs:string' use='optional'/>\
+                   <xs:attribute name='compatibilitymode'       type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
@@ -259,6 +260,7 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                    phyConfig_.sPropagationModel_         = checkForValue(pLayerNode, "propagationmodel",        phyConfig_.sPropagationModel_);
                    phyConfig_.sSystemNoiseFigure_        = checkForValue(pLayerNode, "systemnoisefigure",       phyConfig_.sSystemNoiseFigure_);
                    phyConfig_.sSubId_                    = checkForValue(pLayerNode, "subid",                   phyConfig_.sSubId_);
+                   phyConfig_.sCompatibilityMode_        = checkForValue(pLayerNode, "compatibilitymode",       phyConfig_.sCompatibilityMode_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,
