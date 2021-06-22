@@ -205,7 +205,7 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin, const time
   clearReadyMessages_safe(bin);
 
   // container for all freqs and energy for this subframe
-  // allows for consulting the spectrum sevice once and only once for each freq/timerange later
+  // allows for consulting the spectrum sevice once and only once for each freq/span later
   EMANE::Models::LTE::SpectrumWindowCache spectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency in this msg
@@ -258,11 +258,10 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
   if(state_.isRunning())
     {
-      const auto sor = otaInfo.sot_; // LTE timing advance negates propagation delay (sor == sot)
-      const auto eor = sor + otaInfo.span_;
+      const auto & sor = otaInfo.sot_; // LTE timing advance negates propagation delay (sor == sot)
 
       // should be ~4 sf in the future
-      const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(eor.time_since_epoch() - tp_now.time_since_epoch());
+      const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(sor.time_since_epoch() - tp_now.time_since_epoch());
 
       // get bin for msg sf_time (tti) this is the sf that the msg is expected to arrive tx/rx
       const uint32_t bin = getMessageBin(rxControl.sf_time_, timing_.tsSfIntervalUsec());
@@ -274,7 +273,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
       statisticManager_.updateRxPacketOtaDelay(bin, tvToSeconds(tvDiff));
 
-      // eor should be now or in the future
+      // sor should be now or in the future
       if(dt >= EMANE::Microseconds::zero())
         {
           statisticManager_.updateEnqueuedMessages(bin);
@@ -298,15 +297,12 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
         }
 
 #ifdef ENABLE_XTRA_INFO_LOGS                   
-         logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s seqnum %lu, bin %u, curr_time %f, sot %f, span %ld, sor %f, eor %f, dt %ld usec, msgs %zu", 
+         logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s seqnum %lu, bin %u, curr_time %f, sot %f, dt %ld usec, msgs %zu", 
                      __func__,
                      rxControl.rx_seqnum_,
                      bin,
                      tp_now.time_since_epoch().count()/1e9,
-                     otaInfo.sot_.time_since_epoch().count()/1e9,
-                     otaInfo.span_.count(),
                      sor.time_since_epoch().count()/1e9,
-                     eor.time_since_epoch().count()/1e9,
                      dt.count(),
                      pendingMessageBins_[bin].get().size());
 #endif
@@ -366,15 +362,15 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & tvSor)
       // running late by a sf or more
       overRunUsec = abs(timeToNextSfUsec);      
 
-      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s last_sf_time %ld:%06ld, late by %ld usec",
-                  __func__,
-                  tvLastSfStart.tv_sec,
-                  tvLastSfStart.tv_usec,
-                  overRunUsec);
-
       // a frame behind or more
       if(overRunUsec >= (10 * timing_.tsSfIntervalUsec()))
        {
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s last_sf_time %ld:%06ld, late by %ld usec",
+                      __func__,
+                      tvLastSfStart.tv_sec,
+                      tvLastSfStart.tv_usec,
+                      overRunUsec);
+
          // lets jump ahead
          while(overRunUsec > 0)
           {

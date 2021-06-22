@@ -89,7 +89,8 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
       {"maxpropagationdelay",  {radioModelConfig.sMaxPropagationDelay_}},
       {"pcrcurveuri",          {radioModelConfig.sPcrCurveURI_}},
       {"resourceblocktxpower", {radioModelConfig.sResourceBlockTxPower_}},
-      {"subid",                {phyConfig.sSubId_}}
+      {"antenna",              {radioModelConfig.sAntenna_}},
+      {"subid",                {phyConfig.sSubId_}},
      },
      false);
 
@@ -239,7 +240,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       const auto & otaInfo = PendingMessage_OtaInfo(msg);
 
-      const auto & frequencySegments = otaInfo.segments_;
+// XXX TODO
+      const auto & frequencySegments = otaInfo.antennaInfos_[0].getFrequencySegments();
 
       auto & nemRxPower = nemRxPowers_dBm.emplace(rxControl.nemId_, EMANE::Models::LTE::SegmentMap()).first->second;
 
@@ -343,7 +345,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       const auto & txControl = PendingMessage_TxControl(msg);
 
       // MUX of all frequency segmenets for all carriers
-      const auto & frequencySegments = otaInfo.segments_;
+// XXX TODO
+      const auto & frequencySegments = otaInfo.antennaInfos_[0].getFrequencySegments();
 
       auto & rxControl = PendingMessage_RxControl(msg);
 

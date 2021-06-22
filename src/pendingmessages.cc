@@ -90,21 +90,23 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
   SegmentSpans segmentSpans;
 
   for(const auto & pendingMsg : pending_)
-    {
-      const auto & otaInfo = PendingMessage_OtaInfo(pendingMsg);
+   {
+     const auto & otaInfo = PendingMessage_OtaInfo(pendingMsg);
 
-      for(auto & segment : otaInfo.segments_)
-        {
-          const auto frequencyHz = segment.getFrequencyHz();
+     for(const auto & antenna : otaInfo.antennaInfos_)
+      {
+        for(auto & segment : antenna.getFrequencySegments())
+         {
+           const auto frequencyHz = segment.getFrequencyHz();
 
-          // sor = sot + offset, LTE timinging advance accounts for propagation delay
-          const auto sor = otaInfo.sot_ + segment.getOffset();
-          const auto eor = sor + segment.getDuration();
+           // sor = sot + offset, LTE timinging advance accounts for propagation delay
+           const auto sor = otaInfo.sot_ + segment.getOffset();
+           const auto eor = sor + segment.getDuration();
 
-          // check for matching frequency
-          const auto iter = segmentSpans.find(frequencyHz);
+           // check for matching frequency
+           const auto iter = segmentSpans.find(frequencyHz);
 
-          if(iter != segmentSpans.end())
+           if(iter != segmentSpans.end())
             {
               auto & min = SegmentTimeSpan_sor(iter->second);
               auto & max = SegmentTimeSpan_eor(iter->second);
@@ -114,11 +116,12 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
               ++SegmentTimeSpan_num(iter->second);
             }
           else
-            {
-              segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
-            }
-        }
-    }
+           {
+             segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
+           }
+         }
+      }
+   }
 
   return segmentSpans;
 }

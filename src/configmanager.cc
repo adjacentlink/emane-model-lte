@@ -74,6 +74,7 @@ namespace {
                    <xs:attribute name='pcrcurveuri'             type='xs:string' use='required'/>\
                    <xs:attribute name='maxpropagationdelay'     type='xs:string' use='optional'/>\
                    <xs:attribute name='resourceblocktxpower'    type='xs:string' use='optional'/>\
+                   <xs:attribute name='antenna'                 type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
@@ -242,6 +243,7 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                    // optional
                    radioModelConfig_.sMaxPropagationDelay_  = checkForValue(pLayerNode, "maxpropagationdelay",     radioModelConfig_.sMaxPropagationDelay_);
                    radioModelConfig_.sResourceBlockTxPower_ = checkForValue(pLayerNode, "resourceblocktxpower",    radioModelConfig_.sResourceBlockTxPower_);
+                   radioModelConfig_.sAntenna_              = checkForValue(pLayerNode, "antenna",                 radioModelConfig_.sAntenna_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,

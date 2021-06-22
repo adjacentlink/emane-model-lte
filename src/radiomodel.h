@@ -182,9 +182,12 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint64_t u64TxSeqNum_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
-      std::uint32_t u32NumAntennas_;
+
+      std::vector<Antenna::Pointing> antennaPointings_;
 
       bool bAntennaInit_;
+
+      std::string sAntennaInfo_;
 
       RadioStatManager statisticManager_;
       MessageProcessor *messageProcessor_[EMANELTE::MAX_CARRIERS];
