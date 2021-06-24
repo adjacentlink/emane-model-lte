@@ -46,6 +46,8 @@ namespace LTE {
   // frequency, spectrum window
   using SpectrumWindowCache = std::map<std::uint64_t, EMANE::SpectrumWindow>;
 
+  // key by antenna index
+  using AntennaSpectrumWindowCache = std::map<uint32_t, SpectrumWindowCache>;
 }
 }
 }

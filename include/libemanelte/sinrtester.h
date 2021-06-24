@@ -45,8 +45,11 @@ namespace EMANELTE {
 namespace MHAL {
 
 class SINRTesterImpl;
+
+// <carrier frequency, carrier id>
+using SINRTesterKey = std::pair<std::uint64_t, std::uint32_t>;
  
-using SINRTesterImpls = std::map<std::uint64_t, std::shared_ptr<SINRTesterImpl>>;
+using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>;
  
  class SINRTester
   {
@@ -56,17 +59,22 @@ using SINRTesterImpls = std::map<std::uint64_t, std::shared_ptr<SINRTesterImpl>>
      SINRTester & operator = (const SINRTester & rhs);
 
      struct SINRTesterResult {
-       bool   bPassed_;
-       double sinr_dB_;
-       double noiseFloor_dBm_;
+       const bool   bFound_;
+       const bool   bPassed_;
+       const float sinr_dB_;
+       const float noiseFloor_dBm_;
 
      SINRTesterResult() :
+       bFound_{false},
        bPassed_{false},
        sinr_dB_{0.0},
        noiseFloor_dBm_{0.0}
      { }
 
-     SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
+     SINRTesterResult(const bool bPassed,
+                      const float sinr,
+                      const float noiseFloor) :
+       bFound_{true},
        bPassed_{bPassed},
        sinr_dB_{sinr},
        noiseFloor_dBm_{noiseFloor}
@@ -77,9 +85,14 @@ using SINRTesterImpls = std::map<std::uint64_t, std::shared_ptr<SINRTesterImpl>>
   
    void reset(const SINRTesterImpls & impls);
 
-   SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrrierFrequencyHz) const;
+   SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
+                               const uint64_t carrrierFrequencyHz,
+                               const uint32_t carrierId = 0) const;
 
-   SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrrierFrequencyHz) const;
+   SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
+                               const uint16_t rnti,
+                               const uint64_t carrrierFrequencyHz,
+                               const uint32_t carrierId = 0) const;
 
   private:
     SINRTesterImpls impls_;

@@ -55,6 +55,7 @@
 #include "enbradiostatisticmanager.h"
 #include "uemessageprocessor.h"
 #include "ueradiostatisticmanager.h"
+#include "spectrumwindowcache.h"
 
 
 namespace EMANE {
@@ -64,8 +65,6 @@ namespace LTE {
 // relative rx/tx per node type ue/enb
 using FrequencyPair = std::pair<std::uint64_t, std::uint64_t>;
 
-// frequency, spectrum window
-using SpectrumWindowCache = std::map<std::uint64_t, EMANE::SpectrumWindow>;
 
 using FrequencySegmentParams = std::pair<EMANELTE::FrequencyHz, EMANELTE::BandwidthHz>;
 
@@ -136,7 +135,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
-      EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
+      EMANE::SpectrumWindow getNoise(const uint32_t antennaIndex,
+                                     const EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
                                      const EMANE::TimePoint & sor);
 

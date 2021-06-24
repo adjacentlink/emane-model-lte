@@ -84,17 +84,20 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
 // a pendingMsg is composed of multiple segments each with a unique frequency
 // find the min sor and max eor for each frequency
 // this will be used to consult the spectrum monitor later
-EMANELTE::MHAL::SegmentSpans
-EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
+EMANELTE::MHAL::AntennaSegmentSpans
+EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
 {
-  SegmentSpans segmentSpans;
+  AntennaSegmentSpans segmentSpans;
 
   for(const auto & pendingMsg : pending_)
    {
-     const auto & otaInfo = PendingMessage_OtaInfo(pendingMsg);
+     const auto & otaInfo = PendingMessage_OtaInfo_Get(pendingMsg);
 
      for(const auto & antenna : otaInfo.antennaInfos_)
       {
+        // track receptions based on rx antenna
+        const auto rxAntennaIndex = antenna.getRxAntennaIndex();
+
         for(auto & segment : antenna.getFrequencySegments())
          {
            const auto frequencyHz = segment.getFrequencyHz();
@@ -104,20 +107,20 @@ EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
            const auto eor = sor + segment.getDuration();
 
            // check for matching frequency
-           const auto iter = segmentSpans.find(frequencyHz);
+           const auto iter = segmentSpans[rxAntennaIndex].find(frequencyHz);
 
-           if(iter != segmentSpans.end())
+           if(iter != segmentSpans[rxAntennaIndex].end())
             {
-              auto & min = SegmentTimeSpan_sor(iter->second);
-              auto & max = SegmentTimeSpan_eor(iter->second);
+              auto & min = SegmentTimeSpan_Sor_Get(iter->second);
+              auto & max = SegmentTimeSpan_Eor_Get(iter->second);
 
               min = std::min(min, sor);
               max = std::max(max, eor);
-              ++SegmentTimeSpan_num(iter->second);
+              ++SegmentTimeSpan_Num_Get(iter->second);
             }
           else
            {
-             segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
+             segmentSpans[rxAntennaIndex].insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
            }
          }
       }

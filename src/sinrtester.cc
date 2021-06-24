@@ -67,11 +67,12 @@ EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 }
 
 
-
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) const
+EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
+                                       const uint64_t carrierFrequencyHz,
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(carrierFrequencyHz);
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, carrierId});
 
   if(iter != impls_.end())
    {
@@ -85,9 +86,12 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequ
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) const
+EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
+                                       const uint16_t rnti,
+                                       const uint64_t carrierFrequencyHz,
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(carrierFrequencyHz);
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, carrierId});
 
   if(iter != impls_.end())
    {
@@ -105,4 +109,3 @@ EMANELTE::MHAL::SINRTester::release()
 {
   impls_.clear();
 }
-

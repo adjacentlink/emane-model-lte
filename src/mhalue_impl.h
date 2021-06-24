@@ -68,7 +68,8 @@ namespace MHAL {
                              const PHY::OTAInfo & otaInfo,
                              const TxControlMessage & txControl);
 
-    EMANE::SpectrumWindow get_noise(FrequencyHz frequencyHz,
+    EMANE::SpectrumWindow get_noise(const uint32_t antennaIndex,
+                                    const FrequencyHz frequencyHz,
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
@@ -80,7 +81,7 @@ namespace MHAL {
 
     void begin_cell_search();
 
-    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache);
+    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache);
 
   private:
     EMANE::Application::NEMs nems_;

@@ -47,8 +47,6 @@
 #include "emane/configureexception.h"
 #include "emane/utils/parameterconvert.h"
 
-#undef ENABLE_INFO_1_LOGS
-
 namespace {
   const char * pzModuleName_ = "RadioModel";
 
@@ -550,7 +548,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getResourceB
 
 template <class RadioStatManager, class MessageProcessor>
 EMANE::SpectrumWindow
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMANELTE::FrequencyHz frequency, 
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(const uint32_t antennaIndex,
+                                                                             const EMANELTE::FrequencyHz frequency, 
                                                                              const EMANE::Microseconds & span, 
                                                                              const EMANE::TimePoint & sor)
 {
@@ -560,7 +559,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(EMA
 
   try 
     {
-      spectrumWindow = pRadioService_->spectrumService().request(frequency, span, sor);
+      spectrumWindow = pRadioService_->spectrumService().requestAntenna(antennaIndex, frequency, span, sor);
     } 
   catch(EMANE::SpectrumServiceException & exp) 
     {
@@ -778,25 +777,8 @@ template <class RadioStatManager, class MessageProcessor>
 void
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstreamMessage(const EMANELTE::MHAL::Data & data,
                                                                                           EMANELTE::MHAL::TxControlMessage & txControl,
-                                                                                          const EMANE::TimePoint & tpTxtime)
+                                                                                          const EMANE::TimePoint & tpTxTime)
 {
-#ifdef ENABLE_INFO_1_LOGS
-  const auto tpNow = EMANE::Clock::now(); 
-  const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tpTxtime - tpNow);
-
-  LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                          EMANE::INFO_LEVEL,
-                          "%s %03hu %s data_len %3zu, tti_tx %05u, curr_time %f, txTime %f, dt %ld usec",
-                          pzModuleName_,
-                          id_,
-                          __func__,
-                          data.length(),
-                          txControl.tti_tx(),
-                          tpNow.time_since_epoch().count()/1e9,
-                          tpTxtime.time_since_epoch().count()/1e9,
-                          dt.count());
-#endif
-
    // MUX all frequency segments for the msg
    FrequencyGroups frequencyGroups;
 
@@ -836,7 +818,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
        {
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::ERROR_LEVEL,
-                                 "MACI %03hu %s::%s: skip carrier %lu Hz, no matching carriers",
+                                 "MACI %03hu %s::%s: ignore carrier %lu Hz, no matching carriers",
                                  id_,
                                  pzModuleName_,
                                  __func__,
@@ -862,7 +844,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
    sendDownstreamPacket(EMANE::CommonMACHeader{u16SubId_, ++u64TxSeqNum_},
                         pkt,
                         {Controls::MIMOTransmitPropertiesControlMessage::create(std::move(frequencyGroups), txAntennas_),
-                         Controls::TimeStampControlMessage::create(tpTxtime)});
+                         Controls::TimeStampControlMessage::create(tpTxTime)});
 }
 
 
@@ -920,7 +902,6 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
       return;
     }
 
-  const auto tpTxtime = pMIMOReceivePropertiesControlMessage->getTxTime();
 
   const uint16_t prefixLength{pkt.stripLengthPrefixFraming()};
 
@@ -937,21 +918,25 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
        {
          const auto propagationDelay = pMIMOReceivePropertiesControlMessage->getPropagationDelay();
 
-#ifdef ENABLE_INFO_1_LOGS
-         const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tpTxtime - tpNow);
+         const auto tpTxTime = pMIMOReceivePropertiesControlMessage->getTxTime();
 
-         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                EMANE::INFO_LEVEL,
-                                "MACI %03hu %s::%s: src %hu, seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec",
-                                id_,
-                                pzModuleName_,
-                                __func__,
-                                pktInfo.getSource(),
-                                txControl.tx_seqnum(),
-                                propagationDelay().count(),
-                                tpNow.time_since_epoch().count()/1e9,
-                                tpTxtime.time_since_epoch().count()/1e9,
-                                dt.count());
+         const auto recvInfos = pMIMOReceivePropertiesControlMessage->getAntennaReceiveInfos();
+  
+#if 0
+         const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tpTxTime - tpNow);
+
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                 EMANE::INFO_LEVEL,
+                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec",
+                                 id_,
+                                 pzModuleName_,
+                                 __func__,
+                                 pktInfo.getSource(),
+                                 txControl.tx_seqnum(),
+                                 propagationDelay.count(),
+                                 tpNow.time_since_epoch().count()/1e9,
+                                 tpTxTime.time_since_epoch().count()/1e9,
+                                 dt.count());
 #endif
 
         // check for up/down link type
@@ -974,8 +959,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
          bool bFoundCarrier = false;
 
-         // sanity check foi should handle this
-         // must have at least 1 matching carrier to pass this message
+         // sanity check must have at least 1 matching carrier to pass this message
          for(auto carrier : txControl.carriers())
           {
             // check the carrier frequencyHz, see if it matches one of our carrier rx freqs
@@ -1015,10 +999,10 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                timeval{txControl.sf_time().ts_sec(),                // sf time / txTime
                        txControl.sf_time().ts_usec()}},
 
-           EMANELTE::MHAL::PHY::OTAInfo{tpTxtime,                                // emulation sot / txTime
-               propagationDelay,                                                 // propagation delay
-               pMIMOReceivePropertiesControlMessage->getAntennaReceiveInfos()},  // anteanna rx info
-             txControl);                                                         // txControl
+           EMANELTE::MHAL::PHY::OTAInfo{tpTxTime,                   // emulation sot / txTime
+               propagationDelay,                                    // propagation delay
+               recvInfos},                                          // anteanna rx info
+             txControl);                                            // txControl
 
           updateSubframePass_i(pktInfo.getSource());
        }

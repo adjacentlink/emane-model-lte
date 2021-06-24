@@ -47,10 +47,10 @@
 namespace EMANELTE {
 namespace MHAL {
   // pending rx message, moves to ready after noise processing
-#define PendingMessage_Data(x)      std::get<0>((x))
-#define PendingMessage_RxControl(x) std::get<1>((x))
-#define PendingMessage_OtaInfo(x)   std::get<2>((x))
-#define PendingMessage_TxControl(x) std::get<3>((x))
+#define PendingMessage_Data_Get(x)      std::get<0>((x))
+#define PendingMessage_RxControl_Get(x) std::get<1>((x))
+#define PendingMessage_OtaInfo_Get(x)   std::get<2>((x))
+#define PendingMessage_TxControl_Get(x) std::get<3>((x))
 
   using PendingMessage = std::tuple<Data,              // opaque data
                                     RxControl,         // rx control
@@ -59,9 +59,9 @@ namespace MHAL {
 
   using PendingMessages = std::list<PendingMessage>;
 
-#define SegmentTimeSpan_sor(x) std::get<0>((x))
-#define SegmentTimeSpan_eor(x) std::get<1>((x))
-#define SegmentTimeSpan_num(x) std::get<2>((x))
+#define SegmentTimeSpan_Sor_Get(x) std::get<0>((x))
+#define SegmentTimeSpan_Eor_Get(x) std::get<1>((x))
+#define SegmentTimeSpan_Num_Get(x) std::get<2>((x))
 
   using SegmentTimeSpan = std::tuple<EMANE::TimePoint,  // sor
                                      EMANE::TimePoint,  // eor
@@ -69,6 +69,10 @@ namespace MHAL {
 
   // frequency, time span
   using SegmentSpans = std::map<std::uint64_t, SegmentTimeSpan>;
+
+  // by antenna index
+  // ue has 1 antenna, enb can have up the 3
+  using AntennaSegmentSpans = std::map<uint32_t, SegmentSpans>;
 
   class PendingMessageBin {
    public:
@@ -91,7 +95,7 @@ namespace MHAL {
     // a msg is composed of multiple segments each with a unique frequency
     // find the min sor and max eor for each frequency
     // this will be used to consult the spectrum monitor later
-    SegmentSpans getSegmentSpans();
+    AntennaSegmentSpans getAntennaSegmentSpans();
 
     PendingMessages & get();
 
