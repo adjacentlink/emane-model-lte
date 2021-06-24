@@ -140,7 +140,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                                      const EMANE::Microseconds & span, 
                                      const EMANE::TimePoint & sor);
 
-      double getReceiverSensitivitydBm();
+      float getReceiverSensitivitydBm();
 
       EMANE::FrequencySet getFrequencies();
 

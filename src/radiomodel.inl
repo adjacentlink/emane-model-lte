@@ -585,7 +585,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(con
 
 
 template <class RadioStatManager, class MessageProcessor>
-double EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getReceiverSensitivitydBm()
+float EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getReceiverSensitivitydBm()
 {
   return pRadioService_->spectrumService().getReceiverSensitivitydBm();
 }

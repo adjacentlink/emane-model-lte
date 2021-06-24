@@ -200,7 +200,7 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz)
+EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, float carrierRxFrequencyHz, float carrierTxFrequencyHz)
 {
   // ue will rotate thru its frequency list using carrierIndex 0 initially
   // if/when the carrierIndex is > 0, then accumulate frequencies
@@ -408,11 +408,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
             peakSum += sinr_dB;
           } // end each segment
 
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierId %u, frequency %lu",
-                      __func__, rxControl.nemId_, carrierId, carrierFrequencyHz);
-
-
           const auto segmentCacheSize = segmentCache.size();
+
+#if 0
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierId %u, frequency %lu, segmentCacheSize %zu",
+                      __func__, rxControl.nemId_, carrierId, carrierFrequencyHz, segmentCacheSize);
+#endif
 
           // now check for number of pass/fail segments
           if(segmentCacheSize > 0)

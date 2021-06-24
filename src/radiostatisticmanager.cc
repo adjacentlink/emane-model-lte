@@ -308,7 +308,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
 }
 
 
-void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency,  double noiseFloor_mW)
+void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency,  float noiseFloor_mW)
 {
   auto iter = rxFrequencyMap_.find(frequency);
 
@@ -328,7 +328,7 @@ void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(E
   else
     {
       uint64_t & count = std::get<RX_FREQ_COUNT>(iter->second);
-      double & sum_dB = std::get<RX_FREQ_NF>(iter->second);
+      float & sum_dB = std::get<RX_FREQ_NF>(iter->second);
 
       count  += 1;
       sum_dB += EMANELTE::MW_TO_DB(noiseFloor_mW);

@@ -51,8 +51,8 @@ public:
                          const EMANE::Models::LTE::SegmentMap & segmentCache,
                          bool pcfichPass,
                          bool pbchPass,
-                         double sinr,
-                         double noiseFloor,
+                         float sinr,
+                         float noiseFloor,
                          std::uint64_t carrierFrequencyHz) :
     pRadioModel_{pRadioModel},
     txControl_{txControl},
@@ -76,8 +76,8 @@ private:
   EMANE::Models::LTE::SegmentMap segmentCache_;
   const bool   pcfichPass_;
   const bool   pbchPass_;
-  const double sinr_dB_;
-  const double noiseFloor_dBm_;
+  const float  sinr_dB_;
+  const float  noiseFloor_dBm_;
   const std::uint64_t carrierFrequencyHz_;
   std::map<std::uint32_t, bool> pdcchRNTIResults_;
 };

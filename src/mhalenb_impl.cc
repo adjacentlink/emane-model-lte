@@ -469,42 +469,19 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            signalSum_mW     += rxPower_mW;
            noiseFloorSum_mW += noiseFloor_mW;
 
-#if 0
-           logger_.log(EMANE::DEBUG_LEVEL, "MHAL::PHY %s, src %hu, freq %lu, offset %lu, duration %lu, rxPower_dBm %0.1f, noisefloor_dbm %0.1f, sinr_dB %0.1f",
-                       __func__,
-                       rxControl.nemId_,
-                       segment.getFrequencyHz(),
-                       segment.getOffset().count(),
-                       segment.getDuration().count(),
-                       rxPower_dBm,
-                       noiseFloor_dBm,
-                       sinr_dB);
-#endif
            segmentCache.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB);
 
            pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
-
-#if 0
-           const bool & bSignalInNoise{std::get<4>(spectrumWindow->second)};
-
-           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, sfIdx=%d, seqnum %lu, siginnoise %d, freq %lu, offs %lu, dur %lu, rxPwr %5.3f dBm, nf %5.3lf dBm, sinr %5.3lf dB",
-                       __func__,
-                       rxControl.nemId_,
-                       txControl.tti_tx(),
-                       rxControl.rx_seqnum_,
-                       bSignalInNoise,
-                       frequencyHz,
-                       segment.getOffset().count(),
-                       segment.getDuration().count(),
-                       rxPower_dBm,
-                       noiseFloor_dBm,
-                       sinr_dB);
-#endif
 
            peakSum += sinr_dB;
          } // end each segment
 
         const auto segmentCacheSize = segmentCache.size();
+
+#if 0
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierId %u, frequency %lu, segmentCacheSize %zu",
+                    __func__, rxControl.nemId_, carrierId, carrierFrequencyHz, segmentCacheSize);
+#endif
 
         // now check for number of pass/fail segments
         if(segmentCacheSize > 0)
@@ -518,11 +495,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
            sinrTesterImpls[SINRTesterKey(carrierFrequencyHz, carrierId)].reset(pSINRTester);
 
-           rxControl.peak_sum_[carrierId]    = peakSum;
+           rxControl.peak_sum_   [carrierId] = peakSum;
            rxControl.num_samples_[carrierId] = segmentCacheSize;
-           rxControl.avg_snr_[carrierId]     = signalAvg_dBm - noiseFloorAvg_dBm;
-           rxControl.avg_nf_[carrierId]      = noiseFloorAvg_dBm;
-           rxControl.is_valid_[carrierId]    = true;
+           rxControl.avg_snr_    [carrierId] = signalAvg_dBm - noiseFloorAvg_dBm;
+           rxControl.avg_nf_     [carrierId] = noiseFloorAvg_dBm;
+           rxControl.is_valid_   [carrierId] = true;
 
            if(carrier.uplink().has_prach())
             {

@@ -75,14 +75,14 @@ using FrequencySet = std::set<std::uint64_t>;
 // tx timestamp adjust knob for the ota tx_timestamp, NOT the msg tti_time
 const int TX_TIME_ADJUST = 0;
 
-inline double DB_TO_MW(double dbm)
+inline float DB_TO_MW(float dbm)
  {
-   return pow(10, dbm/10.0);
+   return powf(10, dbm/10.0);
  }
 
-inline double MW_TO_DB(double mw)
+inline float MW_TO_DB(float mw)
  {
-   return 10.0 * log10(mw);
+   return 10.0 * log10f(mw);
  }
 }
 

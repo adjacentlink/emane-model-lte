@@ -59,16 +59,16 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
      SINRTester & operator = (const SINRTester & rhs);
 
      struct SINRTesterResult {
-       const bool   bFound_;
-       const bool   bPassed_;
-       const float sinr_dB_;
-       const float noiseFloor_dBm_;
+       const bool   bFound_;    // sinr tester was set
+       const bool   bPassed_;   // sinr passed curve check
+       const float  sinr_dB_;
+       const float  noiseFloor_dBm_;
 
      SINRTesterResult() :
        bFound_{false},
        bPassed_{false},
-       sinr_dB_{0.0},
-       noiseFloor_dBm_{0.0}
+       sinr_dB_{-201.0f},
+       noiseFloor_dBm_{-201.0f}
      { }
 
      SINRTesterResult(const bool bPassed,

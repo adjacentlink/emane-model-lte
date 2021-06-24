@@ -304,7 +304,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
 
 
 void
-EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & tvSor)
+EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSor)
 {
   timing_.lockTime();
 
@@ -390,7 +390,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & tvSor)
      noiseWorker_safe(bin);
 
      // transfer to caller
-     auto rxMessages = std::move(readyMessageBins_[bin].get());
+     rxMessages = std::move(readyMessageBins_[bin].get());
 
      for(const auto & rxMessage : rxMessages)
       {
@@ -424,7 +424,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & messages, timeval & tvSor)
   // but needs to stay in sync with its internal state
   tvSor = tvLastSfStart;
 
-  statisticManager_.updateHandoffMessages(bin, messages.size());
+  statisticManager_.updateHandoffMessages(bin, rxMessages.size());
 
   // now advance the subframe times, curr -> next, next -> next+1
   // and clear any stale data for the next subframe rx bin
