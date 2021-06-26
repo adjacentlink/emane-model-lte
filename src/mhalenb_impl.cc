@@ -43,7 +43,7 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t localCarrierId,
   // enb will run thru each carrier each and only once at startup
   if(localCarrierId == 0)
    {
-     // this must be done first
+     // this must be done first one time
      MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
 
      pRadioModel_->setSymbolsPerSlot(mhal_enb_config.symbols_per_slot_);
@@ -211,6 +211,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
   // For the first pass, store the combined receive power for all transmitters 
   // sending on the same segment offset and duration
+  // for each ue ul msg
   for(auto & msg : pendingMessageBins_[bin].get())
     {
       const auto & otaInfo = PendingMessage_OtaInfo_Get(msg);
@@ -227,19 +228,22 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            {
              bFoundPci = true;
 
-             // pci found
+             // pci of interest found
              break;
            }
        }
 
       if(! bFoundPci)
         {
-          // transmitters on other cells are considered noise
+          // no cells of interest, skip
           continue;
         }
 
 
 // XXX TODO FIXME
+fprintf(stderr, "recv %zu antennaInfos\n", otaInfo.antennaInfos_.size());
+
+      // ue has 1 antenna, but the enb may have up to 3 receive paths
       const auto & frequencySegments = otaInfo.antennaInfos_[0].getFrequencySegments();
 
       auto & nemRxPower = nemRxPowers_dBm.emplace(rxControl.nemId_, EMANE::Models::LTE::SegmentMap()).first->second;
@@ -323,17 +327,16 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       float rxPower_mW = 0;
       std::tie(minSot, maxSot, rxPower_mW) = segment.second;
 
-      const auto rxPower_dBm = EMANELTE::MW_TO_DB(rxPower_mW);
-
       const auto minSor = minSot + offset;
       const auto maxEor = maxSot + offset + duration;
 
       // find the max out-of-band noise across the segment bins
-      const auto rangeInfo = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, minSor, maxEor);
+      const auto rangeInfo = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second,
+                                                                 EMANELTE::MW_TO_DB(rxPower_mW),
+                                                                 minSor,
+                                                                 maxEor);
 
-      const auto noiseFloor_dBm = rangeInfo.first;
-
-      outOfBandNoiseFloor_dBm.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, offset, duration), noiseFloor_dBm);
+      outOfBandNoiseFloor_dBm.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, offset, duration), rangeInfo.first);
     } // end second pass
 
 
@@ -346,7 +349,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
       const auto & txControl = PendingMessage_TxControl_Get(msg);
 
-      // MUX of all frequency segmenets for all carriers
+      // all frequency segmenets for all carriers
 // XXX TODO FIXME
       const auto & frequencySegments = otaInfo.antennaInfos_[0].getFrequencySegments();
 
@@ -406,7 +409,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            continue;
          }
 
-        // DEMUX frequency segments for this carrier
+        // frequency segments for this carrier
         EMANE::FrequencySegments segmentsThisCarrier;
 
         // for each sub channel of the carrier
@@ -426,16 +429,16 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
        if(segmentsThisCarrier.empty())
         {
-#if 0
           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, missing all subChannels, skip carrier %lu",
                       __func__, carrierFrequencyHz);
-#endif
+
+          // can not reasemble msg, skip
           continue;
         }
 
-        float signalSum_mW = 0.0, 
+        float signalSum_mW     = 0.0, 
               noiseFloorSum_mW = 0.0,
-              peakSum = 0.0;
+              peakSum          = 0.0;
 
         EMANE::Models::LTE::SegmentMap segmentCache;
 
@@ -461,10 +464,19 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            const auto rxPower_dBm = segment.getRxPowerdBm();
            const auto rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
 
-           const auto noiseFloor_dBm = outOfBandNoiseFloor_dBm.find(EMANE::Models::LTE::SegmentKey(segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()))->second;
+           const auto noiseFloor_dBm = outOfBandNoiseFloor_dBm.find(EMANE::Models::LTE::SegmentKey(segment.getFrequencyHz(), 
+                                                                                                   segment.getOffset(),
+                                                                                                   segment.getDuration()))->second;
            const auto noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
            const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
+
+           fprintf(stderr, "carrierId %u, frequency %lu, rxPower %f, noiseFloor %f\n",
+                   carrierId,
+                   segment.getFrequencyHz(),
+                   rxPower_dBm,
+                   noiseFloor_dBm);
+
 
            signalSum_mW     += rxPower_mW;
            noiseFloorSum_mW += noiseFloor_mW;

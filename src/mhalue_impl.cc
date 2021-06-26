@@ -263,9 +263,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
      std::map<uint32_t, std::multimap<std::uint64_t, EMANE::FrequencySegment>> antennaFrequencySegmentTable;
 
      // ue has 1 antenna, but we can receive from more than 1 enb antenna
+     // hence multiple recv antenna infos possibly up to 3 entries
      for(const auto & antennaInfo : otaInfo.antennaInfos_)
       {
-        // tracking txAntenna == carrierId
+        // txAntenna is directly related to carrierId
         const auto txAntennaIndex = antennaInfo.getTxAntennaIndex();
 
         const auto & frequencySegments = antennaInfo.getFrequencySegments();
@@ -295,13 +296,15 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                        __func__,
                       rxControl.nemId_,
                       carrierFrequencyHz);
-           
+          
+           // not a frequency of interest, skip
            continue;
          }
 
-        // check that we did recv rx info for this txAntenna / carrrierId
+        // check that we do have recv antenna info for this txAntenna / carrrierId
         if(antennaFrequencySegmentTable.count(carrierId) == 0)
          {
+           // no segments, skip
            continue;
          }
 
@@ -326,6 +329,10 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
          // check for missing all segments
          if(segmentsThisCarrier.empty())
           {
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, missing all subChannels, skip carrier %lu",
+                      __func__, carrierFrequencyHz);
+
+            // can not reasemble msg, skip
             continue;
           }
 
@@ -340,7 +347,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
           {
             const auto frequencyHz = segment.getFrequencyHz();
 
-            // ue only has 1 antenna
+            // ue only has 1 antenna query antennaId 0
             const auto antennaSpectrum = antennaSpectrumWindowCache.find(0);
 
             if(antennaSpectrum == antennaSpectrumWindowCache.end())
@@ -353,6 +360,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
                pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
 
+               // something is wrong, not an expected condition
                continue;
              }
 
@@ -368,6 +376,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
                pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
 
+               // something is wrong, not an expected condition
                continue;
              }
 
@@ -383,6 +392,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
                pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segment.getFrequencyHz());
 
+               // something is wrong, not an expected condition
                continue;
              }
 
@@ -391,9 +401,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
             const auto segmentSor = otaInfo.sot_ + segment.getOffset();
             const auto segmentEor = segmentSor   + segment.getDuration();
+
             const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
 
-            const auto noiseFloor_dBm = rangeInfo.first;
+            // XXX FIXME force noise floor to allow for multiple cell testing
+            const bool celltest = true;
+            const auto noiseFloor_dBm = celltest ? -105.0f : rangeInfo.first;
             const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
             const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
@@ -441,7 +454,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                                                            noiseFloorAvg_dBm,
                                                            carrierFrequencyHz);
 
-             // sinr tester mapped by carrierId
+             // sinr tester mapped by carrier frequency and carrierId
              sinrTesterImpls[SINRTesterKey(carrierFrequencyHz, carrierId)].reset(pSINRtester);
 
              // load carrier info
