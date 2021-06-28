@@ -393,7 +393,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                           bin,
                           frequencyHz);
 
-              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segment.getFrequencyHz());
+              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
 
               // something is wrong, not an expected condition
               continue;
@@ -407,9 +407,9 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
            const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
 
-           // XXX FIXME force noise floor to allow for multiple cell testing
-           const bool celltest = true;
-           const auto noiseFloor_dBm = celltest ? -105.0f : rangeInfo.first;
+           // HACK force low noise floor to allow for multiple cell testing
+           const bool celltest = false;
+           const auto noiseFloor_dBm = celltest ? -111.0f : rangeInfo.first;
            const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
            const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
@@ -475,7 +475,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
       if(! sinrTesterImpls.empty())
        {
-         // lastly, make ready
+         // make ready for phy_adater use
          readyMessageBins_[bin].get().emplace_back(RxMessage{PendingMessage_Data_Get(msg),
                                                              rxControl,
                                                              sinrTesterImpls});

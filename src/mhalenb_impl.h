@@ -83,10 +83,12 @@ namespace MHAL {
     std::unique_ptr<EMANE::Application::NEMManager> pNEMManager_;
     EMANE::Models::LTE::ENBRadioModel * pRadioModel_;
 
-    void putSINRResult(const ChannelMessage & channel_message,
-                       RxControl & rxControl,
-                       UplinkSINRTesterImpl * pSINRTester,
-                       bool received);
+    void putSINRResult_i(const ChannelMessage & channel_message,
+                         const RxControl & rxControl,
+                         UplinkSINRTesterImpl * pSINRTester,
+                         const bool received);
+
+    bool checkPci_i(const TxControlMessage & txControl) const;
   };
 }
 }

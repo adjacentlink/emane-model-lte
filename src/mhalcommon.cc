@@ -392,6 +392,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
      // transfer to caller
      rxMessages = std::move(readyMessageBins_[bin].get());
 
+#if 0
      for(const auto & rxMessage : rxMessages)
       {
         const auto & sfTime = rxMessage.rxControl_.sf_time_;
@@ -411,6 +412,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
                        dt.count());
          }
       }
+#endif
    }
 
   // clear messages for this subframe bin
