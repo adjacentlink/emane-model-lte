@@ -294,29 +294,29 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
         if(segmentIter == segmentCache.end())
          {
-           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                  EMANE::DEBUG_LEVEL,
-                                  "MACI %03hu %s::%s: "
-                                  "type %d, "
-                                  "slot1 segment cache miss, "
-                                  "slotDuration=%lu, "
-                                  "freq=%lu, "
-                                  "startSymb=%d, "
-                                  "stopSymb=%d, "
-                                  "offs=%lu, "
-                                  "dur=%lu, "
-                                  "rb=%d",
-                                  id_,
-                                  "UEMessageProcessor",
-                                  __func__,
-                                  type,
-                                  slotDuration.count(),
-                                  freq,
-                                  rbParams.first_,
-                                  rbParams.last_,
-                                  offset.count(),
-                                  duration.count(),
-                                  rb);
+           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                   EMANE::INFO_LEVEL,
+                                   "MACI %03hu %s::%s: "
+                                   "type %d, "
+                                   "slot1 segment cache miss, "
+                                   "slotDuration=%lu, "
+                                   "freq=%lu, "
+                                   "startSymb=%d, "
+                                   "stopSymb=%d, "
+                                   "offs=%lu, "
+                                   "dur=%lu, "
+                                   "rb=%d",
+                                   id_,
+                                   "UEMessageProcessor",
+                                   __func__,
+                                   type,
+                                   slotDuration.count(),
+                                   freq,
+                                   rbParams.first_,
+                                   rbParams.last_,
+                                   offset.count(),
+                                   duration.count(),
+                                   rb);
 
             continue;
           }
@@ -328,7 +328,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
         const float fRandomValue{RNDZeroToOne_()};
 
         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                               EMANE::DEBUG_LEVEL,
+                               EMANE::INFO_LEVEL,
                                "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
                                id_,
                                "UEMessageProcessor",
@@ -375,29 +375,29 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          if(segmentIter == segmentCache.end())
           {
-            LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                   EMANE::DEBUG_LEVEL,
-                                   "MACI %03hu %s::%s: "
-                                   "type %d, "
-                                   "slot2 segment cache miss, "
-                                   "slotDuration=%lu, "
-                                   "freq=%lu, "
-                                   "startSymb=%d, "
-                                   "stopSymb=%d, "
-                                   "offs=%lu, "
-                                   "dur=%lu, "
-                                   "rb=%d",
-                                   id_,
-                                   "UEMessageProcessor",
-                                   __func__,
-                                   type,
-                                   slotDuration.count(),
-                                   freq,
-                                   rbParams.first_,
-                                   rbParams.last_,
-                                   offset.count(),
-                                   duration.count(),
-                                   rb);
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::INFO_LEVEL,
+                                    "MACI %03hu %s::%s: "
+                                    "type %d, "
+                                    "slot2 segment cache miss, "
+                                    "slotDuration=%lu, "
+                                    "freq=%lu, "
+                                    "startSymb=%d, "
+                                    "stopSymb=%d, "
+                                    "offs=%lu, "
+                                    "dur=%lu, "
+                                    "rb=%d",
+                                    id_,
+                                    "UEMessageProcessor",
+                                    __func__,
+                                    type,
+                                    slotDuration.count(),
+                                    freq,
+                                    rbParams.first_,
+                                    rbParams.last_,
+                                    offset.count(),
+                                    duration.count(),
+                                    rb);
 
             continue;
           }
@@ -408,8 +408,8 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          const float fRandomValue{RNDZeroToOne_()};
 
-         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                EMANE::DEBUG_LEVEL,
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                EMANE::INFO_LEVEL,
                                 "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
                                 id_,
                                 "UEMessageProcessor",
@@ -426,30 +426,39 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
           }
        } // end for
 
-      std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
+      const uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
 
-      bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
+      const bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
 
-      if(!messageReceived)
-       {
-          LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                 EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
-                                 id_,
-                                 "UEMessageProcessor",
-                                 __func__,
-                                 messageReceived ? "PASS" : "FAIL",
-                                 sfIdx,
-                                 type,
-                                 modType,
-                                 numberMessageREs,
-                                 numberInfoREs,
-                                 numberReceivedREs);
-        }
+      LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
+                              id_,
+                              "UEMessageProcessor",
+                              __func__,
+                              messageReceived ? "PASS" : "FAIL",
+                              sfIdx,
+                              type,
+                              modType,
+                              numberMessageREs,
+                              numberInfoREs,
+                              numberReceivedREs);
 
       return messageReceived;
     }
-  } // end for
+   else
+    {
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "MACI %03hu %s::%s: carrieFrequency %lu != frequency %lu",
+                              id_,
+                              "UEMessageProcessor",
+                              __func__,
+                              carrier.frequency_hz(),
+                              frequencyHz);
+    }
+
+  } // end for each carrier
 
   return false;
 }

@@ -43,6 +43,7 @@ EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
   impls_ = std::move(impls);
 }
 
+
 EMANELTE::MHAL::SINRTester & EMANELTE::MHAL::SINRTester::operator = (const SINRTester & rhs)
 {
   if(&rhs == this)
@@ -70,9 +71,11 @@ EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
                                        const uint64_t carrierFrequencyHz,
-                                       const uint32_t carrierId) const
+                                       const uint32_t rxAntennaId,
+                                       const uint32_t txAntennaId) const
 {
-  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, carrierId});
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, txAntennaId});
+
 
   if(iter != impls_.end())
    {
@@ -80,6 +83,9 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
    }
   else
    {
+     fprintf(stderr, "%p, not found freq %lu, rxAntennaId %u, txAntennaId %u\n",
+             this, carrierFrequencyHz, rxAntennaId, txAntennaId);
+
      return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
    }
 }
@@ -89,9 +95,10 @@ EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
                                        const uint16_t rnti,
                                        const uint64_t carrierFrequencyHz,
-                                       const uint32_t carrierId) const
+                                       const uint32_t rxAntennaId,
+                                       const uint32_t txAntennaId) const
 {
-  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, carrierId});
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, txAntennaId});
 
   if(iter != impls_.end())
    {
@@ -99,6 +106,9 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
    }
   else
    {
+     fprintf(stderr, "%p, not found freq %lu, rxAntennaId %u, txAntennaId %u\n",
+             this, carrierFrequencyHz, rxAntennaId, txAntennaId);
+   
      return EMANELTE::MHAL::SINRTester::SINRTesterResult{};
    }
 }
@@ -107,5 +117,5 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
 void
 EMANELTE::MHAL::SINRTester::release()
 {
-  impls_.clear();
+   impls_.clear();
 }

@@ -46,8 +46,8 @@ namespace MHAL {
 
 class SINRTesterImpl;
 
-// <carrier frequency, carrier id>
-using SINRTesterKey = std::pair<std::uint64_t, std::uint32_t>;
+// <carrier frequency, rxAntennaId, txAntennaId>
+using SINRTesterKey = std::tuple<uint64_t, uint32_t, uint32_t>;
  
 using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>;
  
@@ -59,13 +59,11 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
      SINRTester & operator = (const SINRTester & rhs);
 
      struct SINRTesterResult {
-       const bool   bFound_;    // sinr tester was set
-       const bool   bPassed_;   // sinr passed curve check
+       const bool   bPassed_;      // sinr passed curve check
        const float  sinr_dB_;
        const float  noiseFloor_dBm_;
 
      SINRTesterResult() :
-       bFound_{false},
        bPassed_{false},
        sinr_dB_{-201.0f},
        noiseFloor_dBm_{-201.0f}
@@ -74,7 +72,6 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
      SINRTesterResult(const bool bPassed,
                       const float sinr,
                       const float noiseFloor) :
-       bFound_{true},
        bPassed_{bPassed},
        sinr_dB_{sinr},
        noiseFloor_dBm_{noiseFloor}
@@ -87,12 +84,14 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
 
    SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
                                const uint64_t carrrierFrequencyHz,
-                               const uint32_t carrierId = 0) const;
+                               const uint32_t rxAntennaId,
+                               const uint32_t txAntennaId) const;
 
    SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
                                const uint16_t rnti,
                                const uint64_t carrrierFrequencyHz,
-                               const uint32_t carrierId = 0) const;
+                               const uint32_t rxAntennaId,
+                               const uint32_t txAntennaId) const;
 
   private:
     SINRTesterImpls impls_;

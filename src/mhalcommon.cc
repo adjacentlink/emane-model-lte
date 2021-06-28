@@ -203,7 +203,7 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
   clearReadyMessages_safe(bin);
 
   // container for all freqs and energy for this subframe per rxAntenna
-  // allows for consulting the spectrum sevice once and only once for each freq/span later
+  // allows for consulting the spectrum sevice once and only once for each freq/span
   EMANE::Models::LTE::AntennaSpectrumWindowCache antennaSpectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency in this msg
