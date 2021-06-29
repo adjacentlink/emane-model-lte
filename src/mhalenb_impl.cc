@@ -55,8 +55,8 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t localCarrierId,
   physicalCellIds_.insert(mhal_enb_config.physical_cell_id_);
 
   pRadioModel_->setFrequencies(localCarrierId,
-                               llround(mhal_enb_config.uplink_frequency_hz_),   // rx
-                               llround(mhal_enb_config.downlink_frequency_hz_), // tx
+                               mhal_enb_config.uplink_frequency_hz_,   // rx
+                               mhal_enb_config.downlink_frequency_hz_, // tx
                                clearCache);
 
   pRadioModel_->setNumResourceBlocks(mhal_enb_config.num_resource_blocks_);
@@ -236,15 +236,15 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           {
             const float rxPower_mW = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
 
-            const EMANE::Models::LTE::SegmentKey key{segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()};
+            const EMANE::Models::LTE::SegmentKey segmentKey{segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()};
 
             const EMANE::Models::LTE::SegmentSOTValue value{otaInfo.sot_, otaInfo.sot_, rxPower_mW};
 
-            const auto iter = entries.find(key);
+            const auto iter = entries.find(segmentKey);
 
             if(iter == entries.end())
              {
-               entries.emplace(key, value);
+               entries.emplace(segmentKey, value);
              }
             else
              {
@@ -264,8 +264,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             const auto rxAntennaId = antennaInfo.getRxAntennaIndex();
 
             antennaInBandSegmentPowerMap_mW.emplace(rxAntennaId, entries);
-
-#if 0
+#if 1
             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, load inband power map for rxAntenna %u, %zu entries", 
                         __func__, rxAntennaId, entries.size());
 #endif
@@ -281,7 +280,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
   // For PUSCH and PRACH, we make an a simplifying assumption for now that inband receptions are time aligned and
   // orthogonal so do not interfere with each other; uplink sinr is calculated for each segment
   // as the segment receive power less the noisefloor of out of band contributions.
-  std::map<uint32_t, EMANE::Models::LTE::SegmentMap> outOfBandNoiseFloor_dBm;
+  std::map<uint32_t, EMANE::Models::LTE::SegmentMap> antennaOutOfBandNoiseFloorMap_dBm;
 
 
   for(const auto & entry : antennaInBandSegmentPowerMap_mW)
@@ -354,7 +353,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                                    minSor,
                                                                    maxEor);
 
-        outOfBandNoiseFloor_dBm[rxAntennaId].emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, offset, duration), rangeInfo.first);
+        antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, offset, duration), rangeInfo.first);
       } // end second pass
     }
 
@@ -456,6 +455,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                          rxAntennaId);
 
              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(rxAntennaId);
+
              continue;
            }
 
@@ -474,7 +474,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              if(spectrumWindow == spectrumWindowCache->second.end())
               {
-                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s 3rd, , src %hu, bin %u, no spectrumWindow cache info for freq %lu",
+                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s 3rd, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
                             __func__,
                             rxControl.nemId_,
                             bin,
@@ -486,19 +486,46 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               }
 
              const auto rxPower_dBm = segment.getRxPowerdBm();
-             const auto rxPower_mW  = EMANELTE::DB_TO_MW(segment.getRxPowerdBm());
+             const auto rxPower_mW  = EMANELTE::DB_TO_MW(rxPower_dBm);
 
-             const auto noiseFloor_dBm = outOfBandNoiseFloor_dBm[rxAntennaId].find(
-                      EMANE::Models::LTE::SegmentKey(segment.getFrequencyHz(), segment.getOffset(), segment.getDuration()))->second;
+             const auto outOfBandNoiseFloorMap_dBm = antennaOutOfBandNoiseFloorMap_dBm.find(rxAntennaId);
 
-             const auto noiseFloor_mW = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+             if(outOfBandNoiseFloorMap_dBm == antennaOutOfBandNoiseFloorMap_dBm.end())
+              {
+                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s 3rd, src %hu, no out out band noise entry for rxAntenna %u",
+                            __func__,
+                            rxControl.nemId_,
+                            rxAntennaId);
+
+                continue;
+              }
+
+             const EMANE::Models::LTE::SegmentKey segmentKey{frequencyHz, segment.getOffset(), segment.getDuration()};
+
+             const auto entry = outOfBandNoiseFloorMap_dBm->second.find(segmentKey);
+
+             if(entry == outOfBandNoiseFloorMap_dBm->second.end())
+              {
+                logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s 3rd, src %hu, no out out band noise info for rxAntenna %u, frequency %lu, offset %ld, duration %ld",
+                            __func__,
+                            rxControl.nemId_,
+                            rxAntennaId,
+                            frequencyHz,
+                            segment.getOffset().count(),
+                            segment.getDuration().count());
+
+                continue;
+              }
+             
+             const auto noiseFloor_dBm = entry->second;
+             const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
              const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
 
              signalSum_mW     += rxPower_mW;
              noiseFloorSum_mW += noiseFloor_mW;
 
-             segmentCache.emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, segment.getOffset(), segment.getDuration()), sinr_dB);
+             segmentCache.emplace(segmentKey, sinr_dB);
 
              pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
 

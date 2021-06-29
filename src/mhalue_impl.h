@@ -75,7 +75,7 @@ namespace MHAL {
 
     std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
 
-    void set_frequencies(uint32_t carrierIndex, float carrierRxFrequencyHz, float carrierTxFrequencyHz);
+    void set_frequencies(uint32_t carrierIndex, std::uint64_t carrierRxFrequencyHz, std::uint64_t carrierTxFrequencyHz);
 
     void set_num_resource_blocks(int num_resource_blocks);
 

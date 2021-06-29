@@ -44,7 +44,7 @@ EMANE::Models::LTE::FrequencySegmentBuilder::insert(FrequencySegmentKey key, flo
   // has higher transmit power than existing one
   if(iter == segmentMap_.end() || txPowerdBm > iter->second)
     {
-      segmentMap_.insert(std::pair<FrequencySegmentKey, float>(key, txPowerdBm));
+      segmentMap_.emplace(key, txPowerdBm);
     }
 }
 

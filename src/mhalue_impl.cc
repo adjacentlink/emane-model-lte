@@ -200,17 +200,17 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, float carrierRxFrequencyHz, float carrierTxFrequencyHz)
+EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, std::uint64_t carrierRxFrequencyHz, std::uint64_t carrierTxFrequencyHz)
 {
   // ue will rotate thru its frequency list using carrierIndex 0 initially
   // if/when the carrierIndex is > 0, then accumulate frequencies
   const bool clearCache = carrierIndex == 0;
   const bool searchMode = carrierIndex == 0;
 
-  pRadioModel_->setFrequencies(carrierIndex,                   // carrier idx
-                               llround(carrierRxFrequencyHz),  // rx freq
-                               llround(carrierTxFrequencyHz),  // tx freq
-                               clearCache);                    // clear cache
+  pRadioModel_->setFrequencies(carrierIndex,          // carrier idx
+                               carrierRxFrequencyHz,  // rx freq
+                               carrierTxFrequencyHz,  // tx freq
+                               clearCache);           // clear cache
 
   if(carrierIndex == 0)
    {

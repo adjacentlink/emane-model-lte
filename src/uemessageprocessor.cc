@@ -375,6 +375,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          if(segmentIter == segmentCache.end())
           {
+#if 0
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
                                     "MACI %03hu %s::%s: "
@@ -398,6 +399,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                     offset.count(),
                                     duration.count(),
                                     rb);
+#endif
 
             continue;
           }
@@ -408,6 +410,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          const float fRandomValue{RNDZeroToOne_()};
 
+#if 0
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                 EMANE::INFO_LEVEL,
                                 "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
@@ -419,6 +422,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                 por,
                                 fRandomValue,
                                 rbParams.res_);
+#endif
 
          if(por >= fRandomValue)
           {
@@ -430,7 +434,8 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
       const bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
 
-      LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
+#if 0
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::INFO_LEVEL,
                               "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
                               id_,
@@ -443,11 +448,12 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                               numberMessageREs,
                               numberInfoREs,
                               numberReceivedREs);
-
+#endif
       return messageReceived;
     }
    else
     {
+#if 0
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::INFO_LEVEL,
                               "MACI %03hu %s::%s: carrieFrequency %lu != frequency %lu",
@@ -456,6 +462,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                               __func__,
                               carrier.frequency_hz(),
                               frequencyHz);
+#endif
     }
 
   } // end for each carrier

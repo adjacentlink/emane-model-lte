@@ -505,14 +505,14 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
 
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: numCarriers=%zu, carrierIndex=%u, rxFreq=%lu MHz, txFreq=%lu MHz",
+                          "%s %03hu %s: numCarriers=%zu, carrierIndex=%u, rxFreq=%lu Hz, txFreq=%lu Hz",
                           pzModuleName_,
                           id_,
                           __func__,
                           frequencyTable_.size(),
                           carrierIndex,
-                          carrierRxFrequencyHz/1000000,
-                          carrierTxFrequencyHz/1000000);
+                          carrierRxFrequencyHz,
+                          carrierTxFrequencyHz);
 }
 
 
