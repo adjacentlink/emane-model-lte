@@ -298,21 +298,6 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         const auto carrierFrequencyHz = carrier.frequency_hz();
         const auto carrierId          = carrier.carrier_id();
 
-        // local carrierId
-        const auto localCarrierId = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
-
-        // check carriers of interest
-        if(localCarrierId < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
-         {
-           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, ignore carrier frequency %lu Hz, not of interest",
-                       __func__,
-                      rxControl.nemId_,
-                      carrierFrequencyHz);
-          
-           // not a frequency of interest, skip
-           continue;
-         }
-
         // check that we do have recv antenna info for this txAntenna / carrrierId
         if(antennaFrequencySegmentTable.count(carrierId) == 0)
          {

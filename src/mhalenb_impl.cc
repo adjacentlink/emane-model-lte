@@ -403,27 +403,12 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             const auto carrierFrequencyHz = carrier.frequency_hz();
             const auto carrierId          = carrier.carrier_id();
 
-            // local carrierId
-            const auto localCarrierId = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
+            // frequency segments for this carrier
+            EMANE::FrequencySegments segmentsThisCarrier;
 
-            // check carriers of interest
-            if(localCarrierId < 0 || carriersOfInterest.count(carrierFrequencyHz) == 0)
+            // for each sub channel of the carrier
+            for(const auto subChannelHz : carrier.sub_channels())
              {
-               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, src %hu, skip carrier %lu",
-                           __func__,
-                          rxControl.nemId_,
-                          carrierFrequencyHz);
- 
-               // ignore carriers not of interest
-               continue;
-             }
-
-           // frequency segments for this carrier
-           EMANE::FrequencySegments segmentsThisCarrier;
-
-           // for each sub channel of the carrier
-           for(const auto subChannelHz : carrier.sub_channels())
-            {
               if(frequencySegmentTable.count(subChannelHz))
                {
                  const auto range = frequencySegmentTable.equal_range(subChannelHz);
@@ -434,30 +419,30 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                     segmentsThisCarrier.push_back(iter->second);
                   }
                }
+             }
+
+           if(segmentsThisCarrier.empty())
+            {
+              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip carrier %lu",
+                          __func__, carrierFrequencyHz);
+ 
+               // can not reasemble msg, skip
+              continue;
             }
 
-          if(segmentsThisCarrier.empty())
-           {
-             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip carrier %lu",
-                         __func__, carrierFrequencyHz);
+           const auto spectrumWindowCache = antennaSpectrumWindowCache.find(rxAntennaId);
 
-             // can not reasemble msg, skip
-             continue;
-           }
+           if(spectrumWindowCache == antennaSpectrumWindowCache.end())
+            {
+              logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 3rd, bin %u, no antennaSpectrumWindow cache info for rxAntennaId %u",
+                          __func__,
+                          bin,
+                          rxAntennaId);
+ 
+              pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(rxAntennaId);
 
-          const auto spectrumWindowCache = antennaSpectrumWindowCache.find(rxAntennaId);
-
-          if(spectrumWindowCache == antennaSpectrumWindowCache.end())
-           {
-             logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 3rd, bin %u, no antennaSpectrumWindow cache info for rxAntennaId %u",
-                         __func__,
-                         bin,
-                         rxAntennaId);
-
-             pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(rxAntennaId);
-
-             continue;
-           }
+              continue;
+            }
 
 
           float signalSum_mW     = 0.0,
