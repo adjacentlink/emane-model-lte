@@ -264,7 +264,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             const auto rxAntennaId = antennaInfo.getRxAntennaIndex();
 
             antennaInBandSegmentPowerMap_mW.emplace(rxAntennaId, entries);
-#if 1
+#if 0
             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, load inband power map for rxAntenna %u, %zu entries", 
                         __func__, rxAntennaId, entries.size());
 #endif
@@ -282,7 +282,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
   // as the segment receive power less the noisefloor of out of band contributions.
   std::map<uint32_t, EMANE::Models::LTE::SegmentMap> antennaOutOfBandNoiseFloorMap_dBm;
 
-
   for(const auto & entry : antennaInBandSegmentPowerMap_mW)
    {
      const auto rxAntennaId = entry.first;
@@ -298,7 +297,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
          pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(rxAntennaId);
 
-        
          // something is wrong, not an expected condition
          continue;
        }

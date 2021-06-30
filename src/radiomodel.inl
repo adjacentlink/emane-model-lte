@@ -493,6 +493,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
    }
 
   // save rx/tx frequencyHz per carrier id
+  // will be 1 entry when carrier aggreation is not enabled
   frequencyTable_[carrierIndex] = FrequencyPair{carrierRxFrequencyHz, carrierTxFrequencyHz};
 
   rxCarriersOfInterest_.insert(carrierRxFrequencyHz);
@@ -604,7 +605,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   // rx frequencies per carrier
   std::map<uint32_t, FrequencySet> rxFrequencyTableHz; 
 
-  // for each carrier
+  // for each carrier (not cell which is the case for an anb with multiple cells)
   for(const auto & entry : frequencyTable_)
    {
      const auto & rxFreqHz = entry.second.first;
@@ -707,11 +708,11 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
            rxFrequencyTableHz[carrierIndex].insert(frequencyHz);
          }
 
-       messageProcessor_[carrierIndex]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
+       messageProcessor_[0]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
      }
     else
      {
-       messageProcessor_[carrierIndex]->swapFrequencyMaps(rxFreqToRBMap, txFreqToRBMap);
+       messageProcessor_[0]->swapFrequencyMaps(rxFreqToRBMap, txFreqToRBMap);
      }
   }
 
@@ -785,7 +786,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
       const auto carrierId = control->carrier_id();
 
       // get the all frequency segments for this carrier
-      const auto segments = messageProcessor_[carrierId]->buildFrequencySegments(txControl, carrierFrequencyHz, carrierId);
+      const auto segments = messageProcessor_[0]->buildFrequencySegments(txControl, carrierFrequencyHz, carrierId);
 
       EMANELTE::FrequencySet frequencySet;
 
@@ -1147,11 +1148,11 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
    uint64_t carrierFrequencyHz,
    uint32_t carrierId)
 {
-     return messageProcessor_[carrierId]->noiseTestChannelMessage(txControl,
-                                                                   channel_msg,
-                                                                   segmentCache,
-                                                                   carrierFrequencyHz,
-                                                                   carrierId);
+     return messageProcessor_[0]->noiseTestChannelMessage(txControl,
+                                                                    channel_msg,
+                                                                    segmentCache,
+                                                                    carrierFrequencyHz,
+                                                                    carrierId);
 }
 
 

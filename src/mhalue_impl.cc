@@ -279,8 +279,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         for(auto & segment : frequencySegments)
          {
            antennaFrequencySegmentTable[txAntennaId].emplace(segment.getFrequencyHz(), segment);
-
-           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %u, txAntenna %u, segment[frequency %lu Hz, offset %ld, duration %ld]",
+#if 0
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, txAntennaId %u, segment[frequency %lu Hz, offset %ld, duration %ld]",
                        __func__,
                       rxControl.nemId_,
                       rxAntennaId,
@@ -288,6 +288,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                       segment.getFrequencyHz(),
                       segment.getOffset().count(),
                       segment.getDuration().count());
+#endif
          }
       }
 
@@ -319,8 +320,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
               for(auto iter = range.first; iter != range.second; ++iter)
                {
                  segmentsThisCarrier.push_back(iter->second);
-
-                 logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %u, carrierId %u, carrier %lu Hz, subchannel %lu Hz, segment[frequency %lu Hz, offset %ld, duration %ld]",
+#if 0
+                 logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, carrierId %u, carrier %lu Hz, subchannel %lu Hz, segment[frequency %lu Hz, offset %ld, duration %ld]",
                              __func__,
                              rxControl.nemId_,
                              rxAntennaId,
@@ -330,11 +331,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                              iter->second.getFrequencyHz(),
                              iter->second.getOffset().count(),
                              iter->second.getDuration().count());
+#endif
                }
             }
            else
             {
-              logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %u, carrierId %u, carrier %lu Hz, subchannel %lu Hz, not found",
+              logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, carrierId %u, carrier %lu Hz, subchannel %lu Hz, not found",
                           __func__,
                           rxControl.nemId_,
                           rxAntennaId,
