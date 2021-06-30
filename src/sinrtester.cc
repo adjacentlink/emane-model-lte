@@ -80,9 +80,9 @@ EMANELTE::MHAL::SINRTester::SINRTesterResult
 EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
                                        const uint64_t carrierFrequencyHz,
                                        const uint32_t rxAntennaId,
-                                       const uint32_t txAntennaId) const
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, txAntennaId});
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, carrierId});
 
 
   if(iter != impls_.end())
@@ -101,9 +101,9 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
                                        const uint16_t rnti,
                                        const uint64_t carrierFrequencyHz,
                                        const uint32_t rxAntennaId,
-                                       const uint32_t txAntennaId) const
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, txAntennaId});
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, carrierId});
 
   if(iter != impls_.end())
    {

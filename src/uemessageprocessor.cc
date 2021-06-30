@@ -120,7 +120,8 @@ EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::Chan
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                               uint64_t frequencyHz)
+                                                               const uint64_t carrierFrequencyHz,
+                                                               const uint32_t carrierId)
 {
   std::uint32_t tti_tx = txControl.tti_tx();
 
@@ -132,7 +133,8 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
 
   for(const auto & carrier : txControl.carriers())
    {
-     if(carrier.frequency_hz() == frequencyHz)
+     if((carrier.frequency_hz() == carrierFrequencyHz) &&
+        (carrier.carrier_id()   == carrierId))
       {       
         statisticManager_.updateTxTableCounts(txControl);
 
@@ -165,11 +167,13 @@ bool
 EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                                                 const EMANELTE::MHAL::ChannelMessage & channel_message,
                                                                 EMANE::Models::LTE::SegmentMap & segmentCache,
-                                                                std::uint64_t frequencyHz)
+                                                                const uint64_t carrierFrequencyHz,
+                                                                const uint32_t carrierId)
 {
   for(const auto & carrier : txControl.carriers())
    {
-     if(carrier.frequency_hz() == frequencyHz)
+     if((carrier.frequency_hz() == carrierFrequencyHz) &&
+        (carrier.carrier_id()   == carrierId))
       {
         const size_t sfIdx{txControl.tti_tx() % 10};
 
@@ -375,7 +379,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          if(segmentIter == segmentCache.end())
           {
-#if 0
+#if 1
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
                                     "MACI %03hu %s::%s: "
@@ -456,12 +460,14 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 #if 0
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::INFO_LEVEL,
-                              "MACI %03hu %s::%s: carrieFrequency %lu != frequency %lu",
+                              "MACI %03hu %s::%s: carrierFrequency %lu != %lu or carrierId != %u",
                               id_,
                               "UEMessageProcessor",
                               __func__,
                               carrier.frequency_hz(),
-                              frequencyHz);
+                              carrierFrequencyHz,
+                              carrier.carrier_id(),
+                              carrierId);
 #endif
     }
 

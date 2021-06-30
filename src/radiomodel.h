@@ -147,7 +147,8 @@ class RadioModel : public EMANE::MACLayerImplementor
       bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                    const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                    SegmentMap & segmentCache,
-                                   std::uint64_t carrierFrequencyHz);
+                                   const uint64_t carrierFrequencyHz,
+                                   const uint32_t carrierId );
 
       void setFrequenciesOfInterest(bool searchMode);
 

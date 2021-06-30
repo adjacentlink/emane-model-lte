@@ -38,7 +38,7 @@
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype)
 {
   if(ctype == CHAN_PCFICH)
     {
@@ -52,14 +52,17 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
     {
      for(auto & carrier : txControl_.carriers())
       {
-        if(carrier.frequency_hz() == carrierFrequencyHz_)
+        if((carrier.frequency_hz() == carrierFrequencyHz_) &&
+           (carrier.carrier_id()   == carrierId_))
          {
            if(carrier.downlink().has_pmch())
             {
               return SINRTester::SINRTesterResult{
                         pRadioModel_->noiseTestChannelMessage(txControl_, 
                                                               carrier.downlink().pmch(),
-                                                              segmentCache_, carrierFrequencyHz_), sinr_dB_, noiseFloor_dBm_};
+                                                              segmentCache_, 
+                                                              carrierFrequencyHz_,
+                                                              carrierId_), sinr_dB_, noiseFloor_dBm_};
             }
          }
       }
@@ -70,7 +73,7 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
+EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti)
 {
   if(!pcfichPass_)
     {
@@ -80,7 +83,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
 
   for(auto & carrier : txControl_.carriers())
    {
-     if(carrier.frequency_hz() == carrierFrequencyHz_)
+     if((carrier.frequency_hz() == carrierFrequencyHz_) &&
+        (carrier.carrier_id()   == carrierId_))
       {
        // For other physical channels, match the specified rnti
         if(ctype == CHAN_PHICH)
@@ -96,9 +100,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
                        pRadioModel_->noiseTestChannelMessage(txControl_,
                                                              carrier.downlink().phich(i),
                                                              segmentCache_,
-                                                             carrierFrequencyHz_),
-                       sinr_dB_,
-                       noiseFloor_dBm_};
+                                                             carrierFrequencyHz_,
+                                                             carrierId_), sinr_dB_, noiseFloor_dBm_};
             }
          }
         else if(ctype == CHAN_PDCCH)
@@ -113,7 +116,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
               bool pdcchPass{pRadioModel_->noiseTestChannelMessage(txControl_,
                                                                    carrier.downlink().pdcch(i),
                                                                    segmentCache_,
-                                                                   carrierFrequencyHz_)};
+                                                                   carrierFrequencyHz_,
+                                                                   carrierId_)};
 
               // Store PDCCH result for corresponding PDSCH check
               pdcchRNTIResults_.emplace(rnti, pdcchPass);
@@ -141,9 +145,8 @@ EMANELTE::MHAL::DownlinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t r
               return SINRTester::SINRTesterResult{pRadioModel_->noiseTestChannelMessage(txControl_, 
                                                                                         carrier.downlink().pdsch(i),
                                                                                         segmentCache_,
-                                                                                        carrierFrequencyHz_), 
-                                                  sinr_dB_,
-                                                  noiseFloor_dBm_};
+                                                                                        carrierFrequencyHz_,
+                                                                                        carrierId_), sinr_dB_, noiseFloor_dBm_};
            }
          }
        }

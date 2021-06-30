@@ -401,7 +401,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           {
             // carrier center freq and index
             const auto carrierFrequencyHz = carrier.frequency_hz();
-            const auto txAntennaId        = carrier.carrier_id();
+            const auto carrierId          = carrier.carrier_id();
 
             // local carrierId
             const auto localCarrierId = pRadioModel_->getRxCarrierIndex(carrierFrequencyHz);
@@ -547,16 +547,17 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              auto pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm,
                                                          noiseFloorAvg_dBm,
-                                                         carrierFrequencyHz);
+                                                         carrierFrequencyHz,
+                                                         carrierId);
 
-             // carrierFrequency, rxAntennaId, txAntennaId
-             sinrTesterImpls[SINRTesterKey(carrierFrequencyHz, rxAntennaId, txAntennaId)].reset(pSINRTester);
+             // carrierFrequency, rxAntennaId, carrierId/txantennaId
+             sinrTesterImpls[SINRTesterKey(carrierFrequencyHz, rxAntennaId, carrierId)].reset(pSINRTester);
 
-             rxControl.peak_sum_   [txAntennaId] = peakSum;
-             rxControl.num_samples_[txAntennaId] = segmentCacheSize;
-             rxControl.avg_snr_    [txAntennaId] = signalAvg_dBm - noiseFloorAvg_dBm;
-             rxControl.avg_nf_     [txAntennaId] = noiseFloorAvg_dBm;
-             rxControl.is_valid_   [txAntennaId] = true;
+             rxControl.peak_sum_   [carrierId] = peakSum;
+             rxControl.num_samples_[carrierId] = segmentCacheSize;
+             rxControl.avg_snr_    [carrierId] = signalAvg_dBm - noiseFloorAvg_dBm;
+             rxControl.avg_nf_     [carrierId] = noiseFloorAvg_dBm;
+             rxControl.is_valid_   [carrierId] = true;
 
              if(carrier.uplink().has_prach())
               {
@@ -565,7 +566,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                 putSINRResult_i(prach,
                                 rxControl,
                                 pSINRTester,
-                                pRadioModel_->noiseTestChannelMessage(txControl, prach, segmentCache, carrierFrequencyHz));
+                                pRadioModel_->noiseTestChannelMessage(txControl, 
+                                                                      prach,
+                                                                      segmentCache,
+                                                                      carrierFrequencyHz,
+                                                                      carrierId));
               }
 
              for(const auto & pucch : carrier.uplink().pucch())
@@ -573,7 +578,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                 putSINRResult_i(pucch,
                                 rxControl,
                                 pSINRTester,
-                                pRadioModel_->noiseTestChannelMessage(txControl, pucch, segmentCache, carrierFrequencyHz));
+                                pRadioModel_->noiseTestChannelMessage(txControl,
+                                                                      pucch,
+                                                                      segmentCache,
+                                                                      carrierFrequencyHz,
+                                                                      carrierId));
               }
 
              for(const auto & pusch : carrier.uplink().pusch())
@@ -581,7 +590,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                 putSINRResult_i(pusch,
                                 rxControl,
                                 pSINRTester,
-                                pRadioModel_->noiseTestChannelMessage(txControl, pusch, segmentCache, carrierFrequencyHz));
+                                pRadioModel_->noiseTestChannelMessage(txControl,
+                                                                      pusch,
+                                                                      segmentCache,
+                                                                      carrierFrequencyHz,
+                                                                      carrierId));
               }
 
              StatisticManager::ReceptionInfoMap receptionInfoMap;

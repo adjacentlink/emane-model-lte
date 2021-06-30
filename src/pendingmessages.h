@@ -61,17 +61,16 @@ namespace MHAL {
 
 #define SegmentTimeSpan_Sor_Get(x) std::get<0>((x))
 #define SegmentTimeSpan_Eor_Get(x) std::get<1>((x))
-#define SegmentTimeSpan_Num_Get(x) std::get<2>((x))
 
-  using SegmentTimeSpan = std::tuple<EMANE::TimePoint,  // sor
-                                     EMANE::TimePoint,  // eor
-                                     size_t>;           // num segments
+  // time span start-stop
+  using SegmentTimeSpan = std::tuple<EMANE::TimePoint,   // sor
+                                     EMANE::TimePoint>;  // eor
 
-  // frequency, time span
+  // frequency, segment span
   using SegmentSpans = std::map<std::uint64_t, SegmentTimeSpan>;
 
-  // by antenna index
-  // ue has 1 antenna, enb can have up the 3
+  // by rx antenna index
+  // ue has 1 antenna, enb can have multiple
   using AntennaSegmentSpans = std::map<uint32_t, SegmentSpans>;
 
   class PendingMessageBin {
@@ -88,7 +87,7 @@ namespace MHAL {
 
     // purge and msgs that have expired.
     void add(const timeval & binTime,
-             uint32_t bin,
+             const uint32_t bin,
              const PendingMessage & msg,
              StatisticManager & statisticManager);
 

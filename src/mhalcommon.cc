@@ -207,16 +207,19 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
   EMANE::Models::LTE::AntennaSpectrumWindowCache antennaSpectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency in this msg
-  for(auto & segmentSpans : pendingMessageBins_[bin].getAntennaSegmentSpans())
+  for(auto & antennaSegmentSpans : pendingMessageBins_[bin].getAntennaSegmentSpans())
    {
-     const auto rxAntennaId = segmentSpans.first;
+     const auto rxAntennaId = antennaSegmentSpans.first;
 
-     for(auto & segmentSpan : segmentSpans.second)
+     for(auto & segmentSpan : antennaSegmentSpans.second)
       {
         const auto & minSor      = SegmentTimeSpan_Sor_Get(segmentSpan.second);
         const auto & maxEor      = SegmentTimeSpan_Eor_Get(segmentSpan.second);
         const auto & frequencyHz = segmentSpan.first;
         const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
+  
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, frequency %lu Hz",
+                    __func__, rxAntennaId, frequencyHz);
 
         // per rx antenna
         antennaSpectrumWindowCache[rxAntennaId][frequencyHz] = get_noise(rxAntennaId, frequencyHz, duration, minSor);

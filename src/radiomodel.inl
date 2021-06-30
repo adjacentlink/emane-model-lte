@@ -788,6 +788,9 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 
       const auto carrierFrequencyHz = control->frequency_hz();
 
+      const auto carrierId = control->carrier_id();
+
+#warning "this check is bogus"
       const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
 
       // sanity check
@@ -796,7 +799,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
          const auto carrierIndex = iter->second;
 
          // get the all frequency segments for this carrier
-         const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl, carrierFrequencyHz);
+         const auto segments = messageProcessor_[carrierId]->buildFrequencySegments(txControl, carrierFrequencyHz, carrierId);
 
          EMANELTE::FrequencySet frequencySet;
 
@@ -1166,14 +1169,19 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
    const EMANELTE::MHAL::TxControlMessage & txControl,
    const EMANELTE::MHAL::ChannelMessage & channel_msg,
    SegmentMap & segmentCache,
-   std::uint64_t carrierFrequencyHz)
+   uint64_t carrierFrequencyHz,
+   uint32_t carrierId)
 {
   // check rx carrier table for tx frequencyHz
   const auto index = getRxCarrierIndex(carrierFrequencyHz);
 
   if(index >= 0)
    {
-     return messageProcessor_[index]->noiseTestChannelMessage(txControl, channel_msg, segmentCache, carrierFrequencyHz);
+     return messageProcessor_[index]->noiseTestChannelMessage(txControl,
+                                                              channel_msg,
+                                                              segmentCache,
+                                                              carrierFrequencyHz,
+                                                              carrierId);
    }
   else
    {

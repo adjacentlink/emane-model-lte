@@ -87,13 +87,13 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
    SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
                                const uint64_t carrrierFrequencyHz,
                                const uint32_t rxAntennaId,
-                               const uint32_t txAntennaId) const;
+                               const uint32_t carrierId) const;
 
    SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
                                const uint16_t rnti,
                                const uint64_t carrrierFrequencyHz,
                                const uint32_t rxAntennaId,
-                               const uint32_t txAntennaId) const;
+                               const uint32_t carrierId) const;
 
   private:
     SINRTesterImpls impls_;

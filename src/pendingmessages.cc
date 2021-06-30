@@ -87,12 +87,14 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
 EMANELTE::MHAL::AntennaSegmentSpans
 EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
 {
-  AntennaSegmentSpans segmentSpans;
+  AntennaSegmentSpans antennaSegmentSpans;
 
+  // for each pending msg
   for(const auto & pendingMsg : pending_)
    {
      const auto & otaInfo = PendingMessage_OtaInfo_Get(pendingMsg);
 
+     // for each rx/tx antenna path
      for(const auto & antenna : otaInfo.antennaInfos_)
       {
         // track receptions based on rx antenna
@@ -107,26 +109,25 @@ EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
            const auto eor = sor + segment.getDuration();
 
            // check for matching frequency
-           const auto iter = segmentSpans[rxAntennaIndex].find(frequencyHz);
+           const auto iter = antennaSegmentSpans[rxAntennaIndex].find(frequencyHz);
 
-           if(iter != segmentSpans[rxAntennaIndex].end())
+           if(iter != antennaSegmentSpans[rxAntennaIndex].end())
             {
               auto & min = SegmentTimeSpan_Sor_Get(iter->second);
               auto & max = SegmentTimeSpan_Eor_Get(iter->second);
 
               min = std::min(min, sor);
               max = std::max(max, eor);
-              ++SegmentTimeSpan_Num_Get(iter->second);
             }
           else
            {
-             segmentSpans[rxAntennaIndex].insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
+             antennaSegmentSpans[rxAntennaIndex].emplace(frequencyHz, SegmentTimeSpan{sor, eor});
            }
          }
       }
    }
 
-  return segmentSpans;
+  return antennaSegmentSpans;
 }
 
 
