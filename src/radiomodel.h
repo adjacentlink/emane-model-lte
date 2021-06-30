@@ -154,6 +154,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 
+      int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
+      int getTxCarrierIndex(std::uint64_t carrierFrequency) const;
 
     private:
       bool bRunning_;
@@ -174,6 +176,9 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;
+
+      CarrierFrequencyToIndexTable   txCarrierFrequencyToIndexTable_;
+      CarrierFrequencyToIndexTable   rxCarrierFrequencyToIndexTable_;
 
       std::uint64_t u64TxSeqNum_;
       std::uint32_t u32NumResourceBlocks_;
