@@ -425,7 +425,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
            const auto rangeInfo  = EMANE::Utils::maxBinNoiseFloorRange(spectrumWindow->second, rxPower_dBm, segmentSor, segmentEor);
 
            // HACK force low noise floor to allow for multiple cell testing
-           const bool celltest = true;
+           const bool celltest = false;
            const auto noiseFloor_dBm = celltest ? -111.0f : rangeInfo.first;
            const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
