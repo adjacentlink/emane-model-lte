@@ -200,16 +200,19 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t carrierIndex,
                                             const FrequencyHz carrierRxFrequencyHz,
                                             const FrequencyHz carrierTxFrequencyHz)
 {
-  logger_.log(EMANE::INFO_LEVEL, "MHAL %s carrierIndex %u, pci %u, rxFreq %lu, txFreq %lu",
-              __func__, carrierIndex, pci, carrierRxFrequencyHz, carrierTxFrequencyHz);
+  const bool searchMode = (pci == 0);
+
+  logger_.log(EMANE::INFO_LEVEL, "MHAL %s carrierIndex %u, pci %u, searchMode %d, rxFreq %lu, txFreq %lu",
+              __func__, carrierIndex, pci, searchMode, carrierRxFrequencyHz, carrierTxFrequencyHz);
+
+  
 
   pRadioModel_->setFrequencies(carrierIndex,          // carrier idx
                                carrierRxFrequencyHz,  // rx freq
                                carrierTxFrequencyHz,  // tx freq
-                               carrierIndex == 0);    // clear cache
+                               searchMode);           // clear cache
 
-  // search mode true if pci is 0
-  if(pci == 0)
+  if(searchMode)
    {
      logger_.log(EMANE::INFO_LEVEL, "MHAL %s pci is 0, implies cell search, reset num_prb to 100", __func__);
 
@@ -218,7 +221,7 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t carrierIndex,
      pRadioModel_->setNumResourceBlocks(100);
    }
 
-  pRadioModel_->setFrequenciesOfInterest(pci == 0);
+  pRadioModel_->setFrequenciesOfInterest(searchMode);
 }
 
 

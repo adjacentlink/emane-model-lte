@@ -486,6 +486,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
                                                                                         const EMANELTE::FrequencyHz carrierTxFrequencyHz,
                                                                                         const bool clearCache)
 {
+  // clear old entries, when CA is enabled we will have multiple entries
   if(clearCache)
    {
      frequencyTable_.clear();
@@ -495,7 +496,6 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
    }
 
   // save rx/tx frequencyHz per carrier id
-  // will be 1 entry when carrier aggreation is not enabled
   frequencyTable_[carrierIndex] = FrequencyPair{carrierRxFrequencyHz, carrierTxFrequencyHz};
 
   // save carrier id per unique <rx/tx frequency pair>
