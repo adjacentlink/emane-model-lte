@@ -73,15 +73,20 @@ namespace MHAL {
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
-    std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
+    uint64_t get_tx_prb_frequency(const int prb_index,
+                                  const FrequencyHz freq_hz);
 
-    void set_frequencies(uint32_t carrierIndex, std::uint64_t carrierRxFrequencyHz, std::uint64_t carrierTxFrequencyHz);
+    void set_frequencies(const uint32_t carrierIndex, 
+                         const uint32_t pci,
+                         const FrequencyHz carrierRxFrequencyHz,
+                         const FrequencyHz carrierTxFrequencyHz);
 
-    void set_num_resource_blocks(int num_resource_blocks);
+    void set_num_resource_blocks(const int num_resource_blocks);
 
-    void begin_cell_search();
+    void cell_search();
 
-    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache);
+    void noise_processor(const uint32_t bin,
+                         const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache);
 
   private:
     EMANE::Application::NEMs nems_;

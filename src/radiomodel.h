@@ -124,10 +124,10 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setSymbolsPerSlot(std::uint32_t symbolsPerSlot);
 
-      void setFrequencies(uint32_t carrierIndex,
-                          EMANELTE::FrequencyHz carrierRxFrequencyHz,
-                          EMANELTE::FrequencyHz carrierTxFrequencyHz,
-                          bool clearCache);
+      void setFrequencies(const uint32_t carrierIndex,
+                          const EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                          const EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                          const bool clearCache);
 
       void setNumResourceBlocks(std::uint32_t numResourceBlocks);
 
@@ -150,7 +150,7 @@ class RadioModel : public EMANE::MACLayerImplementor
                                    const uint64_t carrierFrequencyHz,
                                    const uint32_t carrierId );
 
-      void setFrequenciesOfInterest(bool searchMode);
+      void setFrequenciesOfInterest(const bool searchMode);
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 

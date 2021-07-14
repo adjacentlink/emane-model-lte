@@ -38,12 +38,12 @@
 #include "segmentmap.h"
 
 
-void EMANELTE::MHAL::MHALUEImpl::initialize(uint32_t sf_interval_msec,
-                                            const mhal_config_t & mhal_config)
+void EMANELTE::MHAL::MHALUEImpl::initialize(uint32_t sfIntervalMilliseconds,
+                                            const mhal_config_t & mhalConfig)
 {
-  MHALCommon::initialize(sf_interval_msec, mhal_config);
+  MHALCommon::initialize(sfIntervalMilliseconds, mhalConfig);
 
-  pRadioModel_->setSubframeInterval(sf_interval_msec);
+  pRadioModel_->setSubframeInterval(sfIntervalMilliseconds);
 }
 
 
@@ -173,14 +173,9 @@ EMANE::SpectrumWindow EMANELTE::MHAL::MHALUEImpl::get_noise(const uint32_t anten
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
+EMANELTE::MHAL::MHALUEImpl::cell_search()
 {
   logger_.log(EMANE::INFO_LEVEL, "MHAL %s", __func__);
-
-  // on cell search, configure for the largest bandwidth to
-  // ensure packet reception from any enb (register all possible FOI
-  // for the configured receive frequency)
-  pRadioModel_->setNumResourceBlocks(100);
 
   for(size_t bin = 0; bin < EMANELTE::NUM_SF_PER_FRAME; ++bin)
    {
@@ -200,42 +195,49 @@ EMANELTE::MHAL::MHALUEImpl::begin_cell_search()
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_frequencies(uint32_t carrierIndex, std::uint64_t carrierRxFrequencyHz, std::uint64_t carrierTxFrequencyHz)
+EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t carrierIndex,
+                                            const uint32_t pci,
+                                            const FrequencyHz carrierRxFrequencyHz,
+                                            const FrequencyHz carrierTxFrequencyHz)
 {
-  // ue will rotate thru its frequency list using carrierIndex 0 initially
-  // if/when the carrierIndex is > 0, then accumulate frequencies
-  const bool clearCache = carrierIndex == 0;
-  const bool searchMode = carrierIndex == 0;
+  logger_.log(EMANE::INFO_LEVEL, "MHAL %s carrierIndex %u, pci %u, rxFreq %lu, txFreq %lu",
+              __func__, carrierIndex, pci, carrierRxFrequencyHz, carrierTxFrequencyHz);
 
   pRadioModel_->setFrequencies(carrierIndex,          // carrier idx
                                carrierRxFrequencyHz,  // rx freq
                                carrierTxFrequencyHz,  // tx freq
-                               clearCache);           // clear cache
+                               carrierIndex == 0);    // clear cache
 
-  if(carrierIndex == 0)
+  // search mode true if pci is 0
+  if(pci == 0)
    {
+     logger_.log(EMANE::INFO_LEVEL, "MHAL %s pci is 0, implies cell search, reset num_prb to 100", __func__);
+
+     // set to full bandwidth during cell search, 
      // when the mib is detected, the bandwidth will be adjusted
      pRadioModel_->setNumResourceBlocks(100);
    }
 
-  pRadioModel_->setFrequenciesOfInterest(searchMode);
+  pRadioModel_->setFrequenciesOfInterest(pci == 0);
 }
 
 
 void
-EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(int numResourceBlocks)
+EMANELTE::MHAL::MHALUEImpl::set_num_resource_blocks(const int numResourceBlocks)
 {
+  logger_.log(EMANE::INFO_LEVEL, "MHAL %s numResouresBlocks %d ", __func__, numResourceBlocks);
+
   // called when bandwidth is detected
   pRadioModel_->setNumResourceBlocks(numResourceBlocks);
 
-  pRadioModel_->setFrequenciesOfInterest(false);
+  pRadioModel_->setFrequenciesOfInterest(false); // search mode false
 }
 
 
-std::uint64_t
-EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(int prb_index, std::uint64_t channelFrequencyHz)
+EMANELTE::FrequencyHz
+EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(const int prbIndex, const FrequencyHz channelFrequencyHz)
 {
-  return pRadioModel_->getTxResourceBlockFrequency(prb_index, channelFrequencyHz);
+  return pRadioModel_->getTxResourceBlockFrequency(prbIndex, channelFrequencyHz);
 }
 
 

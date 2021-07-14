@@ -45,26 +45,31 @@ namespace EMANELTE {
 namespace MHAL {
 namespace UE {
 
-  void initialize(uint32_t sf_interval, const EMANELTE::MHAL::mhal_config_t & mhal_config);
+   void initialize(const uint32_t sf_interval, const EMANELTE::MHAL::mhal_config_t & mhal_config);
 
-  void start();
+   void start();
 
-  void stop();
+   void stop();
 
-  void set_tti(uint16_t curr_tti);
+   void set_tti(const uint16_t curr_tti);
 
-  void send_msg(const Data & data, EMANELTE::MHAL::TxControlMessage & control);
+   void send_msg(const Data & data,
+                 EMANELTE::MHAL::TxControlMessage & control);
 
-  void get_messages(RxMessages & messages, timeval & rx_time);
+   void get_messages(RxMessages & messages,
+                    timeval & rx_time);
 
-  std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
+   uint64_t get_tx_prb_frequency(const int prb_index,
+                                 const uint64_t freq_hz);
   
-  void set_frequencies(uint32_t carrierIndex, uint64_t carrierRxFrequencyHz, uint64_t carrierTxFrequencyHz);
+   void set_frequencies(const uint32_t carrier_index,
+                        const uint32_t pci,
+                        const uint64_t rx_frequency_hz, 
+                        const uint64_t tx_frequency_hz);
 
-  void set_num_resource_blocks(int n_prb);
+   void set_num_resource_blocks(const int num_prb);
 
-  void begin_cell_search();
-
+   void cell_search();
   }
  }
 }

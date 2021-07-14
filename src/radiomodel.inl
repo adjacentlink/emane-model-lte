@@ -481,10 +481,10 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setNumR
 
 
 template <class RadioStatManager, class MessageProcessor>
-void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(uint32_t carrierIndex,
-                                                                                        EMANELTE::FrequencyHz carrierRxFrequencyHz,
-                                                                                        EMANELTE::FrequencyHz carrierTxFrequencyHz,
-                                                                                        bool clearCache)
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequencies(const uint32_t carrierIndex,
+                                                                                        const EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                                                                                        const EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                                                                                        const bool clearCache)
 {
   if(clearCache)
    {
@@ -498,7 +498,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
   // will be 1 entry when carrier aggreation is not enabled
   frequencyTable_[carrierIndex] = FrequencyPair{carrierRxFrequencyHz, carrierTxFrequencyHz};
 
-  // save carrier id per iunique <rx/tx frequency pair>
+  // save carrier id per unique <rx/tx frequency pair>
   rxCarrierFrequencyToIndexTable_[carrierRxFrequencyHz] = carrierIndex;
   txCarrierFrequencyToIndexTable_[carrierTxFrequencyHz] = carrierIndex;
 
@@ -506,10 +506,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
 
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: numCarriers=%zu, carrierIndex=%u, rxFreq=%lu Hz, txFreq=%lu Hz",
+                          "%s %03hu %s: clearCache %d, frequencyTableSize=%zu, carrierIndex=%u, carrierRxFreq=%lu Hz, carrierTxFreq=%lu Hz",
                           pzModuleName_,
                           id_,
                           __func__,
+                          clearCache,
                           frequencyTable_.size(),
                           carrierIndex,
                           carrierRxFrequencyHz,
@@ -603,7 +604,7 @@ EMANE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProc
 
 template <class RadioStatManager, class MessageProcessor>
 void
-EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(bool searchMode)
+EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(const bool searchMode)
 {
   // all freqs of interest
   FrequencySet allRxFrequenciesHz, allTxFrequenciesHz;
@@ -611,7 +612,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   // rx frequencies per carrier
   std::map<uint32_t, FrequencySet> rxFrequencyTableHz; 
 
-  // for each carrier (not cell which is the case for an anb with multiple cells)
+  // for each carrier (not cell which is the case for an enb with multiple cells)
   for(const auto & entry : frequencyTable_)
    {
      const auto & rxFreqHz = entry.second.first;
@@ -621,14 +622,15 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
 
      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                              EMANE::INFO_LEVEL,
-                             "MACI %03hu %s::%s: carrierIndex=%u, searchMode=%d, rxFreq=%lu Hz, txFreq=%lu Hz",
+                             "MACI %03hu %s::%s: carrierIndex=%u, searchMode=%d, rxFreq=%lu Hz, txFreq=%lu Hz, numPrb %u",
                              id_,
                              pzModuleName_,
                              __func__,
                              carrierIndex,
                              searchMode,
                              rxFreqHz,
-                             txFreqHz);
+                             txFreqHz,
+                             u32NumResourceBlocks_);
 
      EMANELTE::FrequencyResourceBlockMap txFreqToRBMap{};
      EMANELTE::FrequencyResourceBlockMap rxFreqToRBMap{};
@@ -819,7 +821,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
        {
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::ERROR_LEVEL,
-                                 "MACI %03hu %s::%s: skip carrier %lu Hz, no matching carriers configured in txFrequencyTable size %zu",
+                                 "MACI %03hu %s::%s: skip tx carrier %lu Hz, no matching carriers configured in txFrequencyTable size %zu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
@@ -977,7 +979,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
           {
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "MACI %03hu %s::%s: drop msg from %hu, no matching carriers",
+                                    "MACI %03hu %s::%s: drop msg from %hu, no matching rx carriers",
                                     id_,
                                     pzModuleName_,
                                     __func__,
