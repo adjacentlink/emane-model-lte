@@ -205,7 +205,6 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t carrierIndex,
   logger_.log(EMANE::INFO_LEVEL, "MHAL %s carrierIndex %u, pci %u, searchMode %d, rxFreq %lu, txFreq %lu",
               __func__, carrierIndex, pci, searchMode, carrierRxFrequencyHz, carrierTxFrequencyHz);
 
-  
 
   pRadioModel_->setFrequencies(carrierIndex,          // carrier idx
                                carrierRxFrequencyHz,  // rx freq
@@ -259,7 +258,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
      // get the txControl info
      const auto & txControl = PendingMessage_TxControl_Get(msg);
 
-     // ue only has 1 antenna set to antennaId 0
+     // ue only has 1 antenna
      const uint32_t rxAntennaId = 0;
 
      // get the rxControl info
@@ -270,8 +269,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
      //<tx_antenna_index> <frequency, frequency_segments>
      std::map<uint32_t, std::multimap<std::uint64_t, EMANE::FrequencySegment>> antennaFrequencySegmentTable;
 
-     // ue has 1 antenna, but we can receive from more than 1 enb antenna
-     // possibly 3 or more entries
+     // ue has 1 antenna, but we can receive from more than 1 enb tx antenna
      for(const auto & antennaInfo : otaInfo.antennaInfos_)
       {
         // txAntenna is directly related to carrierId
@@ -284,7 +282,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         for(auto & segment : frequencySegments)
          {
            antennaFrequencySegmentTable[txAntennaId].emplace(segment.getFrequencyHz(), segment);
-#if 0
+#if 1
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, txAntennaId %u, segment[frequency %lu Hz, offset %ld, duration %ld]",
                        __func__,
                       rxControl.nemId_,
@@ -307,6 +305,12 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         // check that we do have recv antenna info for this txAntenna / carrrierId
         if(antennaFrequencySegmentTable.count(carrierId) == 0)
          {
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFrequencyHz %lu, carrierId %u, no segemnts, skip",
+                       __func__,
+                      rxControl.nemId_,
+                      carrierFrequencyHz,
+                      carrierId);
+
            // no segments, skip
            continue;
          }

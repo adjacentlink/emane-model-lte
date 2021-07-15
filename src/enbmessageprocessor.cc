@@ -304,6 +304,7 @@ EMANE::Models::LTE::ENBMessageProcessor::noiseTestChannelMessage(const EMANELTE:
 
   // unused ???
   (void) carrierFrequencyHz;
+  (void) carrierId;
 
   const EMANE::Microseconds slotDuration{txControl.subframe_duration_microsecs()/2};
 

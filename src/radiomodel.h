@@ -184,9 +184,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
 
-      std::vector<Antenna::Pointing> antennaPointings_;
-
-      bool bAntennaInit_;
+      Antennas antennas_;
 
       std::string sAntennaInfo_;
 
@@ -200,7 +198,6 @@ class RadioModel : public EMANE::MACLayerImplementor
       // NumPass, DropPropDelay, DropFreqMismatch, DropDirection
       using SubframeReceiveCountEntry = std::tuple<size_t, size_t, size_t, size_t>;
 
-      Antennas txAntennas_;
 
       // NEMId key
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;

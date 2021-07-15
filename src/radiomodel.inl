@@ -77,7 +77,6 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
   u64TxSeqNum_{},
   u32NumResourceBlocks_{},
   u32SymbolsPerSlot_{},
-  bAntennaInit_{},
   statisticManager_{id, pPlatformService}
 {
   // create message processor per carrier
@@ -252,63 +251,81 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
                           id_,
                           __func__);
 
-   txAntennas_.clear();
+   antennas_.clear();
 
-   antennaPointings_.clear();
+   size_t pos = 0;
 
-   if(sAntennaInfo_ == "omni")
+   // order of each antenna counts
+   while(pos < sAntennaInfo_.length())
     {
-      auto txAntenna = Antenna::createIdealOmni(0, 0.0); // antenna index 0, gain 0
+      size_t n;
 
-      txAntenna.setFrequencyGroupIndex(0);
-
-      txAntenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
-
-      txAntennas_.emplace_back(txAntenna);
-    }
-   else
-    {
-      const std::string tag = "sector";
-
-      size_t pos = 0;
-
-      while((pos = sAntennaInfo_.find(tag, pos)) != std::string::npos)
+      if((n = sAntennaInfo_.find("omni", pos)) != std::string::npos)
        {
-          uint8_t profile = 0;
-          float az = 0, el = 0;
+         auto antenna = Antenna::createIdealOmni(antennas_.size(), 0.0); // antenna index, gain
 
-          const int numArgs = sscanf(sAntennaInfo_.data() + pos + tag.length(), "{%hhu,%f,%f}", &profile, &az, &el);
+         antenna.setFrequencyGroupIndex(antennas_.size());
 
-          if(numArgs != 3)
-           {
-             throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: Invalid antenna info %s", sAntennaInfo_.c_str());
-           }
+         antenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
 
-          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                   EMANE::INFO_LEVEL,
-                                   "%s %03hu %s antenna index %zu, profile %u, az %f, el %f",
-                                   pzModuleName_,
-                                   id_,
-                                   __func__,
-                                   txAntennas_.size(),
-                                   profile,
-                                   az, el);
+         pos = n;
 
-          const auto pointing = Antenna::Pointing(profile, az, el); // profile, az, el
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::INFO_LEVEL,
+                                    "%s %03hu %s antenna index %zu, omni",
+                                    pzModuleName_,
+                                    id_,
+                                    __func__,
+                                    antennas_.size());
 
-          auto txAntenna = Antenna::createProfileDefined(txAntennas_.size(), pointing); // antenna index, pointing
-
-          txAntenna.setFrequencyGroupIndex(txAntennas_.size());
-
-          txAntenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
-
-          antennaPointings_.emplace_back(pointing);
-
-          txAntennas_.emplace_back(txAntenna);
-
-          pos += tag.length();
+         antennas_.emplace_back(antenna);
        }
-   }
+      else
+       {
+         if((n = sAntennaInfo_.find("sector", pos)) != std::string::npos)
+          {
+            uint8_t profile = 0;
+            float az = 0, el = 0;
+
+            const int numArgs = sscanf(sAntennaInfo_.data() + n + strlen("sector"), "{%hhu,%f,%f}", &profile, &az, &el);
+
+            if(numArgs != 3)
+             {
+               throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: Invalid antenna info %s", sAntennaInfo_.c_str());
+             }
+
+            auto antenna = Antenna::createProfileDefined(antennas_.size(), Antenna::Pointing(profile, az, el)); // antenna index, pointing
+
+            antenna.setFrequencyGroupIndex(antennas_.size());
+
+            antenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
+
+            pos = n;
+
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::INFO_LEVEL,
+                                    "%s %03hu %s antenna index %zu, profile %u, az %f, el %f",
+                                    pzModuleName_,
+                                    id_,
+                                    __func__,
+                                    antennas_.size(),
+                                    profile,
+                                    az, el);
+
+            antennas_.emplace_back(antenna);
+          }
+       }
+      
+      if((pos = sAntennaInfo_.find(";", pos)) == std::string::npos)
+       {
+         break;
+       }
+    }
+
+   if(antennas_.empty())
+    {
+      throw EMANE::makeException<EMANE::ConfigureException>("Invalid antenna(s) in [%s], must be omni or sector", sAntennaInfo_.c_str());
+    }
 
   bRunning_ = true;
 }
@@ -323,6 +340,17 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::postSta
                           pzModuleName_,
                           id_,
                           __func__);
+
+  ControlMessages controlMsgs; 
+
+  // add new antenna/freqs
+  for(const auto & antenna : antennas_)
+   {
+     // add dummy antenna until freq is set
+      controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(antenna, {}));
+   }
+
+  sendDownstreamControl(controlMsgs);
 }
 
 
@@ -725,46 +753,20 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   }
 
 
+  // now assign antenna and freq info
   ControlMessages controlMsgs; 
 
   // remove old antenna(s)
-  if(bAntennaInit_)
+  for(const auto & antenna : antennas_)
    {
-     if(sAntennaInfo_ == "omni")
-      {
-         controlMsgs.emplace_back(Controls::RxAntennaRemoveControlMessage::create(0));
-      }
-     else
-      {
-        for(size_t antennaIndex = 0; antennaIndex < antennaPointings_.size(); ++antennaIndex)
-         {
-           controlMsgs.emplace_back(Controls::RxAntennaRemoveControlMessage::create(antennaIndex));
-         }
-      }
-   }
-  else
-   {
-     bAntennaInit_ = true;
+     controlMsgs.emplace_back(Controls::RxAntennaRemoveControlMessage::create(antenna.getIndex()));
    }
 
-
-  // add new antenna freqs
-  if(sAntennaInfo_ == "omni")
+  // next, add new antenna info
+  for(const auto & antenna : antennas_)
    {
-      const auto rxAntenna = Antenna::createIdealOmni(0, 0.0); // antenna index 0, gain 0
-
-      controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(rxAntenna, allRxFrequenciesHz));
-   }
-  else
-   {
-     for(size_t antennaIndex = 0; antennaIndex < antennaPointings_.size(); ++antennaIndex)
-      {
-        // create profile defined
-        const auto rxAntenna = Antenna::createProfileDefined(antennaIndex, antennaPointings_[antennaIndex]);
-
-        // add antenna
-        controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(rxAntenna, rxFrequencyTableHz[antennaIndex]));
-      }
+     // add antenna
+     controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(antenna, rxFrequencyTableHz[antenna.getIndex()]));
    }
 
   // update phy
@@ -789,18 +791,14 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
     {
       auto control = txControl.mutable_carriers(idx);
 
-      const auto carrierFrequencyHz = control->frequency_hz();
-
-      const auto carrierId = control->carrier_id();
-
-      const auto carrierIndex = getTxCarrierIndex(carrierFrequencyHz);
+      const auto carrierIndex = getTxCarrierIndex(control->frequency_hz());
 
       if(carrierIndex >= 0)
        {
          // get the all frequency segments for this carrier
          const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl,
-                                                                                carrierFrequencyHz,
-                                                                                carrierId);
+                                                                                       control->frequency_hz(),
+                                                                                       control->carrier_id());
          EMANELTE::FrequencySet frequencySet;
 
          for(const auto & segment : segments)
@@ -825,7 +823,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
                                  id_,
                                  pzModuleName_,
                                  __func__,
-                                 carrierFrequencyHz,
+                                 control->frequency_hz(),
                                  txCarrierFrequencyToIndexTable_.size());
        }
     }
@@ -847,7 +845,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
    
    sendDownstreamPacket(EMANE::CommonMACHeader{u16SubId_, ++u64TxSeqNum_},
                         pkt,
-                        {Controls::MIMOTransmitPropertiesControlMessage::create(std::move(frequencyGroups), txAntennas_),
+                        {Controls::MIMOTransmitPropertiesControlMessage::create(std::move(frequencyGroups), antennas_),
                          Controls::TimeStampControlMessage::create(tpTxTime)});
 }
 
