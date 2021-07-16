@@ -277,12 +277,21 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
         const auto & frequencySegments = antennaInfo.getFrequencySegments();
 
+#if 0
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, txAntennaId %u, num segments %zu",
+                    __func__,
+                    rxControl.nemId_,
+                    rxAntennaId,
+                    txAntennaId,
+                    frequencySegments.size());
+#endif
+
         // track all segments/subchannels by frequency,
         // may have multiple segments at the same frequency with different slot/offset(s)
         for(auto & segment : frequencySegments)
          {
            antennaFrequencySegmentTable[txAntennaId].emplace(segment.getFrequencyHz(), segment);
-#if 1
+#if 0
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntennaId %u, txAntennaId %u, segment[frequency %lu Hz, offset %ld, duration %ld]",
                        __func__,
                       rxControl.nemId_,
@@ -305,11 +314,13 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         // check that we do have recv antenna info for this txAntenna / carrrierId
         if(antennaFrequencySegmentTable.count(carrierId) == 0)
          {
+#if 0
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFrequencyHz %lu, carrierId %u, no segemnts, skip",
                        __func__,
                       rxControl.nemId_,
                       carrierFrequencyHz,
                       carrierId);
+#endif
 
            // no segments, skip
            continue;

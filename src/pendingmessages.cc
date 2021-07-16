@@ -95,12 +95,12 @@ EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
      const auto & otaInfo = PendingMessage_OtaInfo_Get(pendingMsg);
 
      // for each rx/tx antenna path
-     for(const auto & antenna : otaInfo.antennaInfos_)
+     for(const auto & antennaInfo : otaInfo.antennaInfos_)
       {
         // track receptions based on rx antenna
-        const auto rxAntennaIndex = antenna.getRxAntennaIndex();
+        const auto rxAntennaIndex = antennaInfo.getRxAntennaIndex();
 
-        for(auto & segment : antenna.getFrequencySegments())
+        for(auto & segment : antennaInfo.getFrequencySegments())
          {
            const auto frequencyHz = segment.getFrequencyHz();
 

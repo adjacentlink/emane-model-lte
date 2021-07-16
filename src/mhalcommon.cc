@@ -217,7 +217,8 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
         const auto & maxEor      = SegmentTimeSpan_Eor_Get(segmentSpan.second);
         const auto & frequencyHz = segmentSpan.first;
         const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
- #if 0 
+
+#if 0 
         logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, frequency %lu Hz",
                     __func__, rxAntennaId, frequencyHz);
 #endif

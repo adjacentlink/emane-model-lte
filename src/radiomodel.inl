@@ -260,7 +260,9 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
     {
       size_t n;
 
-      if((n = sAntennaInfo_.find("omni", pos)) != std::string::npos)
+      std::string tag = "omni";
+
+      if((n = sAntennaInfo_.find(tag, pos)) != std::string::npos)
        {
          auto antenna = Antenna::createIdealOmni(antennas_.size(), 0.0); // antenna index, gain
 
@@ -268,26 +270,29 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
          antenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
 
-         pos = n;
+         pos = n + tag.length();
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "%s %03hu %s antenna index %zu, omni",
+                                    "%s %03hu %s antenna index %zu, %s",
                                     pzModuleName_,
                                     id_,
                                     __func__,
-                                    antennas_.size());
+                                    antennas_.size(),
+                                    tag.c_str());
 
          antennas_.emplace_back(antenna);
        }
       else
        {
-         if((n = sAntennaInfo_.find("sector", pos)) != std::string::npos)
+         tag = "sector";
+
+         if((n = sAntennaInfo_.find(tag, pos)) != std::string::npos)
           {
             uint8_t profile = 0;
             float az = 0, el = 0;
 
-            const int numArgs = sscanf(sAntennaInfo_.data() + n + strlen("sector"), "{%hhu,%f,%f}", &profile, &az, &el);
+            const int numArgs = sscanf(sAntennaInfo_.data() + n + tag.length(), "{%hhu,%f,%f}", &profile, &az, &el);
 
             if(numArgs != 3)
              {
@@ -300,7 +305,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
             antenna.setBandwidthHz(EMANELTE::ResourceBlockBandwidthHz);
 
-            pos = n;
+            pos = n + tag.length();
 
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
@@ -534,12 +539,13 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
 
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: clearCache %d, frequencyTableSize=%zu, carrierIndex=%u, carrierRxFreq=%lu Hz, carrierTxFreq=%lu Hz",
+                          "%s %03hu %s: clearCache %d, frequencyTableSize=%zu, numAntennas %zu, carrierIndex=%u, carrierRxFreq=%lu Hz, carrierTxFreq=%lu Hz",
                           pzModuleName_,
                           id_,
                           __func__,
                           clearCache,
                           frequencyTable_.size(),
+                          antennas_.size(),
                           carrierIndex,
                           carrierRxFrequencyHz,
                           carrierTxFrequencyHz);
@@ -588,9 +594,9 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(con
   EMANE::SpectrumWindow spectrumWindow;
 
   try 
-    {
-      spectrumWindow = pRadioService_->spectrumService().requestAntenna(antennaIndex, frequency, span, sor);
-    } 
+   {
+     spectrumWindow = pRadioService_->spectrumService().requestAntenna(antennaIndex, frequency, span, sor);
+   } 
   catch(EMANE::SpectrumServiceException & exp) 
     {
       const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tp - sor);
@@ -635,10 +641,10 @@ void
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenciesOfInterest(const bool searchMode)
 {
   // all freqs of interest
-  FrequencySet allRxFrequenciesHz, allTxFrequenciesHz;
+  FrequencySet allRxFrequencySetHz, allTxFrequencySetHz;
 
   // rx frequencies per carrier
-  std::map<uint32_t, FrequencySet> rxFrequencyTableHz; 
+  std::map<uint32_t, FrequencySet> carrierRxFrequencySetHz; 
 
   // for each carrier (not cell which is the case for an enb with multiple cells)
   for(const auto & entry : frequencyTable_)
@@ -667,6 +673,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
       {
         const auto frequencyHz = getTxResourceBlockFrequency(rbidx, txFreqHz); // tx frequencyHz
 
+#if 0
         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                 EMANE::DEBUG_LEVEL,
                                 "%s %03hu %s: carrierIndex=%u, rbidx=%d txfreq=%lu",
@@ -676,16 +683,18 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
                                 carrierIndex,
                                 rbidx,
                                 frequencyHz);
+#endif
 
         txFreqToRBMap.emplace(frequencyHz, rbidx);
 
-        allTxFrequenciesHz.emplace(frequencyHz);
+        allTxFrequencySetHz.emplace(frequencyHz);
       }
 
      for(uint32_t rbidx = 0; rbidx < u32NumResourceBlocks_; ++rbidx)
       {
         const auto frequencyHz = getRxResourceBlockFrequency(rbidx, rxFreqHz); // rx frequencyHz
 
+#if 0
         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                 EMANE::DEBUG_LEVEL,
                                 "%s %03hu %s: carrierIndex=%u, rbidx=%d rxfreq=%lu",
@@ -695,12 +704,13 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
                                 carrierIndex,
                                 rbidx,
                                 frequencyHz);
+#endif
 
         rxFreqToRBMap.emplace(frequencyHz, rbidx);
 
-        allRxFrequenciesHz.emplace(frequencyHz);
+        allRxFrequencySetHz.emplace(frequencyHz);
 
-        rxFrequencyTableHz[carrierIndex].insert(frequencyHz);
+        carrierRxFrequencySetHz[carrierIndex].insert(frequencyHz);
       }
 
      // During cell searchMode the ue doesn't know the enb bandwidth or the frequencies
@@ -727,21 +737,23 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
         for(uint32_t rbidx = 0; rbidx < 75; ++rbidx)
          {
            const auto frequencyHz = getResourceBlockFrequency(rbidx, rxFreqHz, 75); // rx frequencyHz
- 
+#if 0
            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                    EMANE::DEBUG_LEVEL,
-                                   "%s %03hu %s: rbidx=%d rxfreq=%lu",
+                                   "%s %03hu %s: search carrierIndex %u, rbidx=%d rxfreq=%lu",
                                    pzModuleName_,
                                    id_,
                                    __func__,
+                                   carrierIndex,
                                    rbidx,
                                    frequencyHz);
+#endif
 
            rx75FreqToRBMap.emplace(frequencyHz, rbidx);
 
-           allRxFrequenciesHz.emplace(frequencyHz);
+           allRxFrequencySetHz.emplace(frequencyHz);
 
-           rxFrequencyTableHz[carrierIndex].insert(frequencyHz);
+           carrierRxFrequencySetHz[carrierIndex].insert(frequencyHz);
          }
 
        messageProcessor_[carrierIndex]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
@@ -759,21 +771,56 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   // remove old antenna(s)
   for(const auto & antenna : antennas_)
    {
+     LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                             EMANE::INFO_LEVEL,
+                             "%s %03hu %s: remove antenna index %u",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              antenna.getIndex());
+
      controlMsgs.emplace_back(Controls::RxAntennaRemoveControlMessage::create(antenna.getIndex()));
    }
 
-  // next, add new antenna info
-  for(const auto & antenna : antennas_)
+  if(antennas_.size() == 1)
    {
-     // add antenna
-     controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(antenna, rxFrequencyTableHz[antenna.getIndex()]));
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "%s %03hu %s: add %zu foi(s) to single antenna index %u",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              allRxFrequencySetHz.size(),
+                              antennas_[0].getIndex());
+
+      // add rx antenna and rx frequencies
+      controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(antennas_[0], allRxFrequencySetHz));
+   }
+  else
+   {
+     for(const auto & antenna : antennas_)
+      {
+        const auto rxFrequencySetHz = carrierRxFrequencySetHz[antenna.getIndex()];
+
+        LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                EMANE::INFO_LEVEL,
+                                "%s %03hu %s: add %zu foi(s) to antenna index %u",
+                                pzModuleName_,
+                                id_,
+                                __func__,
+                                rxFrequencySetHz.size(),
+                                antenna.getIndex());
+
+        // add rx antenna and rx frequencies
+        controlMsgs.emplace_back(Controls::RxAntennaAddControlMessage::create(antenna, rxFrequencySetHz));
+      }
    }
 
   // update phy
   sendDownstreamControl(controlMsgs);
 
   // update stats
-  statisticManager_.updateFrequencies(allRxFrequenciesHz, allTxFrequenciesHz);
+  statisticManager_.updateFrequencies(allRxFrequencySetHz, allTxFrequencySetHz);
 }
 
 
@@ -805,7 +852,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
           {
             const auto & segmentFrequencyHz = segment.getFrequencyHz();
 
-            // unique list of subchannel frequencies
+            // unique set of subchannel frequencies
             if(frequencySet.insert(segmentFrequencyHz).second)
              {
                control->add_sub_channels(segmentFrequencyHz);
@@ -814,6 +861,19 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 
          // load the frequency segments for this carrier
          frequencyGroups.emplace_back(segments);
+
+#if 0
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                 EMANE::INFO_LEVEL,
+                                 "MACI %03hu %s::%s: carrierIndex %u, carrierId %u, carrierFrequency %lu, num segments %zu",
+                                 id_,
+                                 pzModuleName_,
+                                 __func__,
+                                 carrierIndex,
+                                 control->carrier_id(),
+                                 control->frequency_hz(),
+                                 segments.size());
+#endif
        }
       else
        {
@@ -929,7 +989,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::INFO_LEVEL,
-                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec",
+                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec, num recv infos %zu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
@@ -938,10 +998,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                                  propagationDelay.count(),
                                  tpNow.time_since_epoch().count()/1e9,
                                  tpTxTime.time_since_epoch().count()/1e9,
-                                 dt.count());
+                                 dt.count(),
+                                 recvInfos.size());
 #endif
 
-        // check for up/down link type of our msg processor type
+        // check for up/down link type of our msg processor type use index 0 since they are the same type per instance
         if(txControl.message_type() != messageProcessor_[0]->receiveMessageType_)
          {
            updateSubframeDropDirection_i(pktInfo.getSource());
@@ -1032,7 +1093,6 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
                              pkt.length());
    }
 }
-
 
 
 template <class RadioStatManager, class MessageProcessor>
@@ -1204,6 +1264,8 @@ EMANELTE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageP
   return rxCarriersOfInterest_;
 }
 
+
+
 template <class RadioStatManager, class MessageProcessor>
 int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCarrierIndex(std::uint64_t carrierFrequencyHz) const
 {
@@ -1219,6 +1281,8 @@ int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCar
    }
 }
 
+
+
 template <class RadioStatManager, class MessageProcessor>
 int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxCarrierIndex(std::uint64_t carrierFrequencyHz) const
 {
@@ -1233,7 +1297,6 @@ int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxCar
      return -1;
    }
 }
-
 
 
 namespace EMANE
