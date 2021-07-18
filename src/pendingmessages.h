@@ -71,7 +71,7 @@ namespace MHAL {
 
   // by rx antenna index
   // ue has 1 antenna, enb can have multiple
-  using AntennaSegmentSpans = std::map<uint32_t, SegmentSpans>;
+  using RxAntennaSegmentSpans = std::map<uint32_t, SegmentSpans>;
 
   class PendingMessageBin {
    public:
@@ -94,7 +94,7 @@ namespace MHAL {
     // a msg is composed of multiple segments each with a unique frequency
     // find the min sor and max eor for each frequency
     // this will be used to consult the spectrum monitor later
-    AntennaSegmentSpans getAntennaSegmentSpans();
+    RxAntennaSegmentSpans getRxAntennaSegmentSpans();
 
     PendingMessages & get();
 

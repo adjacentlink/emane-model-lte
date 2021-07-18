@@ -66,8 +66,8 @@ namespace {
 
 template <class RadioStatManager, class MessageProcessor>
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(EMANE::NEMId id,
-                                                         EMANE::PlatformServiceProvider * pPlatformService,
-                                                         EMANE::RadioServiceProvider * pRadioService) :
+                                                                               EMANE::PlatformServiceProvider * pPlatformService,
+                                                                               EMANE::RadioServiceProvider * pRadioService) :
   MACLayerImplementor{id, pPlatformService, pRadioService},
   bRunning_{},
   subframeIntervalMicroseconds_{},
@@ -327,9 +327,45 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
        }
     }
 
+   // must have at least 1 antenna
    if(antennas_.empty())
     {
-      throw EMANE::makeException<EMANE::ConfigureException>("Invalid antenna(s) in [%s], must be omni or sector", sAntennaInfo_.c_str());
+      std::stringstream ss;
+
+      ss << "Invalid antenna(s) in [" << sAntennaInfo_ << "], must be omni or sector";
+
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "%s %03hu %s %s",
+                              pzModuleName_,
+                              id_,
+                              __func__,
+                              ss.str().c_str());
+
+      throw EMANE::makeException<EMANE::ConfigureException>(ss.str().c_str());
+    }
+   else
+    {
+      if(antennas_.size() > 1)
+       {
+         // ue only has 1 antenna
+         if(messageProcessor_[0]->receiveMessageType_ == EMANELTE::MHAL::DOWNLINK)
+          {
+            std::stringstream ss;
+
+            ss << "Invalid num antenna(s) " << antennas_.size() << ", UE can have one and only one antenna";
+
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::INFO_LEVEL,
+                                    "%s %03hu %s %s",
+                                    pzModuleName_,
+                                    id_,
+                                    __func__,
+                                    ss.str().c_str());
+
+            throw EMANE::makeException<EMANE::ConfigureException>(ss.str().c_str());
+          }
+       }
     }
 
   bRunning_ = true;
@@ -782,6 +818,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
      controlMsgs.emplace_back(Controls::RxAntennaRemoveControlMessage::create(antenna.getIndex()));
    }
 
+  // ue has 1 antenna
   if(antennas_.size() == 1)
    {
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
@@ -843,14 +880,15 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
       if(carrierIndex >= 0)
        {
          // get the all frequency segments for this carrier
-         const auto segments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl,
-                                                                                       control->frequency_hz(),
-                                                                                       control->carrier_id());
+         const auto frequencySegments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl,
+                                                                                                control->frequency_hz(),
+                                                                                                control->carrier_id());
          EMANELTE::FrequencySet frequencySet;
 
-         for(const auto & segment : segments)
+         // check for unique
+         for(const auto & segment : frequencySegments)
           {
-            const auto & segmentFrequencyHz = segment.getFrequencyHz();
+            const auto segmentFrequencyHz = segment.getFrequencyHz();
 
             // unique set of subchannel frequencies
             if(frequencySet.insert(segmentFrequencyHz).second)
@@ -859,20 +897,31 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
              }
           }
 
-         // load the frequency segments for this carrier
-         frequencyGroups.emplace_back(segments);
+         // ue has 1 antenna, set freq groups as needed
+         if(frequencyGroups.size() < antennas_.size())
+          {
+            // create new freq group
+            frequencyGroups.emplace_back(frequencySegments);
+          }
+         else
+          {
+            // append to freq group
+            frequencyGroups[0].insert(frequencyGroups[0].begin(), frequencySegments.begin(), frequencySegments.end());
+          }
 
 #if 0
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::INFO_LEVEL,
-                                 "MACI %03hu %s::%s: carrierIndex %u, carrierId %u, carrierFrequency %lu, num segments %zu",
+                                 "MACI %03hu %s::%s: carrierIndex %u, carrierId %u, carrierFrequency %lu, num segments %zu, num frequency groups %zu, num antennas %zu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
                                  carrierIndex,
                                  control->carrier_id(),
                                  control->frequency_hz(),
-                                 segments.size());
+                                 frequencySegments.size(),
+                                 frequencyGroups.size(),
+                                 antennas_.size());
 #endif
        }
       else

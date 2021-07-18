@@ -245,7 +245,7 @@ EMANELTE::MHAL::MHALUEImpl::get_tx_prb_frequency(const int prbIndex, const Frequ
 
 void
 EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
-                                            const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache)
+                                            const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache)
 {
   const auto carriersOfInterest = pRadioModel_->getCarriersOfInterest();
 
@@ -266,7 +266,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
      SINRTesterImpls sinrTesterImpls;
 
-     //<tx_antenna_index> <frequency, frequency_segments>
+     //<txAntenna> <frequency, frequency_segments>
      std::map<uint32_t, std::multimap<std::uint64_t, EMANE::FrequencySegment>> antennaFrequencySegmentTable;
 
      // ue has 1 antenna, but we can receive from more than 1 enb tx antenna
@@ -314,7 +314,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
         // check that we do have recv antenna info for this txAntenna / carrrierId
         if(antennaFrequencySegmentTable.count(carrierId) == 0)
          {
-#if 0
+#if 1
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, carrierFrequencyHz %lu, carrierId %u, no segemnts, skip",
                        __func__,
                       rxControl.nemId_,
@@ -387,9 +387,9 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
          {
            const auto frequencyHz = segment.getFrequencyHz();
 
-           const auto antennaSpectrum = antennaSpectrumWindowCache.find(rxAntennaId);
+           const auto rxAntennaSpectrum = rxAntennaSpectrumWindowCache.find(rxAntennaId);
 
-           if(antennaSpectrum == antennaSpectrumWindowCache.end())
+           if(rxAntennaSpectrum == rxAntennaSpectrumWindowCache.end())
             {
               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for carrierId %u, rxAntennaId %u",
                           __func__,
@@ -404,9 +404,9 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
               continue;
             }
 
-           const auto spectrumWindow = antennaSpectrum->second.find(frequencyHz);
+           const auto spectrumWindow = rxAntennaSpectrum->second.find(frequencyHz);
 
-           if(spectrumWindow == antennaSpectrum->second.end())
+           if(spectrumWindow == rxAntennaSpectrum->second.end())
             {
               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, src %hu, bin %u, no spectrumWindow cache info for freq %lu",
                           __func__,

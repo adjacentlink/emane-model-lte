@@ -84,10 +84,10 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
 // a pendingMsg is composed of multiple segments each with a unique frequency
 // find the min sor and max eor for each frequency
 // this will be used to consult the spectrum monitor later
-EMANELTE::MHAL::AntennaSegmentSpans
-EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
+EMANELTE::MHAL::RxAntennaSegmentSpans
+EMANELTE::MHAL::PendingMessageBin::getRxAntennaSegmentSpans()
 {
-  AntennaSegmentSpans antennaSegmentSpans;
+  RxAntennaSegmentSpans rxAntennaSegmentSpans;
 
   // for each pending msg
   for(const auto & pendingMsg : pending_)
@@ -109,9 +109,9 @@ EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
            const auto eor = sor + segment.getDuration();
 
            // check for matching frequency
-           const auto iter = antennaSegmentSpans[rxAntennaIndex].find(frequencyHz);
+           const auto iter = rxAntennaSegmentSpans[rxAntennaIndex].find(frequencyHz);
 
-           if(iter != antennaSegmentSpans[rxAntennaIndex].end())
+           if(iter != rxAntennaSegmentSpans[rxAntennaIndex].end())
             {
               auto & min = SegmentTimeSpan_Sor_Get(iter->second);
               auto & max = SegmentTimeSpan_Eor_Get(iter->second);
@@ -121,13 +121,13 @@ EMANELTE::MHAL::PendingMessageBin::getAntennaSegmentSpans()
             }
           else
            {
-             antennaSegmentSpans[rxAntennaIndex].emplace(frequencyHz, SegmentTimeSpan{sor, eor});
+             rxAntennaSegmentSpans[rxAntennaIndex].emplace(frequencyHz, SegmentTimeSpan{sor, eor});
            }
          }
       }
    }
 
-  return antennaSegmentSpans;
+  return rxAntennaSegmentSpans;
 }
 
 

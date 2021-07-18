@@ -120,7 +120,7 @@ protected:
                                           const EMANE::TimePoint & sor) = 0;
 
   virtual void noise_processor(const uint32_t bin,
-                               const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache) = 0;
+                               const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache) = 0;
 
  private:
   void clearBins_i();

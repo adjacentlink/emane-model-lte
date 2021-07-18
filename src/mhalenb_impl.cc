@@ -199,7 +199,7 @@ EMANELTE::MHAL::MHALENBImpl::get_tx_prb_frequency(int prb_index, std::uint64_t f
 
 void
 EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
-                                             const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache)
+                                             const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache)
 {
   const auto carriersOfInterest = pRadioModel_->getCarriersOfInterest();
 
@@ -286,9 +286,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
    {
      const auto rxAntennaId = entry.first;
 
-     const auto spectrumWindowCache = antennaSpectrumWindowCache.find(rxAntennaId);
+     const auto spectrumWindowCache = rxAntennaSpectrumWindowCache.find(rxAntennaId);
 
-     if(spectrumWindowCache == antennaSpectrumWindowCache.end())
+     if(spectrumWindowCache == rxAntennaSpectrumWindowCache.end())
        {
          logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 2nd, bin %u, no antennaSpectrumWindow cache info for rxAntennaId %u",
                      __func__,
@@ -428,9 +428,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               continue;
             }
 
-           const auto spectrumWindowCache = antennaSpectrumWindowCache.find(rxAntennaId);
+           const auto spectrumWindowCache = rxAntennaSpectrumWindowCache.find(rxAntennaId);
 
-           if(spectrumWindowCache == antennaSpectrumWindowCache.end())
+           if(spectrumWindowCache == rxAntennaSpectrumWindowCache.end())
             {
               logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 3rd, bin %u, no antennaSpectrumWindow cache info for rxAntennaId %u",
                           __func__,

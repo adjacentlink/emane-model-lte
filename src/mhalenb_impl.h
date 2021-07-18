@@ -75,7 +75,7 @@ namespace MHAL {
 
     std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
 
-    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache);
+    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache);
 
   private:
     std::set<std::uint32_t>   physicalCellIds_;

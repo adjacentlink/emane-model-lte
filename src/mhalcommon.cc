@@ -204,14 +204,18 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
 
   // container for all freqs and energy for this subframe per rxAntenna
   // allows for consulting the spectrum sevice once and only once for each freq/span
-  EMANE::Models::LTE::AntennaSpectrumWindowCache antennaSpectrumWindowCache;
+  EMANE::Models::LTE::RxAntennaSpectrumWindowCache rxAntennaSpectrumWindowCache;
 
   // load the spectrumWindow cache for each frequency in this msg
-  for(auto & antennaSegmentSpans : pendingMessageBins_[bin].getAntennaSegmentSpans())
+  for(auto & rxAntennaSegmentSpans : pendingMessageBins_[bin].getRxAntennaSegmentSpans())
    {
-     const auto rxAntennaId = antennaSegmentSpans.first;
+     const auto rxAntennaId = rxAntennaSegmentSpans.first;
 
-     for(auto & segmentSpan : antennaSegmentSpans.second)
+#if 0 
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u", __func__, rxAntennaId);
+#endif
+
+     for(auto & segmentSpan : rxAntennaSegmentSpans.second)
       {
         const auto & minSor      = SegmentTimeSpan_Sor_Get(segmentSpan.second);
         const auto & maxEor      = SegmentTimeSpan_Eor_Get(segmentSpan.second);
@@ -224,14 +228,14 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
 #endif
 
         // per rx antenna
-        antennaSpectrumWindowCache[rxAntennaId][frequencyHz] = get_noise(rxAntennaId, frequencyHz, duration, minSor);
+        rxAntennaSpectrumWindowCache[rxAntennaId][frequencyHz] = get_noise(rxAntennaId, frequencyHz, duration, minSor);
       }
    }
 
   statisticManager_.updateDequeuedMessages(bin, numMessages);
 
   // load up the ready messages
-  noise_processor(bin, antennaSpectrumWindowCache);
+  noise_processor(bin, rxAntennaSpectrumWindowCache);
 
   // done with pending msgs
   pendingMessageBins_[bin].clear();

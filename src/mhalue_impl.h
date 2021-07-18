@@ -86,7 +86,7 @@ namespace MHAL {
     void cell_search();
 
     void noise_processor(const uint32_t bin,
-                         const EMANE::Models::LTE::AntennaSpectrumWindowCache & antennaSpectrumWindowCache);
+                         const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache);
 
   private:
     EMANE::Application::NEMs nems_;
