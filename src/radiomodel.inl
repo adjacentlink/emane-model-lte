@@ -575,7 +575,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
 
   LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                           EMANE::INFO_LEVEL,
-                          "%s %03hu %s: clearCache %d, frequencyTableSize=%zu, numAntennas %zu, carrierIndex=%u, carrierRxFreq=%lu Hz, carrierTxFreq=%lu Hz",
+                          "%s %03hu %s: clearCache %d, frequencyTableSize=%zu, numAntennas %zu, carrierIndex=%u, carrierRxFreq=%lu Hz, carrierTxFreq=%lu Hz, coi %zu",
                           pzModuleName_,
                           id_,
                           __func__,
@@ -584,7 +584,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFreq
                           antennas_.size(),
                           carrierIndex,
                           carrierRxFrequencyHz,
-                          carrierTxFrequencyHz);
+                          carrierTxFrequencyHz,
+                          rxCarriersOfInterest_.size());
 }
 
 
@@ -912,7 +913,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
 #if 0
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::INFO_LEVEL,
-                                 "MACI %03hu %s::%s: carrierIndex %u, carrierId %u, carrierFrequency %lu, num segments %zu, num frequency groups %zu, num antennas %zu",
+                                 "MACI %03hu %s::%s: carrierIndex %u, rxCarrierId %u, carrierFrequency %lu, num segments %zu, num frequency groups %zu, num antennas %zu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
@@ -1277,19 +1278,19 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
    const EMANELTE::MHAL::TxControlMessage & txControl,
    const EMANELTE::MHAL::ChannelMessage & channel_msg,
    SegmentMap & segmentCache,
-   uint64_t carrierFrequencyHz,
-   uint32_t carrierId)
+   uint64_t rxCarrierFrequencyHz,
+   uint32_t rxCarrierId)
 {
   // check rx carrier table for tx frequencyHz
-  const auto carrierIndex = getRxCarrierIndex(carrierFrequencyHz);
+  const auto carrierIndex = getRxCarrierIndex(rxCarrierFrequencyHz);
 
   if(carrierIndex >= 0)
    {
      return messageProcessor_[carrierIndex]->noiseTestChannelMessage(txControl,
                                                                      channel_msg,
                                                                      segmentCache,
-                                                                     carrierFrequencyHz,
-                                                                     carrierId);
+                                                                     rxCarrierFrequencyHz,
+                                                                     rxCarrierId);
    }
   else
    {
@@ -1299,7 +1300,7 @@ bool EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::noiseTe
                              id_,
                              pzModuleName_,
                              __func__,
-                             carrierFrequencyHz,
+                             rxCarrierFrequencyHz,
                              rxCarrierFrequencyToIndexTable_.size());
 
      return false;
@@ -1316,9 +1317,9 @@ EMANELTE::FrequencySet EMANE::Models::LTE::RadioModel<RadioStatManager, MessageP
 
 
 template <class RadioStatManager, class MessageProcessor>
-int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCarrierIndex(std::uint64_t carrierFrequencyHz) const
+int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCarrierIndex(std::uint64_t rxCarrierFrequencyHz) const
 {
-  const auto iter = rxCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+  const auto iter = rxCarrierFrequencyToIndexTable_.find(rxCarrierFrequencyHz);
 
   if(iter != rxCarrierFrequencyToIndexTable_.end())
    {
@@ -1333,9 +1334,9 @@ int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getRxCar
 
 
 template <class RadioStatManager, class MessageProcessor>
-int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxCarrierIndex(std::uint64_t carrierFrequencyHz) const
+int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxCarrierIndex(std::uint64_t txCarrierFrequencyHz) const
 {
-  const auto iter = txCarrierFrequencyToIndexTable_.find(carrierFrequencyHz);
+  const auto iter = txCarrierFrequencyToIndexTable_.find(txCarrierFrequencyHz);
 
   if(iter != txCarrierFrequencyToIndexTable_.end())
    {

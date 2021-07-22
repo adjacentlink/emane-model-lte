@@ -212,14 +212,15 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
      const auto rxAntennaId = rxAntennaSegmentSpans.first;
 
 #if 0 
-     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u", __func__, rxAntennaId);
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, num segments %zu",
+                 __func__, rxAntennaId, rxAntennaSegmentSpans.second.size());
 #endif
 
      for(auto & segmentSpan : rxAntennaSegmentSpans.second)
       {
+        const auto & frequencyHz = segmentSpan.first;
         const auto & minSor      = SegmentTimeSpan_Sor_Get(segmentSpan.second);
         const auto & maxEor      = SegmentTimeSpan_Eor_Get(segmentSpan.second);
-        const auto & frequencyHz = segmentSpan.first;
         const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
 
 #if 0 

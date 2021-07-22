@@ -398,8 +398,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
          for(const auto & carrier : txControl.carriers())
           {
             // carrier center freq and index
-            const auto carrierFrequencyHz = carrier.frequency_hz();
-            const auto carrierId          = carrier.carrier_id();
+            const auto txCarrierFrequencyHz = carrier.frequency_hz();
+            const auto txCarrierId          = carrier.carrier_id();
 
             // frequency segments for this carrier
             EMANE::FrequencySegments segmentsThisCarrier;
@@ -407,22 +407,22 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             // for each sub channel of the carrier
             for(const auto subChannelHz : carrier.sub_channels())
              {
-              if(frequencySegmentTable.count(subChannelHz))
-               {
-                 const auto range = frequencySegmentTable.equal_range(subChannelHz);
+               if(frequencySegmentTable.count(subChannelHz))
+                {
+                  const auto range = frequencySegmentTable.equal_range(subChannelHz);
  
-                 // get all segment(s) matching this subchannel frequency
-                 for(auto iter = range.first; iter != range.second; ++iter)
-                  {
-                    segmentsThisCarrier.push_back(iter->second);
-                  }
-               }
+                  // get all segment(s) matching this subchannel frequency
+                  for(auto iter = range.first; iter != range.second; ++iter)
+                   {
+                     segmentsThisCarrier.push_back(iter->second);
+                   }
+                }
              }
 
            if(segmentsThisCarrier.empty())
             {
-              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip carrier %lu",
-                          __func__, carrierFrequencyHz);
+              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip txCarrierId %u, frequency %lu",
+                          __func__, txCarrierId, txCarrierFrequencyHz);
  
                // can not reasemble msg, skip
               continue;
@@ -465,6 +465,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
                 pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
 
+                // something is wrong, not an expected condition
                 continue;
               }
 
@@ -480,6 +481,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             rxControl.nemId_,
                             rxAntennaId);
 
+                // is this an error ?
                 continue;
               }
 
@@ -497,6 +499,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             segment.getOffset().count(),
                             segment.getDuration().count());
 
+                // is this an error ?
                 continue;
               }
              
@@ -518,8 +521,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           const auto segmentCacheSize = segmentCache.size();
 
 #if 0
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s 3rd, src %hu, rxAntennaId %u, frequency %lu, segmentCacheSize %zu",
-                      __func__, rxControl.nemId_, rxAntennaId, carrierFrequencyHz, segmentCacheSize);
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s 3rd, src %hu, rxAntennaId %u, txCarrierId %u, txCarrierFrequency %lu, segmentCacheSize %zu",
+                      __func__, rxControl.nemId_, rxAntennaId, txCarrierId, txCarrierFrequencyHz, segmentCacheSize);
 #endif
 
           // now check for number of pass/fail segments
@@ -530,17 +533,17 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              auto pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm,
                                                          noiseFloorAvg_dBm,
-                                                         carrierFrequencyHz,
-                                                         carrierId);
+                                                         txCarrierFrequencyHz,
+                                                         txCarrierId);
 
-             // carrierFrequency, rxAntennaId, carrierId/txantennaId
-             sinrTesterImpls[SINRTesterKey(carrierFrequencyHz, rxAntennaId, carrierId)].reset(pSINRTester);
+             // txCarrierFrequency, rxAntennaId, txCarrierId
+             sinrTesterImpls[SINRTesterKey(txCarrierFrequencyHz, rxAntennaId, txCarrierId)].reset(pSINRTester);
 
-             rxControl.peak_sum_   [carrierId] = peakSum;
-             rxControl.num_samples_[carrierId] = segmentCacheSize;
-             rxControl.avg_snr_    [carrierId] = signalAvg_dBm - noiseFloorAvg_dBm;
-             rxControl.avg_nf_     [carrierId] = noiseFloorAvg_dBm;
-             rxControl.is_valid_   [carrierId] = true;
+             rxControl.peak_sum_   [txCarrierId] = peakSum;
+             rxControl.num_samples_[txCarrierId] = segmentCacheSize;
+             rxControl.avg_snr_    [txCarrierId] = signalAvg_dBm - noiseFloorAvg_dBm;
+             rxControl.avg_nf_     [txCarrierId] = noiseFloorAvg_dBm;
+             rxControl.is_valid_   [txCarrierId] = true;
 
              if(carrier.uplink().has_prach())
               {
@@ -552,8 +555,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl, 
                                                                       prach,
                                                                       segmentCache,
-                                                                      carrierFrequencyHz,
-                                                                      carrierId));
+                                                                      txCarrierFrequencyHz,
+                                                                      txCarrierId));
               }
 
              for(const auto & pucch : carrier.uplink().pucch())
@@ -564,8 +567,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl,
                                                                       pucch,
                                                                       segmentCache,
-                                                                      carrierFrequencyHz,
-                                                                      carrierId));
+                                                                      txCarrierFrequencyHz,
+                                                                      txCarrierId));
               }
 
              for(const auto & pusch : carrier.uplink().pusch())
@@ -576,8 +579,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl,
                                                                       pusch,
                                                                       segmentCache,
-                                                                      carrierFrequencyHz,
-                                                                      carrierId));
+                                                                      txCarrierFrequencyHz,
+                                                                      txCarrierId));
               }
 
              StatisticManager::ReceptionInfoMap receptionInfoMap;
@@ -595,8 +598,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
       {
         // make ready for phy_adapter use
         readyMessageBins_[bin].get().emplace_back(RxMessage{PendingMessage_Data_Get(msg), 
-                                                             rxControl,
-                                                             sinrTesterImpls});
+                                                            rxControl,
+                                                            sinrTesterImpls});
       }
      else
       {

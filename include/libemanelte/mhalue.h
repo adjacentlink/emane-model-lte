@@ -64,6 +64,7 @@ namespace UE {
   
    void set_frequencies(const uint32_t carrier_index,
                         const uint32_t pci,
+                        const bool scell,
                         const uint64_t rx_frequency_hz, 
                         const uint64_t tx_frequency_hz);
 

@@ -88,10 +88,11 @@ EMANELTE::MHAL::UE::get_tx_prb_frequency(const int prb_index, const uint64_t fre
 
 void EMANELTE::MHAL::UE::set_frequencies(const uint32_t carrier_index,
                                          const uint32_t pci,
+                                         const bool scell,
                                          const uint64_t rx_frequency_hz,
                                          const uint64_t tx_frequency_hz)
 {
-  impl_.set_frequencies(carrier_index, pci, rx_frequency_hz, tx_frequency_hz);
+  impl_.set_frequencies(carrier_index, pci, scell, rx_frequency_hz, tx_frequency_hz);
 }
 
 

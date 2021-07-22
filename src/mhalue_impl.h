@@ -78,6 +78,7 @@ namespace MHAL {
 
     void set_frequencies(const uint32_t carrierIndex, 
                          const uint32_t pci,
+                         const bool scell,
                          const FrequencyHz carrierRxFrequencyHz,
                          const FrequencyHz carrierTxFrequencyHz);
 
