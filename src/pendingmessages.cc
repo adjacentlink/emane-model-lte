@@ -59,9 +59,9 @@ size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 
 // purge and msgs that have expired.
 void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
-                uint32_t bin,
-                const PendingMessage & pendingMsg,
-                StatisticManager & statisticManager)
+                                            const uint32_t bin,
+                                            const PendingMessage & pendingMsg,
+                                            StatisticManager & statisticManager)
 {
   if(pending_.empty())
     {
@@ -100,16 +100,18 @@ EMANELTE::MHAL::PendingMessageBin::getRxAntennaSegmentSpans()
         // track receptions based on rx antenna
         const auto rxAntennaIndex = antennaInfo.getRxAntennaIndex();
 
-        for(auto & segment : antennaInfo.getFrequencySegments())
+        const auto & segmentSpans = antennaInfo.getFrequencySegments();
+
+        for(auto & segment : segmentSpans)
          {
-           const auto frequencyHz = segment.getFrequencyHz();
+           const auto segmentFrequencyHz = segment.getFrequencyHz();
 
            // sor = sot + offset, LTE timinging advance accounts for propagation delay
            const auto sor = otaInfo.sot_ + segment.getOffset();
            const auto eor = sor + segment.getDuration();
 
            // check for matching frequency
-           const auto iter = rxAntennaSegmentSpans[rxAntennaIndex].find(frequencyHz);
+           const auto iter = rxAntennaSegmentSpans[rxAntennaIndex].find(segmentFrequencyHz);
 
            if(iter != rxAntennaSegmentSpans[rxAntennaIndex].end())
             {
@@ -121,7 +123,7 @@ EMANELTE::MHAL::PendingMessageBin::getRxAntennaSegmentSpans()
             }
           else
            {
-             rxAntennaSegmentSpans[rxAntennaIndex].emplace(frequencyHz, SegmentTimeSpan{sor, eor});
+             rxAntennaSegmentSpans[rxAntennaIndex].emplace(segmentFrequencyHz, SegmentTimeSpan{sor, eor});
            }
          }
       }

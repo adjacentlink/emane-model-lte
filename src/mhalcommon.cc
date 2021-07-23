@@ -73,6 +73,7 @@ EMANELTE::MHAL::MHALCommon::initialize(uint32_t sf_interval_msec, const mhal_con
   set_thread_priority(pthread_self(), parent_policy, parent_priority.sched_priority);
 }
 
+
 void
 EMANELTE::MHAL::MHALCommon::start(uint32_t nof_advance_sf)
 {
@@ -190,7 +191,6 @@ EMANELTE::MHAL::MHALCommon::set_thread_priority(pthread_t tid, int policy, int p
 }
 
 
-
 void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
 {
   struct timeval tvIn, tvOut, tvDiff;
@@ -218,18 +218,18 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
 
      for(auto & segmentSpan : rxAntennaSegmentSpans.second)
       {
-        const auto & frequencyHz = segmentSpan.first;
-        const auto & minSor      = SegmentTimeSpan_Sor_Get(segmentSpan.second);
-        const auto & maxEor      = SegmentTimeSpan_Eor_Get(segmentSpan.second);
-        const auto duration      = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
+        const auto & segmentFrequencyHz = segmentSpan.first;
+        const auto & minSor             = SegmentTimeSpan_Sor_Get(segmentSpan.second);
+        const auto & maxEor             = SegmentTimeSpan_Eor_Get(segmentSpan.second);
+        const auto duration             = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
 
 #if 0 
         logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, frequency %lu Hz",
-                    __func__, rxAntennaId, frequencyHz);
+                    __func__, rxAntennaId, segmentFrequencyHz);
 #endif
 
         // per rx antenna
-        rxAntennaSpectrumWindowCache[rxAntennaId][frequencyHz] = get_noise(rxAntennaId, frequencyHz, duration, minSor);
+        rxAntennaSpectrumWindowCache[rxAntennaId][segmentFrequencyHz] = get_noise(rxAntennaId, segmentFrequencyHz, duration, minSor);
       }
    }
 
@@ -450,6 +450,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
   timing_.unlockTime();
 }
 
+
 void
 EMANELTE::MHAL::MHALCommon::clearReadyMessages_safe(const uint32_t bin)
 {
@@ -463,6 +464,7 @@ EMANELTE::MHAL::MHALCommon::clearReadyMessages_safe(const uint32_t bin)
       statisticManager_.updateOrphanedMessages(bin, numOrphans);
     }
 }
+
 
 void
 EMANELTE::MHAL::MHALCommon::clearPendingMessages_safe(const uint32_t bin)
@@ -487,6 +489,7 @@ EMANELTE::MHAL::MHALCommon::clearBins_i()
      clearBin_i(bin);
    }
 }
+
 
 void
 EMANELTE::MHAL::MHALCommon::clearBin_i(size_t bin)

@@ -36,12 +36,12 @@
 #include "mhalenb_impl.h"
 #include "configmanager.h"
 
-void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t localCarrierId,
+void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t carrierId,
                                              const mhal_config_t & mhal_config,
                                              const ENB::mhal_enb_config_t & mhal_enb_config)
 {
   // enb will run thru each carrier each and only once at startup
-  if(localCarrierId == 0)
+  if(carrierId == 0)
    {
      // this must be done first one time
      MHALCommon::initialize(mhal_enb_config.subframe_interval_msec_, mhal_config);
@@ -54,7 +54,7 @@ void EMANELTE::MHAL::MHALENBImpl::initialize(uint32_t localCarrierId,
 
   physicalCellIds_.insert(mhal_enb_config.physical_cell_id_);
 
-  pRadioModel_->setFrequencies(localCarrierId,
+  pRadioModel_->setFrequencies(carrierId,
                                mhal_enb_config.uplink_frequency_hz_,   // rx
                                mhal_enb_config.downlink_frequency_hz_, // tx
                                clearCache);
@@ -303,18 +303,18 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
      for(auto & segment : entry.second)
       {
-        const auto frequencyHz = std::get<0>(segment.first);
+        const auto segmentFrequencyHz = std::get<0>(segment.first);
 
-        const auto spectrumWindow = spectrumWindowCache->second.find(frequencyHz);
+        const auto spectrumWindow = spectrumWindowCache->second.find(segmentFrequencyHz);
 
         if(spectrumWindow == spectrumWindowCache->second.end())
           {
-            logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 2nd, bin %u, no spectrumWindow cache info for freq %lu",
+            logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 2nd, bin %u, no spectrumWindow cache info for frequency %lu Hz",
                         __func__,
                         bin,
-                        frequencyHz);
+                        segmentFrequencyHz);
 
-            pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
+            pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segmentFrequencyHz);
 
             // something is wrong, not an expected condition
             continue;
@@ -327,9 +327,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 2nd, bin %u, freq %lu, no noise data",
                        __func__,
                        bin,
-                       frequencyHz);
+                       segmentFrequencyHz);
 
-           pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
+           pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segmentFrequencyHz);
 
            continue;
          }
@@ -351,7 +351,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                                    minSor,
                                                                    maxEor);
 
-        antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(EMANE::Models::LTE::SegmentKey(frequencyHz, offset, duration), rangeInfo.first);
+        antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(EMANE::Models::LTE::SegmentKey(segmentFrequencyHz, offset, duration), rangeInfo.first);
       } // end second pass
     }
 
@@ -398,8 +398,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
          for(const auto & carrier : txControl.carriers())
           {
             // carrier center freq and index
-            const auto txCarrierFrequencyHz = carrier.frequency_hz();
-            const auto txCarrierId          = carrier.carrier_id();
+            const auto txFrequencyHz = carrier.frequency_hz();
+            const auto txCarrierId   = carrier.carrier_id();
 
             // frequency segments for this carrier
             EMANE::FrequencySegments segmentsThisCarrier;
@@ -421,8 +421,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
            if(segmentsThisCarrier.empty())
             {
-              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip txCarrierId %u, frequency %lu",
-                          __func__, txCarrierId, txCarrierFrequencyHz);
+              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 3rd, missing all subChannels, skip txCarrierId %u, txFrequency %lu",
+                          __func__, txCarrierId, txFrequencyHz);
  
                // can not reasemble msg, skip
               continue;
@@ -452,8 +452,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           // build segmentCache
           for(const auto & segment : segmentsThisCarrier)
            {
-             const auto frequencyHz    = segment.getFrequencyHz();
-             const auto spectrumWindow = spectrumWindowCache->second.find(frequencyHz);
+             const auto segmentFrequencyHz = segment.getFrequencyHz();
+             const auto spectrumWindow     = spectrumWindowCache->second.find(segmentFrequencyHz);
 
              if(spectrumWindow == spectrumWindowCache->second.end())
               {
@@ -461,9 +461,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             __func__,
                             rxControl.nemId_,
                             bin,
-                            frequencyHz);
+                            segmentFrequencyHz);
 
-                pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(frequencyHz);
+                pRadioModel_->getStatisticManager().updateRxFrequencySpectrumError(segmentFrequencyHz);
 
                 // something is wrong, not an expected condition
                 continue;
@@ -485,7 +485,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                 continue;
               }
 
-             const EMANE::Models::LTE::SegmentKey segmentKey{frequencyHz, segment.getOffset(), segment.getDuration()};
+             const EMANE::Models::LTE::SegmentKey segmentKey{segmentFrequencyHz, segment.getOffset(), segment.getDuration()};
 
              const auto entry = outOfBandNoiseFloorMap_dBm->second.find(segmentKey);
 
@@ -495,7 +495,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                             __func__,
                             rxControl.nemId_,
                             rxAntennaId,
-                            frequencyHz,
+                            segmentFrequencyHz,
                             segment.getOffset().count(),
                             segment.getDuration().count());
 
@@ -513,7 +513,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              segmentCache.emplace(segmentKey, sinr_dB);
 
-             pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(frequencyHz, noiseFloor_mW);
+             pRadioModel_->getStatisticManager().updateRxFrequencyAvgNoiseFloor(segmentFrequencyHz, noiseFloor_mW);
 
              peakSum += sinr_dB;
            } // end each segment
@@ -521,8 +521,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
           const auto segmentCacheSize = segmentCache.size();
 
 #if 0
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s 3rd, src %hu, rxAntennaId %u, txCarrierId %u, txCarrierFrequency %lu, segmentCacheSize %zu",
-                      __func__, rxControl.nemId_, rxAntennaId, txCarrierId, txCarrierFrequencyHz, segmentCacheSize);
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s 3rd, src %hu, rxAntennaId %u, txCarrierId %u, txFrequency %lu, segmentCacheSize %zu",
+                      __func__, rxControl.nemId_, rxAntennaId, txCarrierId, txFrequencyHz, segmentCacheSize);
 #endif
 
           // now check for number of pass/fail segments
@@ -533,11 +533,11 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              auto pSINRTester = new UplinkSINRTesterImpl(signalAvg_dBm - noiseFloorAvg_dBm,
                                                          noiseFloorAvg_dBm,
-                                                         txCarrierFrequencyHz,
+                                                         txFrequencyHz,
                                                          txCarrierId);
 
              // txCarrierFrequency, rxAntennaId, txCarrierId
-             sinrTesterImpls[SINRTesterKey(txCarrierFrequencyHz, rxAntennaId, txCarrierId)].reset(pSINRTester);
+             sinrTesterImpls[SINRTesterKey(txFrequencyHz, rxAntennaId, txCarrierId)].reset(pSINRTester);
 
              rxControl.peak_sum_   [txCarrierId] = peakSum;
              rxControl.num_samples_[txCarrierId] = segmentCacheSize;
@@ -555,7 +555,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl, 
                                                                       prach,
                                                                       segmentCache,
-                                                                      txCarrierFrequencyHz,
+                                                                      txFrequencyHz,
                                                                       txCarrierId));
               }
 
@@ -567,7 +567,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl,
                                                                       pucch,
                                                                       segmentCache,
-                                                                      txCarrierFrequencyHz,
+                                                                      txFrequencyHz,
                                                                       txCarrierId));
               }
 
@@ -579,7 +579,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 pRadioModel_->noiseTestChannelMessage(txControl,
                                                                       pusch,
                                                                       segmentCache,
-                                                                      txCarrierFrequencyHz,
+                                                                      txFrequencyHz,
                                                                       txCarrierId));
               }
 
@@ -587,8 +587,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
 
              // add entry per src
              receptionInfoMap[rxControl.nemId_] = StatisticManager::ReceptionInfoData{signalAvg_dBm,
-                                                                                    noiseFloorAvg_dBm,
-                                                                                    segmentCacheSize};
+                                                                                      noiseFloorAvg_dBm,
+                                                                                      segmentCacheSize};
              statisticManager_.updateReceptionTable(receptionInfoMap);
            }         
         } // end tx each carrier

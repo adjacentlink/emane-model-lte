@@ -876,67 +876,54 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
     {
       auto control = txControl.mutable_carriers(idx);
 
-      const auto carrierIndex = getTxCarrierIndex(control->frequency_hz());
+      const auto txFrequencyHz = control->frequency_hz();
+      const auto txCarrierId   = control->carrier_id();
 
-      if(carrierIndex >= 0)
+      // get the all frequency segments for this carrier
+      const auto frequencySegments = messageProcessor_[txCarrierId]->buildFrequencySegments(txControl,
+                                                                                            txFrequencyHz,
+                                                                                            txCarrierId);
+      EMANELTE::FrequencySet frequencySet;
+
+      // check for unique
+      for(const auto & segment : frequencySegments)
        {
-         // get the all frequency segments for this carrier
-         const auto frequencySegments = messageProcessor_[carrierIndex]->buildFrequencySegments(txControl,
-                                                                                                control->frequency_hz(),
-                                                                                                control->carrier_id());
-         EMANELTE::FrequencySet frequencySet;
+         const auto segmentFrequencyHz = segment.getFrequencyHz();
 
-         // check for unique
-         for(const auto & segment : frequencySegments)
+         // unique set of subchannel frequencies
+         if(frequencySet.insert(segmentFrequencyHz).second)
           {
-            const auto segmentFrequencyHz = segment.getFrequencyHz();
-
-            // unique set of subchannel frequencies
-            if(frequencySet.insert(segmentFrequencyHz).second)
-             {
-               control->add_sub_channels(segmentFrequencyHz);
-             }
+            control->add_sub_channels(segmentFrequencyHz);
           }
+       }
 
-         // ue has 1 antenna, set freq groups as needed
-         if(frequencyGroups.size() < antennas_.size())
-          {
-            // create new freq group
-            frequencyGroups.emplace_back(frequencySegments);
-          }
-         else
-          {
-            // append to freq group
-            frequencyGroups[0].insert(frequencyGroups[0].begin(), frequencySegments.begin(), frequencySegments.end());
-          }
-
-#if 0
-         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                 EMANE::INFO_LEVEL,
-                                 "MACI %03hu %s::%s: carrierIndex %u, rxCarrierId %u, carrierFrequency %lu, num segments %zu, num frequency groups %zu, num antennas %zu",
-                                 id_,
-                                 pzModuleName_,
-                                 __func__,
-                                 carrierIndex,
-                                 control->carrier_id(),
-                                 control->frequency_hz(),
-                                 frequencySegments.size(),
-                                 frequencyGroups.size(),
-                                 antennas_.size());
-#endif
+      // ue has 1 antenna, set freq groups as needed
+      if(frequencyGroups.size() < antennas_.size())
+       {
+         // create new freq group
+         frequencyGroups.emplace_back(frequencySegments);
        }
       else
        {
-         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
-                                 EMANE::ERROR_LEVEL,
-                                 "MACI %03hu %s::%s: skip tx carrier %lu Hz, no matching carriers configured in txFrequencyTable size %zu",
-                                 id_,
-                                 pzModuleName_,
-                                 __func__,
-                                 control->frequency_hz(),
-                                 txCarrierFrequencyToIndexTable_.size());
+         // append to freq group
+         frequencyGroups[0].insert(frequencyGroups[0].begin(), frequencySegments.begin(), frequencySegments.end());
        }
-    }
+
+#if 0
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "MACI %03hu %s::%s: carrierIndex %u, rxCarrierId %u, carrierFrequency %lu, num segments %zu, num frequency groups %zu, num antennas %zu",
+                              id_,
+                              pzModuleName_,
+                              __func__,
+                              carrierIndex,
+                              control->carrier_id(),
+                              control->frequency_hz(),
+                              frequencySegments.size(),
+                              frequencyGroups.size(),
+                              antennas_.size());
+#endif
+  }
 
 
    std::string sSerialization{};
