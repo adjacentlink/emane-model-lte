@@ -49,8 +49,36 @@ namespace EPCSTATS {
       void updateDownlinkTraffic(uint32_t src, uint32_t dst, size_t numBytes);
 
       void addBearer(uint32_t dst, uint64_t teid, uint32_t addr, uint64_t imsi, uint8_t ebi);
-
       void delBearer(uint32_t dst);
+
+     void addEMMContext(uint64_t imsi,
+			uint32_t mme_ue_s1ap_id,
+			const char * state,
+			uint8_t procedure_transaction_id,
+			uint8_t attach_type,
+			uint32_t ue_ip,
+			uint32_t sgw_ctrl_fteid_teid);
+      void delEMMContext(uint64_t imsi);
+      void clearEMMContexts();
+
+      void addECMContext(uint64_t imsi,
+			 uint32_t mme_ue_s1ap_id,
+			 const char * state,
+			 uint32_t enb_ue_s1ap_id,
+			 // struct sctp_sndrcvinfo enb_sri,
+			 bool eit);
+      void delECMContext(uint64_t imsi);
+      void clearECMContexts();
+
+      void addESMContext(uint64_t imsi,
+			 uint32_t mme_ue_s1ap_id,
+			 uint8_t erab_id,
+			 const char * state,
+			 uint8_t qci,
+			 uint32_t enb_fteid_teid,
+			 uint32_t sgw_s1u_fteid_teid);
+      void delESMContext(uint64_t imsi);
+      void clearESMContexts();
 }
 
 #endif // EMANELTE_EPCSTATISTICMANAGER_H

@@ -61,6 +61,7 @@ namespace {
   EMANELTE::IPTrafficDB ulTrafficDB_;
   EMANELTE::IPTrafficDB dropTrafficDB_;
 
+  // Bearer Table Definitions
   using BearerTable = OpenStatistic::Table<std::string>;
 
   BearerTable * pBearerTable_ = NULL;
@@ -71,8 +72,8 @@ namespace {
    std::uint64_t imsi_;
    std::uint8_t  ebi_;
 
-   BearerEntry(std::uint64_t teid, 
-               std::uint32_t addr, 
+   BearerEntry(std::uint64_t teid,
+               std::uint32_t addr,
                std::uint64_t imsi,
                std::uint8_t  ebi) :
     teid_{teid},
@@ -104,7 +105,7 @@ namespace {
     const BearerKey key{dst};
 
     const auto keyAsString = keyToString(key);
- 
+
     const std::string sAddr = inet_ntoa(*(in_addr*)(&addr));
 
     auto iter = db.find(key);
@@ -116,7 +117,7 @@ namespace {
         // new entry
         db.insert(std::make_pair(key, entry));
 
-        EMANELTE::addRowWithCheck_(table, 
+        EMANELTE::addRowWithCheck_(table,
                                    keyAsString,
                                    {OpenStatistic::Any{keyAsString},           // 0 dst
                                     OpenStatistic::Any{EMANELTE::toHex(teid)}, // 1 teid
@@ -130,7 +131,7 @@ namespace {
         // update entry
         iter->second = entry;
 
-        EMANELTE::setRowWithCheck_(table, 
+        EMANELTE::setRowWithCheck_(table,
                                    keyAsString,
                                    {OpenStatistic::Any{keyAsString},                         // 0 dst
                                     OpenStatistic::Any{EMANELTE::toHex(iter->second.teid_)}, // 1 teid
@@ -149,7 +150,7 @@ namespace {
     const BearerKey key{dst};
 
     const auto keyAsString = keyToString(key);
- 
+
     auto iter = db.find(key);
 
     if(iter != db.end())
@@ -159,6 +160,304 @@ namespace {
         EMANELTE::delRowWithCheck_(table, keyAsString);
       }
    }
+
+  // EMMContext Table Definitions
+  using EMMContextTable = OpenStatistic::Table<std::uint64_t>;
+
+  EMMContextTable * pEMMContextTable_ = NULL;
+
+  struct EMMContextEntry {
+    std::uint64_t imsi_;
+    std::uint32_t mme_ue_s1ap_id_;
+    const char * state_;
+    std::uint8_t procedure_transaction_id_;
+    std::uint8_t attach_type_;
+    std::uint32_t ue_ip_;
+    std::uint32_t sgw_ctrl_fteid_teid_;
+
+    EMMContextEntry(std::uint64_t imsi,
+		    std::uint32_t mme_ue_s1ap_id,
+		    const char * state,
+		    std::uint8_t procedure_transaction_id,
+		    std::uint8_t attach_type,
+		    std::uint32_t ue_ip,
+		    std::uint32_t sgw_ctrl_fteid_teid):
+      imsi_{imsi},
+      mme_ue_s1ap_id_{mme_ue_s1ap_id},
+      state_{state},
+      procedure_transaction_id_{procedure_transaction_id},
+      attach_type_{attach_type},
+      ue_ip_{ue_ip},
+      sgw_ctrl_fteid_teid_{sgw_ctrl_fteid_teid}
+    { }
+  };
+
+  using EMMContextKey = std::uint64_t;
+  using EMMContextDB  = std::map<EMMContextKey, EMMContextEntry>;
+
+  EMMContextDB EMMContextDB_;
+
+  void updateEMMContextTable_(EMMContextTable * table,
+			      EMMContextDB & db,
+			      std::uint64_t imsi,
+			      std::uint32_t mme_ue_s1ap_id,
+			      const char * state,
+			      std::uint8_t procedure_transaction_id,
+			      std::uint8_t attach_type,
+			      std::uint32_t ue_ip,
+			      std::uint32_t sgw_ctrl_fteid_teid)
+   {
+     const EMMContextKey key{imsi};
+
+     auto iter = db.find(key);
+
+     const EMMContextEntry entry{imsi, mme_ue_s1ap_id, state, procedure_transaction_id, attach_type, ue_ip, sgw_ctrl_fteid_teid};
+
+     const std::string sUEAddr = inet_ntoa(*(in_addr*)(&ue_ip));
+
+     if(iter == db.end())
+       {
+	 // new entry
+	 db.insert(std::make_pair(key, entry));
+
+	 EMANELTE::addRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{key},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{procedure_transaction_id}},
+				     OpenStatistic::Any{std::uint64_t{attach_type}},
+				     OpenStatistic::Any{sUEAddr},
+				     OpenStatistic::Any{std::uint64_t{sgw_ctrl_fteid_teid}}});
+       }
+     else
+       {
+	 // update entry
+	 iter->second = entry;
+
+	 EMANELTE::setRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{imsi},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{procedure_transaction_id}},
+				     OpenStatistic::Any{std::uint64_t{attach_type}},
+				     OpenStatistic::Any{sUEAddr},
+				     OpenStatistic::Any{std::uint64_t{sgw_ctrl_fteid_teid}}});
+       }
+   }
+
+
+  void deleteEMMContextTable_(EMMContextTable * table,
+			      EMMContextDB & db,
+			      std::uint64_t imsi)
+   {
+    const EMMContextKey key{imsi};
+
+    auto iter = db.find(key);
+
+    if(iter != db.end())
+      {
+        db.erase(iter);
+
+        EMANELTE::delRowWithCheck_(table, key);
+      }
+   }
+
+  // ECMContext Table Definitions
+  using ECMContextTable = OpenStatistic::Table<std::uint64_t>;
+
+  ECMContextTable * pECMContextTable_ = NULL;
+
+  struct ECMContextEntry {
+    std::uint64_t imsi_;
+    std::uint32_t mme_ue_s1ap_id_;
+    const char * state_;
+    std::uint32_t enb_ue_s1ap_id_;
+    // struct sctp_sndrcvinfo enb_sri
+    bool eit_;
+
+    ECMContextEntry(std::uint64_t imsi,
+		    std::uint32_t mme_ue_s1ap_id,
+		    const char * state,
+		    std::uint32_t enb_ue_s1ap_id,
+		    // struct sctp_sndrcvinfo enb_sri
+		    bool eit):
+      imsi_{imsi},
+      mme_ue_s1ap_id_{mme_ue_s1ap_id},
+      state_{state},
+      enb_ue_s1ap_id_{enb_ue_s1ap_id},
+      eit_{eit}
+    { }
+  };
+
+  using ECMContextKey = std::uint64_t;
+  using ECMContextDB  = std::map<ECMContextKey, ECMContextEntry>;
+
+  ECMContextDB ECMContextDB_;
+
+  void updateECMContextTable_(ECMContextTable * table,
+			      ECMContextDB & db,
+			      uint64_t imsi,
+			      uint32_t mme_ue_s1ap_id,
+			      const char * state,
+			      uint32_t enb_ue_s1ap_id,
+			      // struct sctp_sndrcvinfo enb_sri,
+			      bool eit)
+   {
+     const ECMContextKey key{imsi};
+
+     auto iter = db.find(key);
+
+     const ECMContextEntry entry{imsi, mme_ue_s1ap_id, state, enb_ue_s1ap_id, eit};
+
+     if(iter == db.end())
+       {
+	 // new entry
+	 db.insert(std::make_pair(key, entry));
+
+	 EMANELTE::addRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{key},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{enb_ue_s1ap_id}},
+				     OpenStatistic::Any{eit}});
+       }
+     else
+       {
+	 // update entry
+	 iter->second = entry;
+
+	 EMANELTE::setRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{key},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{enb_ue_s1ap_id}},
+				     OpenStatistic::Any{eit}});
+       }
+   }
+
+
+  void deleteECMContextTable_(ECMContextTable * table,
+			      ECMContextDB & db,
+			      std::uint64_t imsi)
+   {
+    const ECMContextKey key{imsi};
+
+    auto iter = db.find(key);
+
+    if(iter != db.end())
+      {
+        db.erase(iter);
+
+        EMANELTE::delRowWithCheck_(table, key);
+      }
+   }
+
+  // ESMContext Table Definitions
+  using ESMContextTable = OpenStatistic::Table<std::uint64_t>;
+
+  ESMContextTable * pESMContextTable_ = NULL;
+
+  struct ESMContextEntry {
+    std::uint64_t imsi_;
+    std::uint32_t mme_ue_s1ap_id_;
+    uint8_t erab_id_;
+    const char * state_;
+    uint8_t qci_;
+    uint32_t enb_fteid_teid_;
+    uint32_t sgw_s1u_fteid_teid_;
+
+    ESMContextEntry(uint64_t imsi,
+		    uint32_t mme_ue_s1ap_id,
+		    uint8_t erab_id,
+		    const char * state,
+		    uint8_t qci,
+		    uint32_t enb_fteid_teid,
+		    uint32_t sgw_s1u_fteid_teid):
+      imsi_{imsi},
+      mme_ue_s1ap_id_{mme_ue_s1ap_id},
+      erab_id_{erab_id},
+      state_{state},
+      qci_{qci},
+      enb_fteid_teid_{enb_fteid_teid},
+      sgw_s1u_fteid_teid_{sgw_s1u_fteid_teid}
+    { }
+  };
+
+  using ESMContextKey = std::uint64_t;
+  using ESMContextDB  = std::map<ESMContextKey, ESMContextEntry>;
+
+  ESMContextDB ESMContextDB_;
+
+  void updateESMContextTable_(ESMContextTable * table,
+			      ESMContextDB & db,
+			      uint64_t imsi,
+			      uint32_t mme_ue_s1ap_id,
+			      uint8_t erab_id,
+			      const char * state,
+			      uint8_t qci,
+			      uint32_t enb_fteid_teid,
+			      uint32_t sgw_s1u_fteid_teid)
+   {
+     const ESMContextKey key{imsi};
+
+     auto iter = db.find(key);
+
+     const ESMContextEntry entry{imsi, mme_ue_s1ap_id, erab_id, state, qci, enb_fteid_teid, sgw_s1u_fteid_teid};
+
+     if(iter == db.end())
+       {
+	 // new entry
+	 db.insert(std::make_pair(key, entry));
+
+	 EMANELTE::addRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{key},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{std::uint64_t{erab_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{qci}},
+				     OpenStatistic::Any{std::uint64_t{enb_fteid_teid}},
+				     OpenStatistic::Any{std::uint64_t{sgw_s1u_fteid_teid}}});
+       }
+     else
+       {
+	 // update entry
+	 iter->second = entry;
+
+	 EMANELTE::setRowWithCheck_(table,
+				    key,
+				    {OpenStatistic::Any{key},
+				     OpenStatistic::Any{std::uint64_t{mme_ue_s1ap_id}},
+				     OpenStatistic::Any{std::uint64_t{erab_id}},
+				     OpenStatistic::Any{state},
+				     OpenStatistic::Any{std::uint64_t{qci}},
+				     OpenStatistic::Any{std::uint64_t{enb_fteid_teid}},
+				     OpenStatistic::Any{std::uint64_t{sgw_s1u_fteid_teid}}});
+       }
+   }
+
+
+  void deleteESMContextTable_(ESMContextTable * table,
+			      ESMContextDB & db,
+			      std::uint64_t imsi)
+   {
+    const ESMContextKey key{imsi};
+
+    auto iter = db.find(key);
+
+    if(iter != db.end())
+      {
+        db.erase(iter);
+
+        EMANELTE::delRowWithCheck_(table, key);
+      }
+   }
+
+
 }
 
 
@@ -197,6 +496,27 @@ void EPCSTATS::initialize(const std::string & endpoint)
       OpenStatistic::StatisticProperties::NONE,
       "Bearer Table");
 
+  pEMMContextTable_ =
+    registrar.registerTable<std::uint64_t>(
+      "EMMContextTable",
+      {"IMSI", "MMEUEID", "State", "ProcID", "AttType", "UEAddr",  "SGWTEID"},
+      OpenStatistic::StatisticProperties::NONE,
+      "EMM Context Table");
+
+  pECMContextTable_ =
+    registrar.registerTable<std::uint64_t>(
+      "ECMContextTable",
+      {"IMSI", "MMEUEID", "State", "ENBUEID", "EIT"},
+      OpenStatistic::StatisticProperties::NONE,
+      "ECM Context Table");
+
+  pESMContextTable_ =
+    registrar.registerTable<std::uint64_t>(
+      "ESMContextTable",
+      {"IMSI", "MMEUEID", "ERABID", "State", "QCI", "ENBTEID", "SGWTEID"},
+      OpenStatistic::StatisticProperties::NONE,
+      "ESM Context Table");
+
   OpenStatistic::Service::instance()->start(endpoint);
 }
 
@@ -230,3 +550,99 @@ void EPCSTATS::delBearer(uint32_t dst)
   deleteBearerTable_(pBearerTable_, BearerDB_, dst);
 }
 
+
+void EPCSTATS::addEMMContext(uint64_t imsi,
+			     uint32_t mme_ue_s1ap_id,
+			     const char * state,
+			     uint8_t procedure_transaction_id,
+			     uint8_t attach_type,
+			     uint32_t ue_ip,
+			     uint32_t sgw_ctrl_fteid_teid)
+{
+  updateEMMContextTable_(pEMMContextTable_,
+			 EMMContextDB_,
+			 imsi,
+			 mme_ue_s1ap_id,
+			 state,
+			 procedure_transaction_id,
+			 attach_type,
+			 ue_ip,
+			 sgw_ctrl_fteid_teid);
+}
+
+
+void EPCSTATS::delEMMContext(uint64_t imsi)
+{
+  deleteEMMContextTable_(pEMMContextTable_, EMMContextDB_, imsi);
+}
+
+
+void EPCSTATS::clearEMMContexts()
+{
+  pEMMContextTable_->clear();
+  EMMContextDB_.clear();
+}
+
+
+void EPCSTATS::addECMContext(uint64_t imsi,
+			     uint32_t mme_ue_s1ap_id,
+			     const char * state,
+			     uint32_t enb_ue_s1ap_id,
+			     // struct sctp_sndrcvinfo enb_sri,
+			     bool eit)
+{
+  updateECMContextTable_(pECMContextTable_,
+			 ECMContextDB_,
+			 imsi,
+			 mme_ue_s1ap_id,
+			 state,
+			 enb_ue_s1ap_id,
+			 // struct sctp_sndrcvinfo enb_sri,
+			 eit);
+}
+
+
+void EPCSTATS::delECMContext(uint64_t imsi)
+{
+  deleteECMContextTable_(pECMContextTable_, ECMContextDB_, imsi);
+}
+
+
+void EPCSTATS::clearECMContexts()
+{
+  pECMContextTable_->clear();
+  ECMContextDB_.clear();
+}
+
+
+void EPCSTATS::addESMContext(uint64_t imsi,
+			     uint32_t mme_ue_s1ap_id,
+			     uint8_t erab_id,
+			     const char * state,
+			     uint8_t qci,
+			     uint32_t enb_fteid_teid,
+			     uint32_t sgw_s1u_fteid_teid)
+{
+  updateESMContextTable_(pESMContextTable_,
+			 ESMContextDB_,
+			 imsi,
+			 mme_ue_s1ap_id,
+			 erab_id,
+			 state,
+			 qci,
+			 enb_fteid_teid,
+			 sgw_s1u_fteid_teid);
+}
+
+
+void EPCSTATS::delESMContext(uint64_t imsi)
+{
+  deleteESMContextTable_(pESMContextTable_, ESMContextDB_, imsi);
+}
+
+
+void EPCSTATS::clearESMContexts()
+{
+  pESMContextTable_->clear();
+  ESMContextDB_.clear();
+}
