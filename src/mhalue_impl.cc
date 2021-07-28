@@ -196,15 +196,15 @@ EMANELTE::MHAL::MHALUEImpl::cell_search()
 
 void
 EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t cc_idx,
-                                            const uint32_t pci,
+                                            const uint32_t cellid,
                                             const bool scell,
                                             const FrequencyHz carrierRxFrequencyHz,
                                             const FrequencyHz carrierTxFrequencyHz)
 {
   const bool searchMode = (scell == false) && (cc_idx == 0);
 
-  logger_.log(EMANE::INFO_LEVEL, "MHAL %s cc=%u, pci %u, searchMode %d, rxFreq %lu, txFreq %lu",
-              __func__, cc_idx, pci, searchMode, carrierRxFrequencyHz, carrierTxFrequencyHz);
+  logger_.log(EMANE::INFO_LEVEL, "MHAL %s cc=%u, cellid %u, searchMode %d, rxFreq %lu, txFreq %lu",
+              __func__, cc_idx, cellid, searchMode, carrierRxFrequencyHz, carrierTxFrequencyHz);
 
 
   pRadioModel_->setFrequencies(cc_idx,                // carrier idx

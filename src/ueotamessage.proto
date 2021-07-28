@@ -67,6 +67,8 @@ message UE_UL_Message
    }
 
    repeated Grant grant = 1;
+
+   required uint32 seqnum = 2;
  }
 
  // uplink shared channel
@@ -81,6 +83,8 @@ message UE_UL_Message
    }
 
    repeated Grant grant = 1;
+
+   required uint32 seqnum = 2;
  }
 
  // 1 to 5 carriers [0-4]
