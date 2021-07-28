@@ -130,7 +130,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
   configRegistrar.registerNonNumeric<std::string>("antenna",
                                                   EMANE::ConfigurationProperties::DEFAULT,
                                                   {"omni"},
-                                                  "Defines the antenna properties 'omni' or sector{index,az,el},sector{index,az,el},...");
+                                                  "Defines the antenna properties "
+                                                  "default is 'omni' "
+                                                  "ue supports 1 and only 1 omni antenna "
+                                                  "'omni;omni' for enb carrier aggregation "
+                                                  "'sector{profile,az,el};sector{profile,az,el};sector{profile,az,el}' for enb multicell");
 
 
   statisticManager_.registerStatistics(registrar);
