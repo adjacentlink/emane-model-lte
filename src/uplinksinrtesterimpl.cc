@@ -38,7 +38,7 @@
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype)
 {
   auto sinr_result = channelSINRResults_.find(ctype);
 
@@ -52,7 +52,7 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti)
 {
   auto sinr_result = rntiChannelSINRResults_.find(EMANELTE::MHAL::ChannelRNTI(ctype, rnti));
 

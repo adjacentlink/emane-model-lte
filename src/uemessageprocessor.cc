@@ -86,7 +86,7 @@ EMANE::Models::LTE::UEMessageProcessor::swapSearchFrequencyMaps(EMANELTE::Freque
 
 void
 EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::ChannelMessage & channel_msg,
-                                                      const std::uint32_t tti_tx)
+                                                      const uint32_t tti_tx)
 {
   size_t sfIdx  = tti_tx % 10;
 
@@ -120,19 +120,19 @@ EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::Chan
 
 EMANE::FrequencySegments
 EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                               uint64_t frequencyHz)
+                                                               const uint64_t carrierFrequencyHz,
+                                                               const uint32_t carrierId)
 {
-  std::uint32_t tti_tx = txControl.tti_tx();
+  uint32_t tti_tx = txControl.tti_tx();
 
-  const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
-
-  const EMANE::Microseconds slotDuration = sfDuration/2;
+  const EMANE::Microseconds slotDuration{txControl.subframe_duration_microsecs()/2};
 
   EMANE::FrequencySegments result;
 
   for(const auto & carrier : txControl.carriers())
    {
-     if(carrier.frequency_hz() == frequencyHz)
+     if((carrier.frequency_hz() == carrierFrequencyHz) &&
+        (carrier.carrier_id()   == carrierId))
       {       
         statisticManager_.updateTxTableCounts(txControl);
 
@@ -165,11 +165,13 @@ bool
 EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                                                 const EMANELTE::MHAL::ChannelMessage & channel_message,
                                                                 EMANE::Models::LTE::SegmentMap & segmentCache,
-                                                                std::uint64_t frequencyHz)
+                                                                const uint64_t carrierFrequencyHz,
+                                                                const uint32_t carrierId)
 {
   for(const auto & carrier : txControl.carriers())
    {
-     if(carrier.frequency_hz() == frequencyHz)
+     if((carrier.frequency_hz() == carrierFrequencyHz) &&
+        (carrier.carrier_id()   == carrierId))
       {
         const size_t sfIdx{txControl.tti_tx() % 10};
 
@@ -177,31 +179,29 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
         const size_t slot2{slot1 + 1};
 
-        const std::uint32_t cfi{carrier.downlink().cfi()};
+        const uint32_t cfi{carrier.downlink().cfi()};
 
-        const std::uint32_t numResourceBlocks{carrier.downlink().num_resource_blocks()};
+        const uint32_t numResourceBlocks{carrier.downlink().num_resource_blocks()};
 
-        const EMANE::Microseconds sfDuration{txControl.subframe_duration_microsecs()};
-
-        const EMANE::Microseconds slotDuration = sfDuration/2;
+        const EMANE::Microseconds slotDuration{txControl.subframe_duration_microsecs()/2};
 
         EMANELTE::MHAL::CHANNEL_TYPE type{channel_message.channel_type()};
 
         EMANELTE::MHAL::MOD_TYPE modType{channel_message.modulation_type()};
 
-        const std::uint32_t numberOfBits{channel_message.number_of_bits()};
+        const uint32_t numberOfBits{channel_message.number_of_bits()};
 
-        const std::uint32_t numberInfoREs{numberOfBits/modType};
+        const uint32_t numberInfoREs{numberOfBits/modType};
 
-        std::uint32_t numberMessageREs{0};
+        uint32_t numberMessageREs{0};
 
-        std::uint32_t numberReceivedREs{0};
+        uint32_t numberReceivedREs{0};
 
         EMANE::Microseconds offset;
 
         EMANE::Microseconds duration;
 
-        std::uint32_t rxNumResourceBlocks{numResourceBlocks};
+        uint32_t rxNumResourceBlocks{numResourceBlocks};
 
         auto bwIter = downlinkMap_.find(rxNumResourceBlocks);
 
@@ -215,11 +215,13 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
               {
                 LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                         EMANE::ERROR_LEVEL,
-                                        "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
+                                        "MACI %03hu %s::%s: FAIL cannot find rb map for rxNumResourceBlocks %d, numResourceBlocks=%d, downlinkMapSize %zu",
                                         id_,
                                         "UEMessageProcessor",
                                         __func__,
-                                        75);
+                                        rxNumResourceBlocks,
+                                        75,
+                                        downlinkMap_.size());
 
                 return false;
               }
@@ -232,11 +234,13 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
               {
                 LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                         EMANE::ERROR_LEVEL,
-                                        "MACI %03hu %s::%s: FAIL cannot find rb map for numResourceBlocks=%d",
+                                        "MACI %03hu %s::%s: FAIL cannot find rb map for rxNumResourceBlocks %d, numResourceBlocks=%d, downlinkMapSize %zu",
                                         id_,
                                         "UEMessageProcessor",
                                         __func__,
-                                        100);
+                                        rxNumResourceBlocks,
+                                        100,
+                                        downlinkMap_.size());
 
                 return false;
               }
@@ -294,29 +298,22 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
         if(segmentIter == segmentCache.end())
          {
-           LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                  EMANE::DEBUG_LEVEL,
-                                  "MACI %03hu %s::%s: "
-                                  "type %d, "
-                                  "slot1 segment cache miss, "
-                                  "slotDuration=%lu, "
-                                  "freq=%lu, "
-                                  "startSymb=%d, "
-                                  "stopSymb=%d, "
-                                  "offs=%lu, "
-                                  "dur=%lu, "
-                                  "rb=%d",
-                                  id_,
-                                  "UEMessageProcessor",
-                                  __func__,
-                                  type,
-                                  slotDuration.count(),
-                                  freq,
-                                  rbParams.first_,
-                                  rbParams.last_,
-                                  offset.count(),
-                                  duration.count(),
-                                  rb);
+#if 1
+           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                   EMANE::INFO_LEVEL,
+                                   "MACI %03hu %s::%s: type %d, slot1 segment cache miss, slotDuration=%lu, freq=%lu, startSymb=%d, stopSymb=%d, offs=%lu, dur=%lu, rb=%d",
+                                   id_,
+                                   "UEMessageProcessor",
+                                   __func__,
+                                   type,
+                                   slotDuration.count(),
+                                   freq,
+                                   rbParams.first_,
+                                   rbParams.last_,
+                                   offset.count(),
+                                   duration.count(),
+                                   rb);
+#endif
 
             continue;
           }
@@ -328,7 +325,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
         const float fRandomValue{RNDZeroToOne_()};
 
         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                               EMANE::DEBUG_LEVEL,
+                               EMANE::INFO_LEVEL,
                                "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
                                id_,
                                "UEMessageProcessor",
@@ -375,29 +372,22 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          if(segmentIter == segmentCache.end())
           {
-            LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                   EMANE::DEBUG_LEVEL,
-                                   "MACI %03hu %s::%s: "
-                                   "type %d, "
-                                   "slot2 segment cache miss, "
-                                   "slotDuration=%lu, "
-                                   "freq=%lu, "
-                                   "startSymb=%d, "
-                                   "stopSymb=%d, "
-                                   "offs=%lu, "
-                                   "dur=%lu, "
-                                   "rb=%d",
-                                   id_,
-                                   "UEMessageProcessor",
-                                   __func__,
-                                   type,
-                                   slotDuration.count(),
-                                   freq,
-                                   rbParams.first_,
-                                   rbParams.last_,
-                                   offset.count(),
-                                   duration.count(),
-                                   rb);
+#if 1
+            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                    EMANE::INFO_LEVEL,
+                                    "MACI %03hu %s::%s: type %d, slot2 segment cache miss, slotDuration=%lu, freq=%lu, startSymb=%d, stopSymb=%d, offs=%lu, dur=%lu, rb=%d",
+                                    id_,
+                                    "UEMessageProcessor",
+                                    __func__,
+                                    type,
+                                    slotDuration.count(),
+                                    freq,
+                                    rbParams.first_,
+                                    rbParams.last_,
+                                    offset.count(),
+                                    duration.count(),
+                                    rb);
+#endif
 
             continue;
           }
@@ -408,8 +398,9 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
 
          const float fRandomValue{RNDZeroToOne_()};
 
-         LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                EMANE::DEBUG_LEVEL,
+#if 0
+         LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                EMANE::INFO_LEVEL,
                                 "MACI %03hu %s::%s: modType %d, sinr_dB %0.1f, por %0.1f, rand %0.1f, rbParams.res_ %d",
                                 id_,
                                 "UEMessageProcessor",
@@ -419,6 +410,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                 por,
                                 fRandomValue,
                                 rbParams.res_);
+#endif
 
          if(por >= fRandomValue)
           {
@@ -426,30 +418,44 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
           }
        } // end for
 
-      std::uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
+      const uint32_t numberChannelCodeREs{numberMessageREs - numberInfoREs};
 
-      bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
+      const bool messageReceived{numberReceivedREs > (numberInfoREs + numberChannelCodeREs/2)};
 
-      if(!messageReceived)
-       {
-          LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
-                                 EMANE::DEBUG_LEVEL,
-                                 "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
-                                 id_,
-                                 "UEMessageProcessor",
-                                 __func__,
-                                 messageReceived ? "PASS" : "FAIL",
-                                 sfIdx,
-                                 type,
-                                 modType,
-                                 numberMessageREs,
-                                 numberInfoREs,
-                                 numberReceivedREs);
-        }
-
+#if 0
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "MACI %03hu %s::%s: %s sfIdx %zu, type %d, modType %d, messageREs %d, infoREs %d, rcvedREs %d",
+                              id_,
+                              "UEMessageProcessor",
+                              __func__,
+                              messageReceived ? "PASS" : "FAIL",
+                              sfIdx,
+                              type,
+                              modType,
+                              numberMessageREs,
+                              numberInfoREs,
+                              numberReceivedREs);
+#endif
       return messageReceived;
     }
-  } // end for
+   else
+    {
+#if 0
+      LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                              EMANE::INFO_LEVEL,
+                              "MACI %03hu %s::%s: msg carrierFrequency %lu != %lu or msg carrierId %u != %u",
+                              id_,
+                              "UEMessageProcessor",
+                              __func__,
+                              carrier.frequency_hz(),
+                              carrierFrequencyHz,
+                              carrier.carrier_id(),
+                              carrierId);
+#endif
+    }
+
+  } // end for each carrier
 
   return false;
 }

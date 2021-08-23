@@ -48,9 +48,9 @@ class SINRTesterImpl
 public:
   virtual ~SINRTesterImpl() {};
 
-  virtual SINRTester::SINRTesterResult sinrCheck(CHANNEL_TYPE ctype) = 0;
+  virtual SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype) = 0;
 
-  virtual SINRTester::SINRTesterResult sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) = 0;
+  virtual SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti) = 0;
 };
 
 }

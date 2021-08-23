@@ -44,7 +44,7 @@ EMANE::Models::LTE::FrequencySegmentBuilder::insert(FrequencySegmentKey key, flo
   // has higher transmit power than existing one
   if(iter == segmentMap_.end() || txPowerdBm > iter->second)
     {
-      segmentMap_.insert(std::pair<FrequencySegmentKey, float>(key, txPowerdBm));
+      segmentMap_.emplace(key, txPowerdBm);
     }
 }
 
@@ -95,6 +95,7 @@ EMANE::Models::LTE::FrequencySegmentBuilder::build(EMANE::Microseconds slotDurat
 
       std::tie(offset, duration) = calcSegmentBoundary(slot, startSymb, stopSymb, slotDuration);
 
+#if 0
       LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                               EMANE::DEBUG_LEVEL,
                               "%s %03hu %s: "
@@ -107,6 +108,7 @@ EMANE::Models::LTE::FrequencySegmentBuilder::build(EMANE::Microseconds slotDurat
                               offset.count(),
                               duration.count(),
                               txPowerdBm);
+#endif
 
       segs.push_back({freq, txPowerdBm, duration, offset});
     }

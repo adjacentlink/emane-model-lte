@@ -42,6 +42,7 @@
 
 #include "libemanelte/mhal.h"
 
+#include "emane/antenna.h"
 #include "emane/maclayerimpl.h"
 #include "emane/types.h"
 #include "emane/application/logger.h"
@@ -54,6 +55,7 @@
 #include "enbradiostatisticmanager.h"
 #include "uemessageprocessor.h"
 #include "ueradiostatisticmanager.h"
+#include "spectrumwindowcache.h"
 
 
 namespace EMANE {
@@ -63,8 +65,6 @@ namespace LTE {
 // relative rx/tx per node type ue/enb
 using FrequencyPair = std::pair<std::uint64_t, std::uint64_t>;
 
-// frequency, spectrum window
-using SpectrumWindowCache = std::map<std::uint64_t, EMANE::SpectrumWindow>;
 
 using FrequencySegmentParams = std::pair<EMANELTE::FrequencyHz, EMANELTE::BandwidthHz>;
 
@@ -124,10 +124,10 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void setSymbolsPerSlot(std::uint32_t symbolsPerSlot);
 
-      void setFrequencies(uint32_t carrierIndex,
-                          EMANELTE::FrequencyHz carrierRxFrequencyHz,
-                          EMANELTE::FrequencyHz carrierTxFrequencyHz,
-                          bool clearCache);
+      void setFrequencies(const uint32_t carrierIndex,
+                          const EMANELTE::FrequencyHz carrierRxFrequencyHz,
+                          const EMANELTE::FrequencyHz carrierTxFrequencyHz,
+                          const bool clearCache);
 
       void setNumResourceBlocks(std::uint32_t numResourceBlocks);
 
@@ -135,24 +135,27 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       EMANELTE::FrequencyHz getTxResourceBlockFrequency(std::uint32_t resourceBlockIndex, std::uint64_t freq_hz);
 
-      EMANE::SpectrumWindow getNoise(EMANELTE::FrequencyHz frequency, 
+      EMANE::SpectrumWindow getNoise(const uint32_t antennaIndex,
+                                     const EMANELTE::FrequencyHz frequency, 
                                      const EMANE::Microseconds & span, 
                                      const EMANE::TimePoint & sor);
 
-      double getReceiverSensitivitydBm();
+      float getReceiverSensitivitydBm();
 
       EMANE::FrequencySet getFrequencies();
 
       bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                    const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                    SegmentMap & segmentCache,
-                                   std::uint64_t carrierFrequencyHz);
+                                   const uint64_t carrierFrequencyHz,
+                                   const uint32_t carrierId );
 
-      void setFrequenciesOfInterest(bool searchMode, bool clearCache);
+      void setFrequenciesOfInterest(const bool searchMode);
 
       EMANELTE::FrequencySet getCarriersOfInterest() const;
 
       int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
+      int getTxCarrierIndex(std::uint64_t carrierFrequency) const;
 
     private:
       bool bRunning_;
@@ -174,16 +177,16 @@ class RadioModel : public EMANE::MACLayerImplementor
       // track rx/tx freq by carrier
       FrequencyTable frequencyTable_;
 
-      // track carrier index by freq 
       CarrierFrequencyToIndexTable   txCarrierFrequencyToIndexTable_;
       CarrierFrequencyToIndexTable   rxCarrierFrequencyToIndexTable_;
-
-      EMANE::FrequencySet rxFrequenciesHz_;
-      EMANE::FrequencySet txFrequenciesHz_;
 
       std::uint64_t u64TxSeqNum_;
       std::uint32_t u32NumResourceBlocks_;
       std::uint16_t u32SymbolsPerSlot_;
+
+      Antennas antennas_;
+
+      std::string sAntennaInfo_;
 
       RadioStatManager statisticManager_;
       MessageProcessor *messageProcessor_[EMANELTE::MAX_CARRIERS];
@@ -194,6 +197,7 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       // NumPass, DropPropDelay, DropFreqMismatch, DropDirection
       using SubframeReceiveCountEntry = std::tuple<size_t, size_t, size_t, size_t>;
+
 
       // NEMId key
       using SubframeReceiveCountDB = std::map<EMANE::NEMId, SubframeReceiveCountEntry>;

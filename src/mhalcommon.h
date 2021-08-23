@@ -102,7 +102,7 @@ protected:
                            const PHY::OTAInfo & otaInfo,
                            const TxControlMessage & txControl);
 
-  void noiseWorker_safe(const uint32_t bin, const timeval & tv_sf_start);
+  void noiseWorker_safe(const uint32_t bin);
 
   void clearReadyMessages_safe(const uint32_t bin);
 
@@ -114,12 +114,13 @@ protected:
                                TxControlMessage & control,
                                const EMANE::TimePoint & timestamp) = 0;
 
-  virtual EMANE::SpectrumWindow get_noise(FrequencyHz frequency,
+  virtual EMANE::SpectrumWindow get_noise(const uint32_t antennaIndex,
+                                          const FrequencyHz frequency,
                                           const EMANE::Microseconds & span,
                                           const EMANE::TimePoint & sor) = 0;
 
   virtual void noise_processor(const uint32_t bin,
-                               const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache) = 0;
+                               const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache) = 0;
 
  private:
   void clearBins_i();

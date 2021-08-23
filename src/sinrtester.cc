@@ -43,6 +43,15 @@ EMANELTE::MHAL::SINRTester::SINRTester(const SINRTesterImpls & impls)
   impls_ = std::move(impls);
 }
 
+
+
+EMANELTE::MHAL::SINRTester::~SINRTester()
+{
+  release();
+}
+
+
+
 EMANELTE::MHAL::SINRTester & EMANELTE::MHAL::SINRTester::operator = (const SINRTester & rhs)
 {
   if(&rhs == this)
@@ -67,11 +76,14 @@ EMANELTE::MHAL::SINRTester::reset(const SINRTesterImpls & impls)
 }
 
 
-
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequencyHz) const
+EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
+                                       const uint64_t carrierFrequencyHz,
+                                       const uint32_t rxAntennaId,
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(carrierFrequencyHz);
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, carrierId});
+
 
   if(iter != impls_.end())
    {
@@ -85,9 +97,13 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint64_t carrierFrequ
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64_t carrierFrequencyHz) const
+EMANELTE::MHAL::SINRTester::sinrCheck2(const CHANNEL_TYPE ctype,
+                                       const uint16_t rnti,
+                                       const uint64_t carrierFrequencyHz,
+                                       const uint32_t rxAntennaId,
+                                       const uint32_t carrierId) const
 {
-  const auto iter = impls_.find(carrierFrequencyHz);
+  const auto iter = impls_.find(SINRTesterKey{carrierFrequencyHz, rxAntennaId, carrierId});
 
   if(iter != impls_.end())
    {
@@ -103,6 +119,5 @@ EMANELTE::MHAL::SINRTester::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti, uint64
 void
 EMANELTE::MHAL::SINRTester::release()
 {
-  impls_.clear();
+   impls_.clear();
 }
-

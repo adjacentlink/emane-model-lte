@@ -57,19 +57,17 @@ namespace MHAL {
 
   inline EMANE::Microseconds tvToMicroseconds(const timeval & tv)
   {
-    return EMANE::Microseconds{tv.tv_sec * USEC_PER_SECOND + tv.tv_usec};
+    return EMANE::Microseconds{(tv.tv_sec * USEC_PER_SECOND) + tv.tv_usec};
   }
-
 
   inline timeval tsToTv(const time_t ts)
   {
     return timeval{ts/USEC_PER_SECOND, ts%USEC_PER_SECOND};
   }
 
-
   inline EMANE::TimePoint tvToTp(const timeval & tv)
   {
-    return EMANE::TimePoint{EMANE::Microseconds{tv.tv_sec * USEC_PER_SECOND + tv.tv_usec}};
+    return EMANE::TimePoint{EMANE::Microseconds{(tv.tv_sec * USEC_PER_SECOND) + tv.tv_usec}};
   }
 
   inline uint32_t getMessageBin(const timeval & tv, std::uint64_t tsSfInterval)

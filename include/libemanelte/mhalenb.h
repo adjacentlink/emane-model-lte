@@ -50,8 +50,8 @@ namespace ENB {
     uint32_t physical_cell_id_;
     uint32_t subframe_interval_msec_;
     uint32_t symbols_per_slot_;
-    double uplink_frequency_hz_;
-    double downlink_frequency_hz_;
+    uint64_t uplink_frequency_hz_;
+    uint64_t downlink_frequency_hz_;
     int num_resource_blocks_;
     float pdsch_rs_power_milliwatt_;
     float pdsch_rho_b_over_rho_a_;
@@ -59,8 +59,8 @@ namespace ENB {
     mhal_enb_config_t(uint32_t physical_cell_id,
                       uint32_t subframe_interval_msec,
                       uint32_t symbols_per_slot,
-                      double uplink_frequency_hz,
-                      double downlink_frequency_hz,
+                      uint64_t uplink_frequency_hz,
+                      uint64_t downlink_frequency_hz,
                       int num_resource_blocks,
                       float pdsch_rs_power_milliwatt,
                       float pdsch_rho_b_over_rho_a) :

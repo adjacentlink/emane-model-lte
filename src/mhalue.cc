@@ -40,7 +40,7 @@ namespace {
 }
 
 
-void EMANELTE::MHAL::UE::initialize(uint32_t sf_interval_msec,
+void EMANELTE::MHAL::UE::initialize(const uint32_t sf_interval_msec,
                                     const EMANELTE::MHAL::mhal_config_t & mhal_config)
 {
   impl_.initialize(sf_interval_msec, mhal_config);
@@ -59,16 +59,16 @@ void EMANELTE::MHAL::UE::stop()
 }
 
 
-void EMANELTE::MHAL::UE::set_tti(uint16_t curr_tti)
+void EMANELTE::MHAL::UE::set_tti(const uint16_t curr_tti)
 {
   impl_.set_tti(curr_tti);
 }
 
 
 void EMANELTE::MHAL::UE::send_msg(const EMANELTE::MHAL::Data & data, 
-                                     EMANELTE::MHAL::TxControlMessage & txControl)
+                                  EMANELTE::MHAL::TxControlMessage & tx_control)
 {
-  impl_.send_msg(data, txControl);
+  impl_.send_msg(data, tx_control);
 }
 
 
@@ -79,26 +79,30 @@ EMANELTE::MHAL::UE::get_messages(EMANELTE::MHAL::RxMessages & messages, timeval 
 }
 
 
-std::uint64_t
-EMANELTE::MHAL::UE::get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz)
+uint64_t
+EMANELTE::MHAL::UE::get_tx_prb_frequency(const int prb_index, const uint64_t frequency_hz)
 {
-  return impl_.get_tx_prb_frequency(prb_index, freq_hz);
+  return impl_.get_tx_prb_frequency(prb_index, frequency_hz);
 }
 
 
-void EMANELTE::MHAL::UE::set_frequencies(uint32_t carrierIndex, double carrierRxFrequencyHz, double carrierTxFrequencyHz)
+void EMANELTE::MHAL::UE::set_frequencies(const uint32_t carrier_index,
+                                         const uint32_t pci,
+                                         const bool scell,
+                                         const uint64_t rx_frequency_hz,
+                                         const uint64_t tx_frequency_hz)
 {
-  impl_.set_frequencies(carrierIndex, carrierRxFrequencyHz, carrierTxFrequencyHz);
+  impl_.set_frequencies(carrier_index, pci, scell, rx_frequency_hz, tx_frequency_hz);
 }
 
 
-void EMANELTE::MHAL::UE::set_num_resource_blocks(int n_prb)
+void EMANELTE::MHAL::UE::set_num_resource_blocks(const int num_prb)
 {
-  impl_.set_num_resource_blocks(n_prb);
+  impl_.set_num_resource_blocks(num_prb);
 }
 
 
-void EMANELTE::MHAL::UE::begin_cell_search()
+void EMANELTE::MHAL::UE::cell_search()
 {
-  impl_.begin_cell_search();
+  impl_.cell_search();
 }

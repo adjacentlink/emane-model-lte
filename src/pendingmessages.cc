@@ -59,9 +59,9 @@ size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 
 // purge and msgs that have expired.
 void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
-                uint32_t bin,
-                const PendingMessage & pendingMsg,
-                StatisticManager & statisticManager)
+                                            const uint32_t bin,
+                                            const PendingMessage & pendingMsg,
+                                            StatisticManager & statisticManager)
 {
   if(pending_.empty())
     {
@@ -84,43 +84,52 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
 // a pendingMsg is composed of multiple segments each with a unique frequency
 // find the min sor and max eor for each frequency
 // this will be used to consult the spectrum monitor later
-EMANELTE::MHAL::SegmentSpans
-EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
+EMANELTE::MHAL::RxAntennaSegmentSpans
+EMANELTE::MHAL::PendingMessageBin::getRxAntennaSegmentSpans()
 {
-  SegmentSpans segmentSpans;
+  RxAntennaSegmentSpans rxAntennaSegmentSpans;
 
+  // for each pending msg
   for(const auto & pendingMsg : pending_)
-    {
-      const auto & otaInfo = PendingMessage_OtaInfo(pendingMsg);
+   {
+     const auto & otaInfo = PendingMessage_OtaInfo_Get(pendingMsg);
 
-      for(auto & segment : otaInfo.segments_)
-        {
-          const auto frequencyHz = segment.getFrequencyHz();
+     // for each rx/tx antenna path
+     for(const auto & antennaInfo : otaInfo.antennaInfos_)
+      {
+        // track receptions based on rx antenna
+        const auto rxAntennaIndex = antennaInfo.getRxAntennaIndex();
 
-          // sor = sot + offset, LTE timinging advance accounts for propagation delay
-          const auto sor = otaInfo.sot_ + segment.getOffset();
-          const auto eor = sor + segment.getDuration();
+        const auto & segmentSpans = antennaInfo.getFrequencySegments();
 
-          // check for matching frequency
-          const auto iter = segmentSpans.find(frequencyHz);
+        for(auto & segment : segmentSpans)
+         {
+           const auto segmentFrequencyHz = segment.getFrequencyHz();
 
-          if(iter != segmentSpans.end())
+           // sor = sot + offset, LTE timinging advance accounts for propagation delay
+           const auto sor = otaInfo.sot_ + segment.getOffset();
+           const auto eor = sor + segment.getDuration();
+
+           // check for matching frequency
+           const auto iter = rxAntennaSegmentSpans[rxAntennaIndex].find(segmentFrequencyHz);
+
+           if(iter != rxAntennaSegmentSpans[rxAntennaIndex].end())
             {
-              auto & min = SegmentTimeSpan_sor(iter->second);
-              auto & max = SegmentTimeSpan_eor(iter->second);
+              auto & min = SegmentTimeSpan_Sor_Get(iter->second);
+              auto & max = SegmentTimeSpan_Eor_Get(iter->second);
 
               min = std::min(min, sor);
               max = std::max(max, eor);
-              ++SegmentTimeSpan_num(iter->second);
             }
           else
-            {
-              segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
-            }
-        }
-    }
+           {
+             rxAntennaSegmentSpans[rxAntennaIndex].emplace(segmentFrequencyHz, SegmentTimeSpan{sor, eor});
+           }
+         }
+      }
+   }
 
-  return segmentSpans;
+  return rxAntennaSegmentSpans;
 }
 
 

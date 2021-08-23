@@ -46,7 +46,7 @@
 namespace EMANELTE {
 
 const uint32_t MAX_CARRIERS = 5;
-
+const float    MIN_POWER_DB = -201;
 namespace MHAL {
   using Data = std::string;
 
@@ -60,16 +60,22 @@ namespace MHAL {
 
     // unique per carrier index
     float    avg_snr_    [MAX_CARRIERS];  // avg snr
+    float    avg_nf_     [MAX_CARRIERS];  // avg noise floor
     float    peak_sum_   [MAX_CARRIERS];  // sum of power over carriers
     uint32_t num_samples_[MAX_CARRIERS];  // number of segments in peak_sum
+    bool     is_valid_   [MAX_CARRIERS];  // carrier has passed reception checks
 
      RxControl() :
-       nemId_{0},
-       rx_seqnum_{0},
-       rx_time_{0,0},
-       tx_time_{0,0},
-       sf_time_{0,0},
-       avg_snr_{-150}
+       nemId_{},
+       rx_seqnum_{},
+       rx_time_{},
+       tx_time_{},
+       sf_time_{},
+       avg_snr_{MIN_POWER_DB},
+       avg_nf_{MIN_POWER_DB},
+       peak_sum_{MIN_POWER_DB},
+       num_samples_{},
+       is_valid_{}
      { }
 
     RxControl(uint16_t nemId,
@@ -82,20 +88,18 @@ namespace MHAL {
       rx_time_{rx_time.tv_sec, rx_time.tv_usec},
       tx_time_{tx_time.tv_sec, tx_time.tv_usec},
       sf_time_{sf_time.tv_sec, sf_time.tv_usec}
-    {
-      for(uint32_t idx = 0; idx < MAX_CARRIERS; ++idx)
-       {
-         avg_snr_[idx]     = -150.0;
-         peak_sum_[idx]    = 0.0;
-         num_samples_[idx] = 0;
-       }
+    { 
+       for(uint32_t n = 0; n < MAX_CARRIERS; ++n)
+         {
+           avg_snr_    [n] = MIN_POWER_DB;
+           avg_nf_     [n] = MIN_POWER_DB;
+           peak_sum_   [n] = MIN_POWER_DB;
+           num_samples_[n] = 0;
+           is_valid_   [n] = false;
+         }
     }
   };
 
-
-#define RxMessage_Data(x)        (x).data_
-#define RxMessage_RxControl(x)   (x).rxControl_
-#define RxMessage_SINRTesters(x) (x).sinrTesters_
 
   struct RxMessage {
     Data            data_;

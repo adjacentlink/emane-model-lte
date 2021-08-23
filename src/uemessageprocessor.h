@@ -89,12 +89,14 @@ namespace LTE
                                  EMANELTE::FrequencyResourceBlockMap & txFreqToRBMap);
 
     EMANE::FrequencySegments buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                    uint64_t carrierFreqHz);
+                                                    const uint64_t carrierFreqHz,
+                                                    const uint32_t carrierId);
 
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                  const EMANELTE::MHAL::ChannelMessage & channel_msg,
                                  EMANE::Models::LTE::SegmentMap & segmentCache,
-                                 std::uint64_t carrierFrequencyHz);
+                                 const uint64_t carrierFrequencyHz,
+                                 const uint32_t carrierId);
 
   private:
     struct DownlinkParams

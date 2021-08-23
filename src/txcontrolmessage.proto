@@ -44,11 +44,12 @@ option optimize_for = SPEED;
 
 message TxControlCarrierMessage
 {
-  required uint64               frequency_hz   = 1;
-  required uint32               phy_cell_id    = 2;
-  repeated uint64               sub_channels   = 3; // sub bands of carrier center freq hz
-  optional DownlinkMessage      downlink       = 4;
-  optional UplinkMessage        uplink         = 5;
+  required uint32               carrier_id     = 1; // used to map antenna id
+  required uint64               frequency_hz   = 2;
+  required uint32               phy_cell_id    = 3;
+  repeated uint64               sub_channels   = 4; // sub bands of carrier center freq hz
+  optional DownlinkMessage      downlink       = 5;
+  optional UplinkMessage        uplink         = 6;
 }
 
 message TxControlMessage
