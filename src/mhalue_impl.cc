@@ -214,11 +214,11 @@ EMANELTE::MHAL::MHALUEImpl::set_frequencies(const uint32_t cc_idx,
 
   if(searchMode)
    {
-     logger_.log(EMANE::INFO_LEVEL, "MHAL %s reset num_prb to 100", __func__);
+     logger_.log(EMANE::INFO_LEVEL, "MHAL %s reset num_prb to 6", __func__);
 
      // set to full bandwidth during cell search, 
      // when the mib is detected, the bandwidth will be adjusted
-     pRadioModel_->setNumResourceBlocks(100);
+     pRadioModel_->setNumResourceBlocks(6);
    }
 
   pRadioModel_->setFrequenciesOfInterest(searchMode);

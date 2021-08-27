@@ -209,7 +209,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
          {
           if(rxNumResourceBlocks % 2)
            {
-             bwIter = downlinkMap_.find(75);
+             bwIter = downlinkMap_.find(7);
 
              if(bwIter == downlinkMap_.end())
               {
@@ -220,7 +220,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                         "UEMessageProcessor",
                                         __func__,
                                         rxNumResourceBlocks,
-                                        75,
+                                        7,
                                         downlinkMap_.size());
 
                 return false;
@@ -228,7 +228,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
           }
          else
           {
-            bwIter = downlinkMap_.find(100);
+            bwIter = downlinkMap_.find(6);
 
             if(bwIter == downlinkMap_.end())
               {
@@ -239,7 +239,7 @@ EMANE::Models::LTE::UEMessageProcessor::noiseTestChannelMessage(const EMANELTE::
                                         "UEMessageProcessor",
                                         __func__,
                                         rxNumResourceBlocks,
-                                        100,
+                                        6,
                                         downlinkMap_.size());
 
                 return false;

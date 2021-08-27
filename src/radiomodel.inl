@@ -757,11 +757,11 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
      // During cell searchMode the ue doesn't know the enb bandwidth or the frequencies
      // which the enb is transmitting on. The enb may be configured for a bandwidth
      // that contains an even or an odd number of resource blocks. When told to
-     // search, register FOI for the largest even (100) and odd (75) resource block
-     // bandwidths to ensure receipt of enb packets from the phy for any enb.
+     // search, register FOI for smallest even (6) and odd (7) resource block
+     // bandwidths that ensure reception of the center MIB to decode the enb bandwidth.
      if(searchMode)
       {
-        if(u32NumResourceBlocks_ != 100)
+        if(u32NumResourceBlocks_ != 6)
          {
            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                    EMANE::ERROR_LEVEL,
@@ -773,11 +773,11 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
            return;
          }
 
-        EMANELTE::FrequencyResourceBlockMap rx75FreqToRBMap{};
+        EMANELTE::FrequencyResourceBlockMap rx7freqtorbmap{};
 
-        for(uint32_t rbidx = 0; rbidx < 75; ++rbidx)
+        for(uint32_t rbidx = 0; rbidx < 7; ++rbidx)
          {
-           const auto frequencyHz = getResourceBlockFrequency(rbidx, rxFreqHz, 75); // rx frequencyHz
+           const auto frequencyHz = getResourceBlockFrequency(rbidx, rxFreqHz, 7); // rx frequencyHz
 #if 0
            LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                    EMANE::DEBUG_LEVEL,
@@ -790,14 +790,14 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
                                    frequencyHz);
 #endif
 
-           rx75FreqToRBMap.emplace(frequencyHz, rbidx);
+           rx7freqtorbmap.emplace(frequencyHz, rbidx);
 
            allRxFrequencySetHz.emplace(frequencyHz);
 
            carrierRxFrequencySetHz[carrierIndex].insert(frequencyHz);
          }
 
-       messageProcessor_[carrierIndex]->swapSearchFrequencyMaps(rxFreqToRBMap, rx75FreqToRBMap, txFreqToRBMap);
+       messageProcessor_[carrierIndex]->swapSearchFrequencyMaps(rxFreqToRBMap, rx7freqtorbmap, txFreqToRBMap);
      }
     else
      {
