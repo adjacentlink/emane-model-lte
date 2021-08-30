@@ -40,17 +40,15 @@
 #include <ostatistic/statisticnumeric.h>
 #include <ostatistic/table.h>
 #include <array>
+#include <math.h>
 #include <string>
+#include <map>
 #include <sys/time.h>
 
 namespace {
 
   OpenStatistic::Table<std::uint64_t> * pNodeInfoTable_       = NULL;
-  OpenStatistic::Table<std::uint64_t> * pGWThruputTable_      = NULL;
-  OpenStatistic::Table<std::uint64_t> * pRLCThruputTable_     = NULL;
-  OpenStatistic::Table<std::uint64_t> * pRLCMRBThruputTable_  = NULL;
   OpenStatistic::Table<std::uint64_t> * pPhySearchStateTable_ = NULL;
-  OpenStatistic::Table<std::uint64_t> * pPhyTable_            = NULL;
   OpenStatistic::Table<std::uint64_t> * pCellTable_           = NULL;
   OpenStatistic::Table<std::uint64_t> * pMacTable_            = NULL;
   OpenStatistic::Table<std::uint64_t> * pULGrantRntiTable_    = NULL;
@@ -95,6 +93,13 @@ namespace {
   ChannelRNTICounter pdcchDB_;
   ChannelRNTICounter pdschDB_;
 
+  // track mac totals over time
+  // carrier <rxPkts, rxErrors, txPkts, txErrors> 
+  std::map<size_t, std::tuple<size_t, size_t, size_t, size_t>> macTableSums_; 
+#define GET_RXPKT(x)  std::get<0>(x)
+#define GET_RXERR(x)  std::get<1>(x)
+#define GET_TXPKT(x)  std::get<2>(x)
+#define GET_TXERR(x)  std::get<3>(x)
 
 }
 
@@ -144,40 +149,6 @@ void UESTATS::initialize(float report_interval_secs)
          OpenStatistic::Any{std::uint64_t{}}}); // 5 Time
 
 
-  // thruput table
-  pGWThruputTable_ =
-    registrar.registerTable<std::uint64_t>(
-      "GWThruputTable",
-      {"DLKbps", "ULKbps", "Time"},
-      OpenStatistic::StatisticProperties::NONE,
-      "Gateway Thruput Table in kbps");
-
-  // fixed size table, setup 1 row
-  pGWThruputTable_->addRow(
-        0,
-        {OpenStatistic::Any{std::uint64_t{}},   // 0 DL
-         OpenStatistic::Any{std::uint64_t{}},   // 1 UL
-         OpenStatistic::Any{std::uint64_t{}}}); // 2 Time
-
-
-  // variable length rlc thruput table
-  pRLCThruputTable_ =
-    registrar.registerTable<std::uint64_t>(
-      "RLCThruputTable",
-      {"LCID", "DLKbps", "ULKbps", "Type", "Cap", "Size", "HighWater", "NumPush", "NumPushFail", "NumPop", "NumPopFail", "Cleared", "Time"},
-      OpenStatistic::StatisticProperties::NONE,
-      "RLC Thruput Table in kbps");
-
-
-  // variable length rlc mrb thruput table
-  pRLCMRBThruputTable_ =
-    registrar.registerTable<std::uint64_t>(
-      "RLCMRBThruputTable",
-      {"LCID", "DLKbps", "Type", "Cap", "Size", "HighWater", "NumPush", "NumPushFail", "NumPop", "NumPopFail", "Cleared", "Time"},
-      OpenStatistic::StatisticProperties::NONE,
-      "RLC MRB Thruput Table in kbps");
-
-
   // variable length cell table
   pCellTable_ =
     registrar.registerTable<std::uint64_t>(
@@ -191,49 +162,9 @@ void UESTATS::initialize(float report_interval_secs)
   pMacTable_ =
     registrar.registerTable<std::uint64_t>(
       "MACTable",
-      {"ULPkts", "ULErr", "ULKbps", "ULPkts", "ULErr", "DLKbps", "ULBuffer", "DLRetxAvg", "ULRetxAvg", "Time"},
+      {"Carrier", "ULPkts", "ULPktSum", "ULErr", "ULErrSum", "ULKbps", "ULPkts", "DLPktSum", "DLErr", "DLErrSum", "DLKbps", "ULBuffer", "DLRetxAvg", "ULRetxAvg", "Time"},
       OpenStatistic::StatisticProperties::NONE,
       "Mac Table");
-
-   // fixed size table, setup 1 row
-   pMacTable_->addRow(
-        0,
-        {OpenStatistic::Any{std::uint64_t{}},   // 0 ULPkts
-         OpenStatistic::Any{std::uint64_t{}},   // 1 ULErr 
-         OpenStatistic::Any{std::uint64_t{}},   // 2 ULRate
-         OpenStatistic::Any{std::uint64_t{}},   // 3 DLPkts
-         OpenStatistic::Any{std::uint64_t{}},   // 4 DLErr
-         OpenStatistic::Any{0.0},               // 5 DLRate
-         OpenStatistic::Any{std::uint64_t{}},   // 6 ULBuffer
-         OpenStatistic::Any{0.0},               // 7 DLRetxAvg
-         OpenStatistic::Any{0.0},               // 8 ULRetxAvg
-         OpenStatistic::Any{std::uint64_t{}}}); // 9 Time
-
-  // phy table
-  pPhyTable_ =
-    registrar.registerTable<std::uint64_t>(
-      "PHYTable",
-      {"CFO", "SFO", "DLSINR", "DLNoise", "DLRSRP", "DLRSRQ", "DLRSSI", "DLMCS", "DLPathLoss", "DLMbps", "ULMCS", "ULPower", "ULMbps", "Time"},
-      OpenStatistic::StatisticProperties::NONE,
-      "Phy Table");
-
-   // fixed size table, setup 1 row
-   pPhyTable_->addRow(
-        0,
-        {OpenStatistic::Any{0.0},          // 0  CFO
-         OpenStatistic::Any{0.0},          // 1  SFO 
-         OpenStatistic::Any{0.0},          // 2  DLSINR
-         OpenStatistic::Any{0.0},          // 3  DLNoise
-         OpenStatistic::Any{0.0},          // 4  DLRSRP
-         OpenStatistic::Any{0.0},          // 5  DLRSRQ
-         OpenStatistic::Any{0.0},          // 6  DLRSSI
-         OpenStatistic::Any{0.0},          // 7  DLMCS
-         OpenStatistic::Any{0.0},          // 8  DLPathLoss
-         OpenStatistic::Any{0.0},          // 9  DLMbps
-         OpenStatistic::Any{0.0},          // 10 ULMCS
-         OpenStatistic::Any{0.0},          // 11 ULPower
-         OpenStatistic::Any{0.0},          // 12 ULMbps
-         OpenStatistic::Any{uint64_t{}}}); // 13 Time
 
    // variable length tables
    pDlIPTrafficTable_ =
@@ -359,106 +290,36 @@ void UESTATS::setEMMState(const char * state)
 }
 
 
-void UESTATS::setRLCMetrics(const UESTATS::RLCMetrics & metrics)
-{
-  if(pRLCThruputTable_)
-   {
-    pRLCThruputTable_->clear();
-
-    for(size_t n = 0; n < metrics.qmetrics_.size(); ++n)
-     { 
-       pRLCThruputTable_->addRow(n,
-                                 {OpenStatistic::Any{n},                                   // LCID
-                                  OpenStatistic::Any{1e3 * metrics.dl_mbps_[n]},           // DL kbps
-                                  OpenStatistic::Any{1e3 * metrics.ul_mbps_[n]},           // UL kbps
-                                  OpenStatistic::Any{metrics.qmetrics_[n].typeToString()}, // type
-                                  OpenStatistic::Any{metrics.qmetrics_[n].capacity_},      // capacity
-                                  OpenStatistic::Any{metrics.qmetrics_[n].currSize_},      // currsize
-                                  OpenStatistic::Any{metrics.qmetrics_[n].highWater_},     // highwater
-                                  OpenStatistic::Any{metrics.qmetrics_[n].numPush_},       // numPush
-                                  OpenStatistic::Any{metrics.qmetrics_[n].numPushFail_},   // numPushFail
-                                  OpenStatistic::Any{metrics.qmetrics_[n].numPop_},        // numPop
-                                  OpenStatistic::Any{metrics.qmetrics_[n].numPopFail_},    // numPopFail
-                                  OpenStatistic::Any{metrics.qmetrics_[n].numCleared_},    // numCleared
-                                  OpenStatistic::Any{time(NULL)}});                        // timestamp
-      }
-   }
-
-  if(pRLCMRBThruputTable_)
-   {
-    pRLCMRBThruputTable_->clear();
-
-    for(size_t n = 0; n < metrics.mrb_qmetrics_.size(); ++n)
-     { 
-       pRLCMRBThruputTable_->addRow(n,
-                                    {OpenStatistic::Any{n},                                       // LCID
-                                     OpenStatistic::Any{1e3 * metrics.dl_mrb_mbps_[n]},           // DL kbps
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].typeToString()}, // type
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].capacity_},      // capacity
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].currSize_},      // currsize
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].highWater_},     // highwater
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].numPush_},       // numPush
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].numPushFail_},   // numPushFail
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].numPop_},        // numPop
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].numPopFail_},    // numPopFail
-                                     OpenStatistic::Any{metrics.mrb_qmetrics_[n].numCleared_},    // numCleared
-                                     OpenStatistic::Any{time(NULL)}});                            // timestamp
-      }
-   }
-}
-
-
-void UESTATS::setGWMetrics(const UESTATS::GWMetrics & metrics)
-{
-  if(pGWThruputTable_)
-   {
-     pGWThruputTable_->setCell(0, 0, OpenStatistic::Any{1e3 * metrics.dl_mbps_}); // kbps
-     pGWThruputTable_->setCell(0, 1, OpenStatistic::Any{1e3 * metrics.ul_mbps_}); // kbps
-     pGWThruputTable_->setCell(0, 2, OpenStatistic::Any{time(NULL)});             // timestamp
-   }
-}
-
-
 void UESTATS::setMACMetrics(const UESTATS::MACMetrics & metrics)
 {
   if(pMacTable_)
    {
-     pMacTable_->setRow(
-       0,
-       {OpenStatistic::Any{metrics.tx_pkts_},
-        OpenStatistic::Any{metrics.tx_errors_},
-        OpenStatistic::Any{metrics.tx_brate_kbps_/report_interval_secs_},
-        OpenStatistic::Any{metrics.rx_pkts_},
-        OpenStatistic::Any{metrics.rx_errors_},
-        OpenStatistic::Any{metrics.rx_brate_kbps_/report_interval_secs_},
-        OpenStatistic::Any{metrics.ul_buffer_},
-        OpenStatistic::Any{metrics.dl_retx_avg_},
-        OpenStatistic::Any{metrics.ul_retx_avg_},
-        OpenStatistic::Any{time(NULL)}});
-   }
-}
+     pMacTable_->clear();
 
+     for(size_t n = 0; n < metrics.size(); ++n)
+      {
+       const auto & metric = metrics[n];
 
-void UESTATS::setPHYMetrics(const UESTATS::PHYMetrics & metrics)
-{
-  if(pPhyTable_)
-   {
-     pPhyTable_->setRow(
-        0,
-        {OpenStatistic::Any{metrics.sync_cfo_},
-         OpenStatistic::Any{metrics.sync_sfo_},
-         OpenStatistic::Any{metrics.dl_sinr_},
-         OpenStatistic::Any{metrics.dl_noise_},
-         OpenStatistic::Any{metrics.dl_rsrp_},
-         OpenStatistic::Any{metrics.dl_rsrq_},
-         OpenStatistic::Any{metrics.dl_rssi_},
-         OpenStatistic::Any{metrics.dl_mcs_},
-         OpenStatistic::Any{metrics.dl_pathloss_},
-         OpenStatistic::Any{metrics.dl_mabr_mbps_},
-         OpenStatistic::Any{metrics.ul_mcs_},
-         OpenStatistic::Any{metrics.ul_power_},
-         OpenStatistic::Any{metrics.ul_mabr_mbps_},
-         OpenStatistic::Any{time(NULL)}});
+       auto & sums = macTableSums_[n];
+
+       pMacTable_->addRow(
+         n,
+         {OpenStatistic::Any{n},
+          OpenStatistic::Any{metric.tx_pkts_},
+          OpenStatistic::Any{GET_TXPKT(sums) += metric.tx_pkts_},
+          OpenStatistic::Any{metric.tx_errors_},
+          OpenStatistic::Any{GET_TXERR(sums) += metric.tx_errors_},
+          OpenStatistic::Any{roundf(metric.tx_brate_kbps_/report_interval_secs_)},
+          OpenStatistic::Any{metric.rx_pkts_},
+          OpenStatistic::Any{GET_RXPKT(sums) += metric.rx_pkts_},
+          OpenStatistic::Any{metric.rx_errors_},
+          OpenStatistic::Any{GET_RXERR(sums) += metric.rx_errors_},
+          OpenStatistic::Any{roundf(metric.rx_brate_kbps_/report_interval_secs_)},
+          OpenStatistic::Any{metric.ul_buffer_},
+          OpenStatistic::Any{metric.dl_retx_avg_},
+          OpenStatistic::Any{metric.ul_retx_avg_},
+          OpenStatistic::Any{time(NULL)}});
+      }
    }
 }
 
