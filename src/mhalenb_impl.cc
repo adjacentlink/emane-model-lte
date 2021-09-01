@@ -248,7 +248,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                             frequencySegment.getDuration()};
 
             // min/max sot and rx power
-            const EMANE::Models::LTE::SegmentSOTValue value{otaInfo.sot_, otaInfo.sot_, rxPower_mW};
+            const EMANE::Models::LTE::SegmentSOTValue segmentValue{otaInfo.sot_,
+                                                                   otaInfo.sot_,
+                                                                   rxPower_mW};
 
 #if 0
             logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, RxAntenna %u, src %hu, contributes segmentKey <%lu, %ld, %ld> power %f dBm", 
@@ -266,14 +268,14 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             if(iter == segmentSOTmap.end())
              {
                // new entry             
-               segmentSOTmap.emplace(segmentKey, value);
+               segmentSOTmap.emplace(segmentKey, segmentValue);
              }
             else
              {
                // update sot/power
                auto & minSot(std::get<0>(iter->second));
                auto & maxSot(std::get<1>(iter->second));
-               auto partialRxPower_mW(std::get<2>(iter->second));
+               auto & partialRxPower_mW(std::get<2>(iter->second));
  
                minSot = std::min(minSot, otaInfo.sot_);
                maxSot = std::max(maxSot, otaInfo.sot_);
@@ -313,9 +315,14 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
          continue;
        }
 
-     for(auto & frequencySegment : antennaInBandPower.second)
+     for(auto & segmentSOTMap : antennaInBandPower.second)
       {
-        const auto segmentFrequencyHz = std::get<0>(frequencySegment.first);
+        const auto & segmentKeyInBand   = segmentSOTMap.first;
+        const auto & segmentValueInBand = segmentSOTMap.second;
+
+        const auto & segmentFrequencyHz = std::get<0>(segmentKeyInBand);
+        const auto & offset             = std::get<1>(segmentKeyInBand);
+        const auto & duration           = std::get<2>(segmentKeyInBand);
 
         const auto spectrumWindow = spectrumWindowCache->second.find(segmentFrequencyHz);
 
@@ -346,13 +353,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
            continue;
          }
 
-        const auto offset   = std::get<1>(frequencySegment.first);
-        const auto duration = std::get<2>(frequencySegment.first);
-
-        EMANE::TimePoint minSot, maxSot;
-
-        float rxPower_mW = 0;
-        std::tie(minSot, maxSot, rxPower_mW) = frequencySegment.second;
+        const auto & minSot     = std::get<0>(segmentValueInBand);
+        const auto & maxSot     = std::get<1>(segmentValueInBand);
+        const auto & rxPower_mW = std::get<2>(segmentValueInBand);
 
         const auto minSor = minSot + offset;
         const auto maxEor = maxSot + offset + duration;
@@ -363,18 +366,20 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                                    minSor,
                                                                    maxEor);
 
-        const EMANE::Models::LTE::SegmentKey segmentKey{segmentFrequencyHz, offset, duration};
+        const EMANE::Models::LTE::SegmentKey segmentKeyOutOfBand{segmentFrequencyHz, offset, duration};
 
-        antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(segmentKey, rangeInfo.first);
+        antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(segmentKeyOutOfBand, rangeInfo.first);
 
 #if 0
-        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 2nd, RxAntenna %u, add segmentKey <%lu, %ld, %ld> power %f dBm", 
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 2nd, RxAntenna %u, add segmentKey <%lu, %ld, %ld> rx power %f dBm, noise %f dB, status %d", 
                     __func__,
                     rxAntennaId,
-                    std::get<0>(segmentKey),
-                    std::get<1>(segmentKey).count(),
-                    std::get<2>(segmentKey).count(),
-                    rangeInfo.first);
+                    std::get<0>(segmentKeyOutOfBand),
+                    std::get<1>(segmentKeyOutOfBand).count(),
+                    std::get<2>(segmentKeyOutOfBand).count(),
+                    EMANELTE::MW_TO_DB(rxPower_mW),
+                    rangeInfo.first,
+                    rangeInfo.second);
 #endif
 
       } // end second pass
