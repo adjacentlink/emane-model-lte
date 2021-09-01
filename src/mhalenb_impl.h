@@ -73,7 +73,7 @@ namespace MHAL {
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
-    std::uint64_t get_tx_prb_frequency(int prb_index, std::uint64_t freq_hz);
+    std::uint64_t get_tx_prb_frequency(const int prb_index, const uint64_t freq_hz);
 
     void noise_processor(const uint32_t bin, const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache);
 
