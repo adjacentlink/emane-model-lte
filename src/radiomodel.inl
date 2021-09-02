@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 - Adjacent Link LLC, Bridgewater, New Jersey
+ * Copyright (c) 2019,2021 - Adjacent Link LLC, Bridgewater, New Jersey
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,6 +74,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
   u16SubId_{},
   pcrCurveURI_{},
   maxPropagationDelay_{},
+  frequencyTablesEnable_{},
   u64TxSeqNum_{},
   u32NumResourceBlocks_{},
   u32SymbolsPerSlot_{},
@@ -136,6 +137,11 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
                                                   "'omni;omni' for enb carrier aggregation "
                                                   "'sector{profile,az,el};sector{profile,az,el};sector{profile,az,el}' for enb multicell");
 
+  configRegistrar.registerNumeric<bool>("frequencytablesenable",
+                                        EMANE::ConfigurationProperties::DEFAULT,
+                                        {false},
+                                        "Enable to populate channel frequency statistic table "
+					"counts.");
 
   statisticManager_.registerStatistics(registrar);
 
@@ -163,7 +169,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
       if(item.first == "subid")
         {
           u16SubId_ = EMANE::Utils::ParameterConvert(item.second[0].asString()).toUINT16();
- 
+
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
                                   "%s %03hu %s: %s = %hu",
@@ -176,7 +182,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
       else if(item.first == "maxpropagationdelay")
         {
           maxPropagationDelay_ = EMANE::Microseconds(EMANE::Utils::ParameterConvert(item.second[0].asString()).toUINT64());
- 
+
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
                                   "%s %03hu %s: %s = %lu",
@@ -234,6 +240,19 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.second[0].asString().c_str());
 
           sAntennaInfo_ = item.second[0].asString();
+        }
+      else if(item.first == "frequencytablesenable")
+        {
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::INFO_LEVEL,
+                                  "%s %03hu %s: %s = %s",
+                                  pzModuleName_,
+                                  id_,
+                                  __func__,
+                                  item.first.c_str(),
+                                  item.second[0].asBool() ? "on" : "off");
+
+          frequencyTablesEnable_ = item.second[0].asBool();
         }
       else
         {
@@ -324,7 +343,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
             antennas_.emplace_back(antenna);
           }
        }
-      
+
       if((pos = sAntennaInfo_.find(";", pos)) == std::string::npos)
        {
          break;
@@ -386,7 +405,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::postSta
                           id_,
                           __func__);
 
-  ControlMessages controlMsgs; 
+  ControlMessages controlMsgs;
 
   // add new antenna/freqs
   for(const auto & antenna : antennas_)
@@ -431,9 +450,9 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 {
   // no-op
 }
- 
 
-        
+
+
 template <class RadioStatManager, class MessageProcessor>
 void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::processDownstreamPacket(EMANE::DownstreamPacket &,
                                                                            const EMANE::ControlMessages &)
@@ -626,19 +645,19 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getResourceB
 template <class RadioStatManager, class MessageProcessor>
 EMANE::SpectrumWindow
 EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getNoise(const uint32_t antennaIndex,
-                                                                             const EMANELTE::FrequencyHz frequency, 
-                                                                             const EMANE::Microseconds & span, 
+                                                                             const EMANELTE::FrequencyHz frequency,
+                                                                             const EMANE::Microseconds & span,
                                                                              const EMANE::TimePoint & sor)
 {
   const auto tp = EMANE::Clock::now();
 
   EMANE::SpectrumWindow spectrumWindow;
 
-  try 
+  try
    {
      spectrumWindow = pRadioService_->spectrumService().requestAntenna(antennaIndex, frequency, span, sor);
-   } 
-  catch(EMANE::SpectrumServiceException & exp) 
+   }
+  catch(EMANE::SpectrumServiceException & exp)
     {
       const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tp - sor);
 
@@ -685,7 +704,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   FrequencySet allRxFrequencySetHz, allTxFrequencySetHz;
 
   // rx frequencies per carrier
-  std::map<uint32_t, FrequencySet> carrierRxFrequencySetHz; 
+  std::map<uint32_t, FrequencySet> carrierRxFrequencySetHz;
 
   // for each carrier (not cell which is the case for an enb with multiple cells)
   for(const auto & entry : frequencyTable_)
@@ -807,7 +826,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
 
 
   // now assign antenna and freq info
-  ControlMessages controlMsgs; 
+  ControlMessages controlMsgs;
 
   // remove old antenna(s)
   for(const auto & antenna : antennas_)
@@ -862,7 +881,10 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::setFrequenci
   sendDownstreamControl(controlMsgs);
 
   // update stats
-  statisticManager_.updateFrequencies(allRxFrequencySetHz, allTxFrequencySetHz);
+  if(frequencyTablesEnable_)
+   {
+     statisticManager_.updateFrequencies(allRxFrequencySetHz, allTxFrequencySetHz);
+   }
 }
 
 
@@ -886,7 +908,8 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
       // get the all frequency segments for this carrier
       const auto frequencySegments = messageProcessor_[txCarrierId]->buildFrequencySegments(txControl,
                                                                                             txFrequencyHz,
-                                                                                            txCarrierId);
+                                                                                            txCarrierId,
+											    frequencyTablesEnable_);
       EMANELTE::FrequencySet frequencySet;
 
       // check for unique
@@ -943,7 +966,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::sendDownstre
    pkt.prepend(sSerialization.c_str(), sSerialization.length());
 
    pkt.prependLengthPrefixFraming(sSerialization.length());
-   
+
    sendDownstreamPacket(EMANE::CommonMACHeader{u16SubId_, ++u64TxSeqNum_},
                         pkt,
                         {Controls::MIMOTransmitPropertiesControlMessage::create(std::move(frequencyGroups), antennas_),
@@ -1024,7 +1047,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
          const auto tpTxTime = pMIMOReceivePropertiesControlMessage->getTxTime();
 
          const auto recvInfos = pMIMOReceivePropertiesControlMessage->getAntennaReceiveInfos();
-  
+
 #if 0
          const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tpTxTime - tpNow);
 
@@ -1090,7 +1113,10 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
              return;
           }
 
-         statisticManager_.updateRxTableCounts(txControl, rxCarriersOfInterest_);
+         if(frequencyTablesEnable_)
+          {
+            statisticManager_.updateRxTableCounts(txControl, rxCarriersOfInterest_);
+          }
 
 
          pMHAL_->handle_upstream_msg(                               // opaque data

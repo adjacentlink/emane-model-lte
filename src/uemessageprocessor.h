@@ -90,7 +90,8 @@ namespace LTE
 
     EMANE::FrequencySegments buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
                                                     const uint64_t carrierFreqHz,
-                                                    const uint32_t carrierId);
+                                                    const uint32_t carrierId,
+						    const bool frequencyTablesEnable);
 
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
                                  const EMANELTE::MHAL::ChannelMessage & channel_msg,

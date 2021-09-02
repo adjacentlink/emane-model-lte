@@ -237,7 +237,8 @@ EMANE::Models::LTE::ENBMessageProcessor::addTxSegments(const EMANELTE::MHAL::Cha
 EMANE::FrequencySegments
 EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
                                                                 const uint64_t carrierFrequencyHz,
-                                                                const uint32_t carrierId)
+                                                                const uint32_t carrierId,
+                                                                const bool frequencyTablesEnable)
 {
   EMANE::FrequencySegments result;
 
@@ -252,7 +253,10 @@ EMANE::Models::LTE::ENBMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::
 
         const EMANE::Microseconds slotDuration{txControl.subframe_duration_microsecs()/2};
 
-        statisticManager_.updateTxTableCounts(txControl);
+        if(frequencyTablesEnable)
+         {
+           statisticManager_.updateTxTableCounts(txControl);
+         }
 
         addTxSegments(carrier.downlink().pcfich(), tti_tx, cfi);
 

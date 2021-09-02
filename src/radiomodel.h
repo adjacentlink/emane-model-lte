@@ -164,6 +164,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       std::uint16_t u16SubId_;
       std::string pcrCurveURI_;
       EMANE::Microseconds maxPropagationDelay_;
+      bool frequencyTablesEnable_;
 
       // <carrierIndex, <rx/tx freq>>
       using FrequencyTable = std::map<std::uint32_t, FrequencyPair>;

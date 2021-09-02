@@ -36,7 +36,7 @@
 
 
 EMANE::Models::LTE::UERadioStatisticManager::UERadioStatisticManager(EMANE::NEMId id,
-                                                                 EMANE::PlatformServiceProvider * pPlatformService) :
+                                                                     EMANE::PlatformServiceProvider * pPlatformService) :
   RadioStatisticManager{
     id,
     pPlatformService,

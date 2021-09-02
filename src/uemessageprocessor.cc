@@ -121,7 +121,8 @@ EMANE::Models::LTE::UEMessageProcessor::addTxSegments(const EMANELTE::MHAL::Chan
 EMANE::FrequencySegments
 EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
                                                                const uint64_t carrierFrequencyHz,
-                                                               const uint32_t carrierId)
+                                                               const uint32_t carrierId,
+                                                               const bool frequencyTablesEnable)
 {
   uint32_t tti_tx = txControl.tti_tx();
 
@@ -133,8 +134,11 @@ EMANE::Models::LTE::UEMessageProcessor::buildFrequencySegments(EMANELTE::MHAL::T
    {
      if((carrier.frequency_hz() == carrierFrequencyHz) &&
         (carrier.carrier_id()   == carrierId))
-      {       
-        statisticManager_.updateTxTableCounts(txControl);
+      {
+        if(frequencyTablesEnable)
+         {
+           statisticManager_.updateTxTableCounts(txControl);
+         }
 
         if(carrier.uplink().has_prach())
          {
