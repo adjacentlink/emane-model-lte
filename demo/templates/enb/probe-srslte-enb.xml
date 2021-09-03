@@ -3,7 +3,6 @@
     <SRSLTE.ENB.Tables.Counts enable="yes"/>
     <SRSLTE.ENB.Tables.MAC enable="yes"/>
     <SRSLTE.ENB.Tables.PHY enable="yes"/>
-    <SRSLTE.ENB.Tables.RLC enable="yes"/>
     <SRSLTE.ENB.Tables.Upper enable="yes"/>
   </probes>
 </probe-srslte-enb>
