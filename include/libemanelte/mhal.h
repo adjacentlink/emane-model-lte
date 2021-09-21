@@ -68,9 +68,9 @@ namespace MHAL {
      RxControl() :
        nemId_{},
        rx_seqnum_{},
-       rx_time_{},
-       tx_time_{},
-       sf_time_{},
+       rx_time_{0,0},
+       tx_time_{0,0},
+       sf_time_{0,0},
        avg_snr_{MIN_POWER_DB},
        avg_nf_{MIN_POWER_DB},
        peak_sum_{MIN_POWER_DB},

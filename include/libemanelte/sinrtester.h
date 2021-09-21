@@ -56,6 +56,8 @@ using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>
     public:
      SINRTester(const SINRTesterImpls & impls);
 
+     SINRTester();
+
      ~SINRTester();
 
      SINRTester & operator = (const SINRTester & rhs);
