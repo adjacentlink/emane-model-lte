@@ -324,6 +324,9 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
   // subframe end time
   const timeval tvLastSfEnd = timing_.getNextSfTime();
 
+  // clear any old messages
+  rxMessages.clear();
+
   timeval tvNow, tvDiff;
 
   // actual time now
