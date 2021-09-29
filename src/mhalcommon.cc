@@ -158,7 +158,15 @@ EMANELTE::MHAL::MHALCommon::send_msg(const Data & data,
 
       timersub(&tvSfTime, &tvAdjust, &tvSfTime);
     }
- 
+
+#if 0 
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s send seqnum %lu, sf_time %ld:%06ld", 
+              __func__,
+             txControl.tx_seqnum(),
+             tvSfTime.tv_sec,
+             tvSfTime.tv_usec);
+#endif
+
   send_downstream(data, txControl, EMANE::TimePoint(EMANE::Microseconds(tvToUseconds(tvSfTime))));
 }
 

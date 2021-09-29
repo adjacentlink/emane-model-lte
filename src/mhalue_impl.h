@@ -93,6 +93,8 @@ namespace MHAL {
     EMANE::Application::NEMs nems_;
     std::unique_ptr<EMANE::Application::NEMManager> pNEMManager_;
     EMANE::Models::LTE::UERadioModel * pRadioModel_;
+
+    uint64_t lastRxSeqNum_;
   };
 }
 }

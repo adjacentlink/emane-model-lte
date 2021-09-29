@@ -127,6 +127,8 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
 
 void EMANELTE::MHAL::MHALUEImpl::start()
 {
+  lastRxSeqNum_ = 0;
+
   MHALCommon::start(0);
 }
 
@@ -160,6 +162,17 @@ void EMANELTE::MHAL::MHALUEImpl::handle_upstream_msg(const Data & data,
     }
 
   MHALCommon::handle_upstream_msg(data, rxControl, otaInfo, txControl);
+
+  // check rx seq num
+  if((rxControl.rx_seqnum_ - 1) != lastRxSeqNum_)
+   {
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s rx seqnum jump %lu -> %lu", 
+                 __func__,
+                 lastRxSeqNum_,
+                 rxControl.rx_seqnum_);
+   }
+
+  lastRxSeqNum_ = rxControl.rx_seqnum_;
 }
 
 
