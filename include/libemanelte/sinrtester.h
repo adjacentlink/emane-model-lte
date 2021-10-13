@@ -36,7 +36,8 @@
 #ifndef EMANELTE_SINRTESTER_H
 #define EMANELTE_SINRTESTER_H
 
-#include <pthread.h>
+#include <map>
+#include <memory>
 #include "libemanelte/otacommon.pb.h"
 
 
@@ -44,47 +45,61 @@ namespace EMANELTE {
 namespace MHAL {
 
 class SINRTesterImpl;
-  
 
-class SINRTester
-{
-public:
-  SINRTester();
+// <carrier frequency, rxAntennaId, txAntennaId>
+using SINRTesterKey = std::tuple<uint64_t, uint32_t, uint32_t>;
+ 
+using SINRTesterImpls = std::map<SINRTesterKey, std::shared_ptr<SINRTesterImpl>>;
+ 
+ class SINRTester
+  {
+    public:
+     SINRTester(const SINRTesterImpls & impls);
 
-  struct SINRTesterResult {
-    bool bPassed_;
-    double sinr_dB_;
-    double noiseFloor_dBm_;
+     SINRTester();
 
-    SINRTesterResult() :
-      bPassed_{false},
-      sinr_dB_{0.0},
-      noiseFloor_dBm_{0.0}
-    { }
+     ~SINRTester();
 
-    SINRTesterResult(bool bPassed, double sinr, double noiseFloor) :
-      bPassed_{bPassed},
-      sinr_dB_{sinr},
-      noiseFloor_dBm_{noiseFloor}
-    { }
-  };
+     SINRTester & operator = (const SINRTester & rhs);
+
+     struct SINRTesterResult {
+       const bool   bPassed_;      // sinr passed curve check
+       const float  sinr_dB_;
+       const float  noiseFloor_dBm_;
+
+     SINRTesterResult() :
+       bPassed_{false},
+       sinr_dB_{-201.0f},
+       noiseFloor_dBm_{-201.0f}
+     { }
+
+     SINRTesterResult(const bool bPassed,
+                      const float sinr,
+                      const float noiseFloor) :
+       bPassed_{bPassed},
+       sinr_dB_{sinr},
+       noiseFloor_dBm_{noiseFloor}
+     { }
+    };
     
-  void setImpl(SINRTesterImpl * impl);
+   void release();
+  
+   void reset(const SINRTesterImpls & impls);
 
-  bool sinrCheck(CHANNEL_TYPE ctype);
+   SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
+                               const uint64_t carrrierFrequencyHz,
+                               const uint32_t rxAntennaId,
+                               const uint32_t carrierId) const;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti);
+   SINRTesterResult sinrCheck2(const CHANNEL_TYPE ctype,
+                               const uint16_t rnti,
+                               const uint64_t carrrierFrequencyHz,
+                               const uint32_t rxAntennaId,
+                               const uint32_t carrierId) const;
 
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype);
-
-  SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti);
-
-  void release();
-
-private:
-  SINRTesterImpl * impl_;
-  pthread_mutex_t mutex_;
-};
+  private:
+    SINRTesterImpls impls_;
+ };
 
 }
 }

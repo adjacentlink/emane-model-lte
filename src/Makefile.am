@@ -4,8 +4,8 @@ pkgconfig_DATA = libemanelte.pc
 lib_LTLIBRARIES = libemanelte.la
 
 libemanelte_la_CPPFLAGS=   \
- -I@top_srcdir@/include \
- $(AM_CFLAGS)              \
+ -I@top_srcdir@/include    \
+ $(AM_CPPFLAGS)            \
  $(libemane_CFLAGS)        \
  $(libostatistic_CFLAGS)
 

@@ -57,16 +57,16 @@ public:
 
   void stop();
 
-  void updateOrphanedMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateLateMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateExpiredMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateEnqueuedMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateDequeuedMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateDropSINRMessages(size_t subframe, std::uint64_t increment = 1);
-  void updateHandoffMessages(size_t subframe, std::uint64_t increment = 1);
+  void updateOrphanedMessages (size_t subframe, std::uint64_t increment = 1);
+  void updateLateMessages     (size_t subframe, std::uint64_t increment = 1);
+  void updateExpiredMessages  (size_t subframe, std::uint64_t increment = 1);
+  void updateEnqueuedMessages (size_t subframe, std::uint64_t increment = 1);
+  void updateDequeuedMessages (size_t subframe, std::uint64_t increment = 1);
+  void updateDropSINRMessages (size_t subframe, std::uint64_t increment = 1);
+  void updateHandoffMessages  (size_t subframe, std::uint64_t increment = 1);
   void updateSlotErrorMessages(size_t subframe, std::uint64_t increment = 1);
   
-  void updateRxPacketOtaDelay(size_t subframe, double seconds);
+  void updateRxPacketOtaDelay (size_t subframe, double seconds);
   void updateNoiseProcessDelay(size_t subframe, double seconds);
 
   // src, <signal, noiseFloor, samples>
@@ -75,7 +75,7 @@ public:
 
   void updateReceptionTable(const ReceptionInfoMap & receptionInfoMap);
 
-  void tallySubframeProcessTime(const size_t subframe, const timeval & tv_diff, bool bWasBlocked);
+  void tallySubframeProcessTime(const size_t subframe, const timeval & tv_diff);
   
 private:
   EMANE::Application::Logger & logger_;

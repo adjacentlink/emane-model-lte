@@ -39,6 +39,10 @@ namespace {
 std::map<std::uint32_t, EMANE::Models::LTE::ResourceBlockList> centerResourceBlocks_ =
   {
     {6,   { 0, 1, 2, 3, 4, 5   }},
+    // 7 is not an operational bandwidth. it is used by the ue during cell search to overlap
+    // with the central resource blocks carrying the PBCH when the enb is configured with
+    // an odd numbered bandwidth (15, 25, 75).
+    {7,   { 0, 1, 2, 3, 4, 5, 6}},
     {15,  { 4, 5, 6, 7, 8, 9,10}},
     {25,  { 9,10,11,12,13,14,15}},
     {50,  {22,23,24,25,26,27   }},

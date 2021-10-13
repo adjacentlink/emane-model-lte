@@ -1,5 +1,6 @@
-<probe-srslte-epc address="127.0.0.1" port="47100">
+<probe-srslte-epc address="127.0.0.1" port="47001">
   <probes>
+    <SRSLTE.EPC.Tables.NAS enable="yes"/>
     <SRSLTE.EPC.Tables.Traffic enable="yes"/>
   </probes>
 </probe-srslte-epc>

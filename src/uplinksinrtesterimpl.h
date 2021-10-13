@@ -45,36 +45,39 @@ namespace EMANELTE {
 namespace MHAL {
 
 typedef std::pair<CHANNEL_TYPE, bool> ChannelSINRResult;
-typedef std::map<CHANNEL_TYPE, bool> ChannelSINRResults;
+typedef std::map <CHANNEL_TYPE, bool> ChannelSINRResults;
 
 typedef std::pair<CHANNEL_TYPE, uint16_t> ChannelRNTI;
 typedef std::pair<ChannelRNTI, bool> RNTIChannelSINRResult;
-typedef std::map<ChannelRNTI, bool> RNTIChannelSINRResults;
+typedef std::map <ChannelRNTI, bool> RNTIChannelSINRResults;
 
 
 class UplinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
-  UplinkSINRTesterImpl(double sinr, double noiseFloor) : 
+  UplinkSINRTesterImpl(const float sinr, 
+                       const float noiseFloor, 
+                       const uint64_t carrierFrequencyHz,
+                       const uint32_t carrierId) : 
    sinr_dB_{sinr},
-   noiseFloor_dBm_{noiseFloor}
+   noiseFloor_dBm_{noiseFloor},
+   carrierFrequencyHz_{carrierFrequencyHz},
+   carrierId_{carrierId}
   { };
  
   ChannelSINRResults channelSINRResults_;
 
   RNTIChannelSINRResults rntiChannelSINRResults_;
 
-  bool sinrCheck(CHANNEL_TYPE ctype) override;
+  SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;  
-
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
-
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+  SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti) override;  
 
 private:
-  const double sinr_dB_;
-  const double noiseFloor_dBm_;
+  const float sinr_dB_;
+  const float noiseFloor_dBm_;
+  const uint64_t carrierFrequencyHz_;
+  const uint32_t carrierId_;
 };
 
 }

@@ -51,7 +51,8 @@ namespace MHAL {
       pRadioModel_{NULL}
     {}
 
-    void initialize(const mhal_config_t & mhal_config,
+    void initialize(uint32_t idx,
+                    const mhal_config_t & mhal_config,
                     const ENB::mhal_enb_config_t & mhal_enb_config);
 
     void init_emane();
@@ -63,30 +64,31 @@ namespace MHAL {
                          const EMANE::TimePoint & timestamp);
 
     void handle_upstream_msg(const Data & data,
-                             const RxData & rxData,
+                             const RxControl & rxControl,
                              const PHY::OTAInfo & otaInfo,
                              const TxControlMessage & txControl);
 
-    bool get_messages(RxMessages & messages, timeval & tv_sor);
-
-    EMANE::SpectrumWindow get_noise(FrequencyHz frequencyHz,
+    EMANE::SpectrumWindow get_noise(const uint32_t antennaIndex,
+                                    const FrequencyHz frequencyHz,
                                     const EMANE::Microseconds & span,
                                     const EMANE::TimePoint & sor);
 
-    long long unsigned int get_tx_prb_frequency(int prb_index);
+    std::uint64_t get_tx_prb_frequency(const int prb_index, const uint64_t freq_hz);
 
-    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::SpectrumWindowCache & spectrumWindowCache);
+    void noise_processor(const uint32_t bin, const EMANE::Models::LTE::RxAntennaSpectrumWindowCache & rxAntennaSpectrumWindowCache);
 
   private:
-    std::uint32_t physicalCellId_;
-    EMANE::Application::NEMs nems_;
+    std::set<std::uint32_t>   physicalCellIds_;
+    EMANE::Application::NEMs  nems_;
     std::unique_ptr<EMANE::Application::NEMManager> pNEMManager_;
     EMANE::Models::LTE::ENBRadioModel * pRadioModel_;
 
-    void putSINRResult(const ChannelMessage & channel_message,
-                       RxControl & rxControl,
-                       UplinkSINRTesterImpl * pSINRTester,
-                       bool received);
+    void putSINRResult_i(const ChannelMessage & channel_message,
+                         const RxControl & rxControl,
+                         UplinkSINRTesterImpl * pSINRTester,
+                         const bool received);
+
+    bool checkPci_i(const TxControlMessage & txControl) const;
   };
 }
 }

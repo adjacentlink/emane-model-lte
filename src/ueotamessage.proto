@@ -43,17 +43,6 @@ import "otacommon.proto";
 message UE_UL_Message
 {
 // ********** BEGIN MSG DEFS ***********
- message Transmitter 
-  {
-    // cell radio net temp id
-    required uint32 crnti = 1;
-
-    // Physical Cell Id
-    required uint32  phy_cell_id = 2;
-
-    // tx tti
-    required uint32 tti = 3;
-  }
 
  // random access channel
  message PRACH
@@ -78,6 +67,8 @@ message UE_UL_Message
    }
 
    repeated Grant grant = 1;
+
+   required uint32 seqnum = 2;
  }
 
  // uplink shared channel
@@ -92,15 +83,36 @@ message UE_UL_Message
    }
 
    repeated Grant grant = 1;
+
+   required uint32 seqnum = 2;
  }
+
+ // 1 to 5 carriers [0-4]
+ message CarrierMessage
+  {
+    // carried id used to map to antenna id
+    required uint32 carrier_id = 1;
+
+    // tx center freq for this carrier
+    required uint64 frequency_hz = 2;
+
+    // Physical Cell Id
+    required uint32  phy_cell_id = 3;
+
+    optional PRACH   prach       = 4;
+    optional PUCCH   pucch       = 5;
+    optional PUSCH   pusch       = 6;
+  }
+
 // ********** END MSG DEFS ***********
 
+ // cell radio net temp id
+ required uint32 crnti = 1;
 
- required Transmitter transmitter = 1;
+ // tx tti
+ required uint32 tti = 2;
 
- optional PRACH prach = 2;
+ // Carrier(s)
+ repeated CarrierMessage carriers = 3;
 
- optional PUCCH pucch = 3;
-
- optional PUSCH pusch = 4;
 }

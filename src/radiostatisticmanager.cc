@@ -117,6 +117,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateFrequencies(const EMANE::Freque
 
       for(auto freq : tx)
         {
+#if 0
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::DEBUG_LEVEL,
                                   "RadioModel %03hu %s adding channeltype=%d TX table freq=%lu.",
@@ -124,6 +125,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateFrequencies(const EMANE::Freque
                                   __func__,
                                   channel_type,
                                   freq);
+#endif
 
           std::vector<EMANE::Any> v{
             EMANE::Any{std::uint64_t{freq}},                           // 0  key resource block frequency
@@ -160,6 +162,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateFrequencies(const EMANE::Freque
 
       for(auto freq : rx)
         {
+#if 0
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::DEBUG_LEVEL,
                                   "RadioModel %03hu %s adding channeltype=%d RX table freq=%lu.",
@@ -167,6 +170,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateFrequencies(const EMANE::Freque
                                   __func__,
                                   channel_type,
                                   freq);
+#endif
 
           std::vector<EMANE::Any> v{
             EMANE::Any{std::uint64_t{freq}},                           // 0  key resource block frequency
@@ -238,6 +242,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
 
       count_iter->second[slot_index][freq]++;
 
+#if 0
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
                              "RadioModel %03hu %s %s channel_type=%d slot_index=%d freq=%lu count=%lu.",
@@ -248,6 +253,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
                              slot_index,
                              freq,
                              count_iter->second[slot_index][freq]);
+#endif
 
       try
        {
@@ -276,6 +282,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
 
       count_iter->second[slot_index][freq]++;
 
+#if 0
       LOGGER_VERBOSE_LOGGING(pPlatformService_->logService(),
                              EMANE::DEBUG_LEVEL,
                              "RadioModel %03hu %s %s channel_type=%d slot_index=%d freq=%lu count=%lu.",
@@ -286,6 +293,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
                              slot_index,
                              freq,
                              count_iter->second[slot_index][freq]);
+#endif
 
       try
        {
@@ -308,7 +316,7 @@ EMANE::Models::LTE::RadioStatisticManager::updateTableCounts(
 }
 
 
-void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency,  double noiseFloor_mW)
+void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency,  float noiseFloor_mW)
 {
   auto iter = rxFrequencyMap_.find(frequency);
 
@@ -328,7 +336,7 @@ void EMANE::Models::LTE::RadioStatisticManager::updateRxFrequencyAvgNoiseFloor(E
   else
     {
       uint64_t & count = std::get<RX_FREQ_COUNT>(iter->second);
-      double & sum_dB = std::get<RX_FREQ_NF>(iter->second);
+      float & sum_dB = std::get<RX_FREQ_NF>(iter->second);
 
       count  += 1;
       sum_dB += EMANELTE::MW_TO_DB(noiseFloor_mW);

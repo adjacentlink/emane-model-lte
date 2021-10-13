@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<emane-spectrum-monitor id="${id}">
+  <emulator>
+      <param name="otamanagerchannelenable"   value="on"/>
+      <param name="otamanagerdevice"          value="${control_interface}"/>
+      <param name="otamanagergroup"           value="224.1.2.8:45702"/>
+      <param name="eventservicegroup"         value="224.1.2.8:45703"/>
+      <param name="eventservicedevice"        value="${control_interface}"/>
+  </emulator>
+  <physical-layer>
+    <param name="propagationmodel"            value="precomputed"/>
+    <param name="fixedantennagainenable"      value="${fixedantennagainenable}"/>
+  </physical-layer>
+</emane-spectrum-monitor>
+

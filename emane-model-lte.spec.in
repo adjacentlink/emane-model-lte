@@ -21,7 +21,7 @@ EMANE MODEL LTE
 %setup -q
 
 %build
-%configure
+%configure --without-verbose-logging
 make
 
 %install
@@ -53,6 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_datadir}/emane-model-lte/demo/templates/epc/*
 %doc %{_datadir}/emane-model-lte/demo/templates/host/*
 %doc %{_datadir}/emane-model-lte/demo/templates/ue/*
+%doc %{_datadir}/emane-model-lte/demo/templates/common_radio/*
 
 
 %package devel

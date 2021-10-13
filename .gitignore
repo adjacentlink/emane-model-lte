@@ -48,6 +48,7 @@ emane-model-lte*.tar.gz
 
 # code reading
 .project
+cscope.out
 
 # demo
 demo/two_ues/enb-*

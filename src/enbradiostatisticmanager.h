@@ -55,7 +55,8 @@ namespace LTE
 
     void updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) override;
 
-    void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) override;
+    void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl,
+                             const EMANELTE::FrequencySet & carriersOfInterest) override;
   }; 
 }
 }

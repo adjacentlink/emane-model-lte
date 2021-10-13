@@ -68,11 +68,12 @@ namespace LTE
 
       virtual void updateTxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
 
-      virtual void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
+      virtual void updateRxTableCounts(const EMANELTE::MHAL::TxControlMessage & txControl, 
+                                       const EMANELTE::FrequencySet & carriersOfInterest) = 0;
 
       void updateFrequencies(const EMANE::FrequencySet & rx, const EMANE::FrequencySet & tx);
 
-      void updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency, double noiseFloor_mW);
+      void updateRxFrequencyAvgNoiseFloor(EMANELTE::FrequencyHz frequency, float noiseFloor_mW);
       void updateRxFrequencySpectrumError(EMANELTE::FrequencyHz frequency);
       void updateRxFrequencyPass(EMANELTE::FrequencyHz frequency);
       void updateRxFrequencyDrop(EMANELTE::FrequencyHz frequency);
@@ -99,7 +100,7 @@ namespace LTE
       ChannelFrequencyStatTableMap txFrequencyTables_;
 
       // num samples, avg noise floor errors sum, pass sum, drop sum
-      using RxFrequencyTableEntry = std::tuple<uint64_t, double, uint32_t, uint32_t, uint32_t>;
+      using RxFrequencyTableEntry = std::tuple<uint64_t, float, uint32_t, uint32_t, uint32_t>;
       using RxFrequencyTableMap   = std::map<EMANELTE::FrequencyHz, RxFrequencyTableEntry>;
       RxFrequencyTableMap rxFrequencyMap_;
       EMANE::StatisticTable<std::uint64_t> * pRxFrequencyTable_;

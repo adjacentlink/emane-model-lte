@@ -39,26 +39,23 @@
 #include "libemanelte/mhal.h"
 #include "libemanelte/txcontrolmessage.pb.h"
 #include "emane/types.h"
-#include "emane/frequencysegment.h"
+#include "emane/controls/antennareceiveinfo.h"
 
 // radio model to lte phy interface (upstream)
 namespace EMANELTE {
 namespace MHAL {
 namespace PHY {
   struct OTAInfo  {
-    EMANE::TimePoint         sot_;         // sot tx sf_time
-    EMANE::Microseconds      propDelay_;   // prop delay
-    EMANE::Microseconds      span_;        // span
-    EMANE::FrequencySegments segments_;    // freq segments
+    EMANE::TimePoint                     sot_;           // sot tx sf_time
+    EMANE::Microseconds                  propDelay_;     // prop delay
+    EMANE::Controls::AntennaReceiveInfos antennaInfos_;  // antenna recevie infos
 
     OTAInfo(const EMANE::TimePoint & sot,
             const EMANE::Microseconds & propDelay,
-            const EMANE::Microseconds & span,
-            const EMANE::FrequencySegments & segments) :
+            const EMANE::Controls::AntennaReceiveInfos & antennaInfos):
       sot_{sot},
       propDelay_{propDelay},
-      span_{span},
-      segments_{std::move(segments)}
+      antennaInfos_{std::move(antennaInfos)}
     { }
   };
 
@@ -66,7 +63,7 @@ namespace PHY {
   {
   public:
     virtual void handle_upstream_msg(const EMANELTE::MHAL::Data & data, 
-                                     const EMANELTE::MHAL::RxData & rxData,
+                                     const EMANELTE::MHAL::RxControl & rxControl,
                                      const OTAInfo & otaInfo,
                                      const EMANELTE::MHAL::TxControlMessage & txControl) = 0;
   };

@@ -251,7 +251,7 @@ void EMANELTE::MHAL::StatisticManager::updateRxPacketOtaDelay(size_t subframe, d
 
 
 void
-EMANELTE::MHAL::StatisticManager::tallySubframeProcessTime(size_t subframe, const timeval & tv_diff, bool bWasBlocked)
+EMANELTE::MHAL::StatisticManager::tallySubframeProcessTime(size_t subframe, const timeval & tv_diff)
 {
   auto bin = static_cast<size_t>(tvToUseconds(tv_diff) / quarterSubframeIntervalMicrosecs_);
 
@@ -259,12 +259,13 @@ EMANELTE::MHAL::StatisticManager::tallySubframeProcessTime(size_t subframe, cons
 
   auto counts = ++subframeProcessTimes_[subframe][bin];
 
-  // bin+1 is the row column
+  // bin+1 is the table column
   setCellWithCheck(__func__, pSubframeProcessTimesTable_, subframe, bin+1, OpenStatistic::Any{counts});
 
-  if(bWasBlocked)
+  // late bins
+  if(bin > 3)
    {
-     auto & item  = noiseProcLateCounts_[subframe];
+     auto & item = noiseProcLateCounts_[subframe];
      item  += 1;
 
      setCellWithCheck(__func__, pSubframeProcessTimesTable_, subframe, NUM_SUBFRAME_TIME_BINS + 1, OpenStatistic::Any{item});

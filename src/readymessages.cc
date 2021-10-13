@@ -39,18 +39,23 @@
 
 void EMANELTE::MHAL::ReadyMessages::clear()
 {
-  ready_.clear();
+  for(auto & e : rxMessages_)
+   {
+     e.release();
+   }
+
+  rxMessages_.clear();
 }
 
 
 size_t EMANELTE::MHAL::ReadyMessages::clearAndCheck()
 {
-  size_t size(ready_.size());
+  const size_t size(rxMessages_.size());
 
   if(size)
-    {
-      clear();
-    }
+   {
+     clear();
+   }
 
   return size;
 }
@@ -58,5 +63,5 @@ size_t EMANELTE::MHAL::ReadyMessages::clearAndCheck()
 
 EMANELTE::MHAL::RxMessages & EMANELTE::MHAL::ReadyMessages::get()
 {
-  return ready_;
+  return rxMessages_;
 }

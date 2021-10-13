@@ -35,6 +35,8 @@
 #ifndef EMANELTE_MHAL_PENDINGMESSAGEBIN_H
 #define EMANELTE_MHAL_PENDINGMESSAGEBIN_H
 
+#include <tuple>
+#include <list>
 
 #include "libemanelte/mhal.h"
 #include "mhalphy.h"
@@ -45,22 +47,34 @@
 namespace EMANELTE {
 namespace MHAL {
   // pending rx message, moves to ready after noise processing
+#define PendingMessage_Data_Get(x)      std::get<0>((x))
+#define PendingMessage_RxControl_Get(x) std::get<1>((x))
+#define PendingMessage_OtaInfo_Get(x)   std::get<2>((x))
+#define PendingMessage_TxControl_Get(x) std::get<3>((x))
+
   using PendingMessage = std::tuple<Data,              // opaque data
-                                    RxData,            // rx control
+                                    RxControl,         // rx control
                                     PHY::OTAInfo,      // emane ota info
                                     TxControlMessage>; // tx control
 
   using PendingMessages = std::list<PendingMessage>;
 
-  using SegmentTimeSpan = std::tuple<EMANE::TimePoint,  // sor
-                                     EMANE::TimePoint,  // eor
-                                     size_t>;           // num segments
+#define SegmentTimeSpan_Sor_Get(x) std::get<0>((x))
+#define SegmentTimeSpan_Eor_Get(x) std::get<1>((x))
 
-  // frequency, time span
+  // time span start-stop
+  using SegmentTimeSpan = std::tuple<EMANE::TimePoint,   // sor
+                                     EMANE::TimePoint>;  // eor
+
+  // frequency, segment span
   using SegmentSpans = std::map<std::uint64_t, SegmentTimeSpan>;
 
+  // by rx antenna index
+  // ue has 1 antenna, enb can have multiple
+  using RxAntennaSegmentSpans = std::map<uint32_t, SegmentSpans>;
+
   class PendingMessageBin {
-  public:
+   public:
     PendingMessageBin() :
       binTime_{0,0}
     {
@@ -73,14 +87,14 @@ namespace MHAL {
 
     // purge and msgs that have expired.
     void add(const timeval & binTime,
-             uint32_t bin,
+             const uint32_t bin,
              const PendingMessage & msg,
              StatisticManager & statisticManager);
 
     // a msg is composed of multiple segments each with a unique frequency
     // find the min sor and max eor for each frequency
     // this will be used to consult the spectrum monitor later
-    SegmentSpans getSegmentSpans();
+    RxAntennaSegmentSpans getRxAntennaSegmentSpans();
 
     PendingMessages & get();
 
@@ -89,9 +103,9 @@ namespace MHAL {
     void lockBin();
 
   private:
-    pthread_mutex_t            mutex_;
-    PendingMessages            pending_;
-    timeval                    binTime_;
+    pthread_mutex_t   mutex_;
+    PendingMessages   pending_;
+    timeval           binTime_;
   };
 }
 }

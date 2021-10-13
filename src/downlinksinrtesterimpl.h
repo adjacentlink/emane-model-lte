@@ -47,12 +47,14 @@ class DownlinkSINRTesterImpl : public SINRTesterImpl
 {
 public:
   DownlinkSINRTesterImpl(EMANE::Models::LTE::UERadioModel * pRadioModel,
-                         TxControlMessage txControl,
-                         EMANE::Models::LTE::SegmentMap segmentCache,
-                         bool pcfichPass,
-                         bool pbchPass,
-                         double sinr,
-                         double noiseFloor) :
+                         const TxControlMessage & txControl,
+                         const EMANE::Models::LTE::SegmentMap & segmentCache,
+                         const bool pcfichPass,
+                         const bool pbchPass,
+                         const float sinr,
+                         const float noiseFloor,
+                         const uint64_t carrierFrequencyHz,
+                         const uint32_t carrierId) :
     pRadioModel_{pRadioModel},
     txControl_{txControl},
     segmentCache_{segmentCache},
@@ -60,26 +62,27 @@ public:
     pbchPass_{pbchPass},
     sinr_dB_{sinr},
     noiseFloor_dBm_{noiseFloor},
+    carrierFrequencyHz_{carrierFrequencyHz},
+    carrierId_{carrierId},
     pdcchRNTIResults_{}
   {}
 
-  bool sinrCheck(CHANNEL_TYPE ctype) override;
 
-  bool sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti) override;
+  SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype) override;
 
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype) override;
-
-  SINRTester::SINRTesterResult sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti) override;  
+  SINRTester::SINRTesterResult sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti) override;  
 
 private:
   EMANE::Models::LTE::UERadioModel * const pRadioModel_;
   const TxControlMessage txControl_;
   EMANE::Models::LTE::SegmentMap segmentCache_;
-  const bool pcfichPass_;
-  const bool pbchPass_;
-  const double sinr_dB_;
-  const double noiseFloor_dBm_;
-  std::map<std::uint32_t, bool> pdcchRNTIResults_;
+  const bool     pcfichPass_;
+  const bool     pbchPass_;
+  const float    sinr_dB_;
+  const float    noiseFloor_dBm_;
+  const uint64_t carrierFrequencyHz_;
+  const uint32_t carrierId_;
+  std::map<uint32_t, bool> pdcchRNTIResults_;
 };
 
 }

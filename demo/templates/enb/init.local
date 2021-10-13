@@ -20,3 +20,15 @@ srsenb-emane enb.conf
 if [ -f otestpointd.xml ]; then
     otestpointd -d otestpointd.xml
 fi
+
+
+if [ -f emane-spectrum-monitor.xml ] &&
+       [ ! -f NO-emane-spectrum-monitor ]
+then
+   xml=emane-spectrum-monitor.xml
+   logfile=$top_dir/persist/$node_name/var/log/emane-spectrum-monitor.log
+   pidfile=$top_dir/persist/$node_name/var/run/emane-spectrum-monitor.pid
+   uuidfie=$top_dir/persist/$node_name/var/run/emane-spectrum-monitor.uuid
+
+   emane-spectrum-monitor --config "$xml" -r -d -l 3 -f "$logfile" --pidfile "$pidfile" --uuidfile "$uuidfile"
+fi

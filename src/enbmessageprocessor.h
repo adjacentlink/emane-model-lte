@@ -87,11 +87,16 @@ namespace LTE
                                  EMANELTE::FrequencyResourceBlockMap & txFreqToRBMap);
 
     EMANE::FrequencySegments buildFrequencySegments(EMANELTE::MHAL::TxControlMessage & txControl,
-                                                    uint32_t symbolsPerSlot);
+                                                    const uint64_t carrierFreqHz,
+                                                    const uint32_t carrierId,
+						    const bool frequencyTablesEnable);
+
 
     bool noiseTestChannelMessage(const EMANELTE::MHAL::TxControlMessage & txControl,
-                                          const EMANELTE::MHAL::ChannelMessage & channel_msg,
-                                          SegmentMap & segmentCache);
+                                 const EMANELTE::MHAL::ChannelMessage & channel_msg,
+                                 SegmentMap & segmentCache,
+                                 const uint64_t carrierFrequencyHz,
+                                 const uint32_t carrierId);
 
   private:
     EMANE::NEMId id_;
@@ -109,7 +114,6 @@ namespace LTE
 
     void addTxSegments(const EMANELTE::MHAL::ChannelMessage & channel_msg,
                        const std::uint32_t tti_tx,
-                       const EMANE::Microseconds sfDuration,
                        const std::uint32_t cfi);
   };
 

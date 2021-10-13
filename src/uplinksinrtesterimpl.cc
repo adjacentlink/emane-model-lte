@@ -36,36 +36,9 @@
 #include "uplinksinrtesterimpl.h"
 
 
-bool
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype)
-{
-  auto sinr_result = channelSINRResults_.find(ctype);
-
-  if(sinr_result == channelSINRResults_.end())
-    {
-      return false;
-    }
-
-  return sinr_result->second;
-}
-
-
-bool
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(CHANNEL_TYPE ctype, uint16_t rnti)
-{
-  auto sinr_result = rntiChannelSINRResults_.find(EMANELTE::MHAL::ChannelRNTI(ctype, rnti));
-
-  if(sinr_result == rntiChannelSINRResults_.end())
-    {
-      return false;
-    }
-
-  return sinr_result->second;
-}
-
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype)
 {
   auto sinr_result = channelSINRResults_.find(ctype);
 
@@ -79,7 +52,7 @@ EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype)
 
 
 EMANELTE::MHAL::SINRTester::SINRTesterResult
-EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck2(CHANNEL_TYPE ctype, uint16_t rnti)
+EMANELTE::MHAL::UplinkSINRTesterImpl::sinrCheck(const CHANNEL_TYPE ctype, const uint16_t rnti)
 {
   auto sinr_result = rntiChannelSINRResults_.find(EMANELTE::MHAL::ChannelRNTI(ctype, rnti));
 

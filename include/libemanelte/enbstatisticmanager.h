@@ -192,14 +192,7 @@ namespace ENBSTATS {
       // list of mrb bearers (LCID's)
       typedef std::vector<RLCMRBBearerMetric> RLCMRBBearerMetrics;
 
-      // user (RNTI) to bearer metrics
-      typedef std::map<uint16_t, RLCBearerMetrics> RLCMetrics;
-
       typedef std::map<uint16_t, RLCMRBBearerMetrics> RLCMRBMetrics;
-
-      void setRLCMetrics(const RLCMetrics & metrics);
-
-      void setRLCMetrics(const RLCMRBMetrics & metrics);
 
       void putDLGrant(uint16_t rnti);
 

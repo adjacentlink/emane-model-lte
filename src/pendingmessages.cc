@@ -46,7 +46,7 @@ void EMANELTE::MHAL::PendingMessageBin::clear()
 
 size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 {
-  size_t size(pending_.size());
+  const size_t size(pending_.size());
 
   if(size)
     {
@@ -59,9 +59,9 @@ size_t EMANELTE::MHAL::PendingMessageBin::clearAndCheck()
 
 // purge and msgs that have expired.
 void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
-                uint32_t bin,
-                const PendingMessage & msg,
-                StatisticManager & statisticManager)
+                                            const uint32_t bin,
+                                            const PendingMessage & pendingMsg,
+                                            StatisticManager & statisticManager)
 {
   if(pending_.empty())
     {
@@ -77,51 +77,59 @@ void EMANELTE::MHAL::PendingMessageBin::add(const timeval & binTime,
         }
     }
 
-  pending_.push_back(msg);
+  pending_.emplace_back(pendingMsg);
 }
 
 
-// a msg is composed of multiple segments each with a unique frequency
+// a pendingMsg is composed of multiple segments each with a unique frequency
 // find the min sor and max eor for each frequency
 // this will be used to consult the spectrum monitor later
-EMANELTE::MHAL::SegmentSpans
-EMANELTE::MHAL::PendingMessageBin::getSegmentSpans()
+EMANELTE::MHAL::RxAntennaSegmentSpans
+EMANELTE::MHAL::PendingMessageBin::getRxAntennaSegmentSpans()
 {
-  SegmentSpans segmentSpans;
+  RxAntennaSegmentSpans rxAntennaSegmentSpans;
 
-  for(auto msg_iter = pending_.begin(); msg_iter != pending_.end(); ++msg_iter)
-    {
-      const auto & otaInfo = std::get<2>(*msg_iter);
+  // for each pending msg
+  for(const auto & pendingMsg : pending_)
+   {
+     const auto & otaInfo = PendingMessage_OtaInfo_Get(pendingMsg);
 
-      for(auto & segment : otaInfo.segments_)
-        {
-          const auto frequencyHz = segment.getFrequencyHz();
+     // for each rx/tx antenna path
+     for(const auto & antennaInfo : otaInfo.antennaInfos_)
+      {
+        // track receptions based on rx antenna
+        const auto rxAntennaIndex = antennaInfo.getRxAntennaIndex();
 
-          // sor = sot + offset + propagation delay
-          //const auto sor = otaInfo.sot_ + segment.getOffset() + otaInfo.propDelay_;
-          const auto sor = otaInfo.sot_ + segment.getOffset();
-          const auto eor = sor + segment.getDuration();
+        const auto & segmentSpans = antennaInfo.getFrequencySegments();
 
-          auto span = segmentSpans.find(frequencyHz);
+        for(auto & segment : segmentSpans)
+         {
+           const auto segmentFrequencyHz = segment.getFrequencyHz();
 
-          if(span != segmentSpans.end())
+           // sor = sot + offset, LTE timinging advance accounts for propagation delay
+           const auto sor = otaInfo.sot_ + segment.getOffset();
+           const auto eor = sor + segment.getDuration();
+
+           // check for matching frequency
+           const auto iter = rxAntennaSegmentSpans[rxAntennaIndex].find(segmentFrequencyHz);
+
+           if(iter != rxAntennaSegmentSpans[rxAntennaIndex].end())
             {
-              auto & min        = std::get<0>(span->second);
-              auto & max        = std::get<1>(span->second);
-              auto & numEntries = std::get<2>(span->second);
+              auto & min = SegmentTimeSpan_Sor_Get(iter->second);
+              auto & max = SegmentTimeSpan_Eor_Get(iter->second);
 
               min = std::min(min, sor);
               max = std::max(max, eor);
-              numEntries += 1;
             }
           else
-            {
-              segmentSpans.insert(std::make_pair(frequencyHz, SegmentTimeSpan{sor, eor, 1}));
-            }
-        }
-    }
+           {
+             rxAntennaSegmentSpans[rxAntennaIndex].emplace(segmentFrequencyHz, SegmentTimeSpan{sor, eor});
+           }
+         }
+      }
+   }
 
-  return segmentSpans;
+  return rxAntennaSegmentSpans;
 }
 
 

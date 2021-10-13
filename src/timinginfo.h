@@ -57,138 +57,138 @@ namespace MHAL {
 
   inline EMANE::Microseconds tvToMicroseconds(const timeval & tv)
   {
-    return EMANE::Microseconds{tv.tv_sec * USEC_PER_SECOND + tv.tv_usec};
+    return EMANE::Microseconds{(tv.tv_sec * USEC_PER_SECOND) + tv.tv_usec};
   }
-
 
   inline timeval tsToTv(const time_t ts)
   {
     return timeval{ts/USEC_PER_SECOND, ts%USEC_PER_SECOND};
   }
 
-
   inline EMANE::TimePoint tvToTp(const timeval & tv)
   {
-    return EMANE::TimePoint{EMANE::Microseconds{tv.tv_sec * USEC_PER_SECOND + tv.tv_usec}};
+    return EMANE::TimePoint{EMANE::Microseconds{(tv.tv_sec * USEC_PER_SECOND) + tv.tv_usec}};
   }
 
-  inline uint32_t getMessageBin(const timeval & tv, std::uint64_t ts_sf_interval)
+  inline uint32_t getMessageBin(const timeval & tv, std::uint64_t tsSfInterval)
   {
-    return (tvToUseconds(tv) / ts_sf_interval) % EMANELTE::NUM_SF_PER_FRAME;
+    return (tvToUseconds(tv) / tsSfInterval) % EMANELTE::NUM_SF_PER_FRAME;
   }
 
 
   class TimingInfo {
   public:
 
-    TimingInfo(timeval tv_sf_interval,
-               timeval tv_slot_interval,
-               time_t ts_sf_interval_usec) :
-      tv_curr_sf_(),
-      tv_next_sf_(),
-      tv_sf_interval_(tv_sf_interval),
-      tv_slot_interval_(tv_slot_interval),
-      ts_sf_interval_usec_(ts_sf_interval_usec)
+    TimingInfo(timeval tvSfInterval,
+               timeval tvSlotInterval,
+               time_t tsSfIntervalUsec) :
+      tvCurrSf_(),
+      tvNextSf_(),
+      tvSfInterval_(tvSfInterval),
+      tvSlotInterval_(tvSlotInterval),
+      tsSfIntervalUsec_(tsSfIntervalUsec)
     { 
       init_mutex(&mutex_);
     }
 
     void set_tv_sf_interval(uint32_t tv_sec, uint32_t tv_usec)
     {
-      tv_sf_interval_.tv_sec  = tv_sec;
-      tv_sf_interval_.tv_usec = tv_usec;
+      tvSfInterval_.tv_sec  = tv_sec;
+      tvSfInterval_.tv_usec = tv_usec;
     }
 
     void set_tv_slot_interval(uint32_t tv_sec, uint32_t tv_usec)
     {
-      tv_slot_interval_.tv_sec  = tv_sec;
-      tv_slot_interval_.tv_usec = tv_usec;
+      tvSlotInterval_.tv_sec  = tv_sec;
+      tvSlotInterval_.tv_usec = tv_usec;
     }
 
-    uint32_t ts_sf_interval_usec()
+    uint32_t tsSfIntervalUsec()
     {
-      return ts_sf_interval_usec_;
+      return tsSfIntervalUsec_;
     }
 
     void set_ts_sf_interval_usec(uint32_t tv_usec)
     {
-      ts_sf_interval_usec_ = tv_usec;
+      tsSfIntervalUsec_ = tv_usec;
     }
 
     // called after lock is set 
     uint32_t stepTime()
     {
-      tv_curr_sf_ = tv_next_sf_;
+      tvCurrSf_ = tvNextSf_;
 
-      timeradd(&tv_next_sf_, &tv_sf_interval_, &tv_next_sf_);
+      timeradd(&tvNextSf_, &tvSfInterval_, &tvNextSf_);
 
       // new upstream depost bin = curr_bin + 4
-      return (getMessageBin(tv_curr_sf_, ts_sf_interval_usec_) + 4) % EMANELTE::NUM_SF_PER_FRAME;
+      return (getMessageBin(tvCurrSf_, tsSfIntervalUsec_) + 4) % EMANELTE::NUM_SF_PER_FRAME;
     }
 
     // called after lock is set 
     void alignTime(uint32_t nof_advance_sf = 0)
     {
-      timeval tv_sos;
+      timeval tvSos;
 
-      gettimeofday(&tv_sos, NULL);
+      gettimeofday(&tvSos, NULL);
 
-      // get next second boundry
-      if(tv_sos.tv_usec > 0)
+      // wait for next second boundry
+      if(tvSos.tv_usec > 0)
         {
-          usleep(USEC_PER_SECOND - tv_sos.tv_usec);
+          usleep(USEC_PER_SECOND - tvSos.tv_usec);
 
-          tv_sos.tv_sec += 1;
-          tv_sos.tv_usec = 0;
+          tvSos.tv_sec += 1;
+          tvSos.tv_usec = 0;
         }
 
-      tv_curr_sf_ = tv_sos;
+      tvCurrSf_ = tvSos;
 
-      timeradd(&tv_sos, &tv_sf_interval_, &tv_next_sf_);
+      // set next sf time
+      timeradd(&tvCurrSf_, &tvSfInterval_, &tvNextSf_);
 
+      // advance curr and next sf times
       for(uint32_t n = 0; n < nof_advance_sf; ++n)
         {
-          tv_curr_sf_ = tv_next_sf_;
-          timeradd(&tv_next_sf_, &tv_sf_interval_, &tv_next_sf_);
+          tvCurrSf_ = tvNextSf_;
+          timeradd(&tvNextSf_, &tvSfInterval_, &tvNextSf_);
 
-          usleep(ts_sf_interval_usec_);
+          usleep(tsSfIntervalUsec_);
         }
     }
 
     const timeval & getCurrSfTime() const
     {
-      return tv_curr_sf_;
+      return tvCurrSf_;
     }
 
     const timeval & getNextSfTime() const
     {
-      return tv_next_sf_;
+      return tvNextSf_;
     }
 
-    inline std::pair<timeval, timeval> get_slot_times(const timeval &tv_sf_start, int slot)
+    inline std::pair<timeval, timeval> get_slot_times(const timeval &tvSfStart, int slot)
     {
       timeval tv1, tv2;
 
       // first slot
       if(slot == 0)
         {
-          tv1 = tv_sf_start;
+          tv1 = tvSfStart;
 
-          timeradd(&tv_sf_start, &tv_slot_interval_, &tv2);
+          timeradd(&tvSfStart, &tvSlotInterval_, &tv2);
         }
       // second slot
       else if(slot == 1)
         {
-          timeradd(&tv_sf_start, &tv_slot_interval_, &tv1);
+          timeradd(&tvSfStart, &tvSlotInterval_, &tv1);
 
-          timeradd(&tv_sf_start, &tv_sf_interval_, &tv2);
+          timeradd(&tvSfStart, &tvSfInterval_, &tv2);
         }
       // both
       else
         {
-          tv1 = tv_sf_start;
+          tv1 = tvSfStart;
 
-          timeradd(&tv_sf_start, &tv_sf_interval_, &tv2);
+          timeradd(&tvSfStart, &tvSfInterval_, &tv2);
         }
 
       return std::pair<timeval, timeval>(tv1, tv2); 
@@ -198,7 +198,7 @@ namespace MHAL {
     // get the slot index  0 for the first slot, 1 for the second slot, 2 for both
     int get_slot_number(const EMANE::Microseconds & duration, const EMANE::Microseconds & offset)
     {
-      if(tvToMicroseconds(tv_sf_interval_) == duration)
+      if(tvToMicroseconds(tvSfInterval_) == duration)
         {
           return 2;
         }
@@ -220,11 +220,11 @@ namespace MHAL {
     } 
  
   private:
-    timeval tv_curr_sf_;
-    timeval tv_next_sf_;
-    timeval tv_sf_interval_;
-    timeval tv_slot_interval_;
-    time_t  ts_sf_interval_usec_;
+    timeval tvCurrSf_;
+    timeval tvNextSf_;
+    timeval tvSfInterval_;
+    timeval tvSlotInterval_;
+    time_t  tsSfIntervalUsec_;
 
     pthread_mutex_t mutex_;
   };
