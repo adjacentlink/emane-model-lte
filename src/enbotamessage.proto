@@ -156,6 +156,7 @@ message PDSCH
 
      // peer data
      required bytes data = 4;
+
    }
 
   repeated Data data = 1;
@@ -166,19 +167,25 @@ message PDSCH
 
 message PHICH
 {
-  // radio net temp id [0x1-0xffff]
-  required uint32 rnti = 1;
+  message Data
+   {
+     // radio net temp id [0x1-0xffff]
+     required uint32 rnti = 1;
 
-  // ack bit 0 nack, 1 ack
-  required uint32 ack = 2;
+     // ack bit 0 nack, 1 ack
+     required uint32 ack = 2;
 
-  // num lowest physical resource blocks
-  required uint32 num_prb_low = 3;
+     // num lowest physical resource blocks
+     required uint32 num_prb_low = 3;
 
-  // num demodulation reference signals
-  required uint32 num_dmrs = 4;
+     // num demodulation reference signals
+     required uint32 num_dmrs = 4;
 
-  required uint32 seqnum = 5;
+   }
+
+  repeated Data data = 1;
+
+  required uint32 seqnum = 2;
 }
 
 // Physical Multicast Channel 
