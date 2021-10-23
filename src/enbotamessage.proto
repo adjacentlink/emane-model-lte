@@ -130,9 +130,9 @@ message PDCCH
     required DCI_MSG dci_msg = 3;
   }
 
-  optional DL_DCI dl_dci = 1;
+  repeated DL_DCI dl_dci = 1;
 
-  optional UL_DCI ul_dci = 2;
+  repeated UL_DCI ul_dci = 2;
 
   required uint32 seqnum = 3;
 }
@@ -241,16 +241,16 @@ message PMCH
     // optional pbch sent on selected subframes
     optional PBCH pbch = 6;
 
-    // repeated pdsch
-    repeated PDCCH pdcch = 7;
+    // optional pdcch
+    optional PDCCH pdcch = 7;
 
-    // optional 
+    // optional pdsch
     optional PDSCH pdsch = 8;
 
     // optional phich
     optional PHICH phich = 9;
 
-    // repeated pmch
+    // optional pmch
     optional PMCH pmch = 10;
   }
 
