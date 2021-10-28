@@ -205,12 +205,18 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       SubframeReceiveCountDB subframeReceiveCountDB_;
 
+      // NEMId key
+      using SubframeReceiveSeqCount = std::map<EMANE::NEMId, std::uint64_t>;
+
+      SubframeReceiveSeqCount subframeRecveiveSeqCount_;
 
       EMANELTE::FrequencyHz getResourceBlockFrequency(std::uint64_t resourceBlockIndex,
                                                       EMANELTE::FrequencyHz centerFreq,
                                                       std::uint64_t numResourceBlocks) const;
 
       void updateSubframePass_i(EMANE::NEMId id);
+
+      void updateSubframeSeq_i(const EMANE::NEMId id, const std::uint64_t seqnum);
 
       void updateSubframeDropPropagationDelay_i(EMANE::NEMId id);
 
