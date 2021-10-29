@@ -416,8 +416,9 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
   // work this subframe bin, lock
   pendingMessageBins_[bin].lockBin();
 
-  // give some slack to late caller
-  if(overRunUsec < (2 * timing_.tsSfIntervalUsec()))
+  // give some slack to late caller,
+  // we can tollerate up to (3) sf of dealy
+  if(overRunUsec < (3 * timing_.tsSfIntervalUsec()))
    {
      noiseWorker_safe(bin);
 
