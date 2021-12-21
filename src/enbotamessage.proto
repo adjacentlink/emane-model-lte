@@ -156,7 +156,6 @@ message PDSCH
 
      // peer data
      required bytes data = 4;
-
    }
 
   repeated SubMsg submsg = 1;
@@ -208,6 +207,8 @@ message PMCH
    }
 
   repeated SubMsg submsg = 1;
+
+  required uint32 seqnum = 2;
 }
 
 // ********** END MSG DEFS ***********
