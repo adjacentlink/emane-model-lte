@@ -1,4 +1,4 @@
-FROM fedora:33
+FROM fedora:35
 
 RUN mkdir -p /opt/built
 
@@ -7,9 +7,9 @@ RUN dnf -y update
 # Copy and install packages from the latest opentestpoint build
 WORKDIR /opt
 RUN mkdir -p dependencies
-COPY --from=gcr.io/automated-builds-303920/fedora33.emane /opt/built/* dependencies/
-COPY --from=gcr.io/automated-builds-303920/fedora33.opentestpoint /opt/built/* dependencies/
-COPY --from=gcr.io/automated-builds-303920/fedora33.openstatistic /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/fedora35.emane /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/fedora35.opentestpoint /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/fedora35.openstatistic /opt/built/* dependencies/
 RUN dnf -y install dependencies/*\.rpm
 
 # Build tools and depends

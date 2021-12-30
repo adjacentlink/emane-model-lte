@@ -159,8 +159,8 @@ EMANELTE::MHAL::MHALCommon::send_msg(const Data & data,
       timersub(&tvSfTime, &tvAdjust, &tvSfTime);
     }
 
-#if 0 
-  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s send seqnum %lu, sf_time %ld:%06ld", 
+#if 0
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s send tx_seqnum %lu, sf_time %ld:%06ld", 
               __func__,
              txControl.tx_seqnum(),
              tvSfTime.tv_sec,
@@ -297,6 +297,16 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
                                        PendingMessage{data, rxControl, otaInfo, txControl},
                                        statisticManager_);
 
+#if 0
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s add rx_seqnum %lu, bin %u, curr_time %f, sot %f, dt %ld usec", 
+                      __func__,
+                      rxControl.rx_seqnum_,
+                      bin,
+                      tp_now.time_since_epoch().count()/1e9,
+                      sor.time_since_epoch().count()/1e9,
+                      dt.count());
+#endif
+
           // unlock bin
           pendingMessageBins_[bin].unlockBin();
         }
@@ -305,7 +315,7 @@ EMANELTE::MHAL::MHALCommon::handle_upstream_msg(const Data & data,
           // rx late too late, discard
           statisticManager_.updateLateMessages(bin);
 
-          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s discard seqnum %lu, bin %u, curr_time %f, sot %f, dt %ld usec", 
+          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s discard rx_seqnum %lu, bin %u, curr_time %f, sot %f, dt %ld usec", 
                       __func__,
                       rxControl.rx_seqnum_,
                       bin,
@@ -360,11 +370,12 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
 
       if(timeToNextSfUsec > 0)
        {
+         // wait a bit
          select(0, NULL, NULL, NULL, &tvDiff);
        }
       else
        {
-         // fall thru
+         // ready now
        }
     }
   else
@@ -372,7 +383,7 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
       // running late by a sf or more
       overRunUsec = abs(timeToNextSfUsec);      
 
-      // a frame behind or more
+      // a full frame behind or more
       if(overRunUsec >= (10 * timing_.tsSfIntervalUsec()))
        {
          logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s last_sf_time %ld:%06ld, late by %ld usec",
@@ -402,16 +413,22 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
   // select bin based on the current working subframe time
   const auto bin = getMessageBin(tvLastSfStart, timing_.tsSfIntervalUsec());
 
-  // work this subframe bin
+  // work this subframe bin, lock
   pendingMessageBins_[bin].lockBin();
 
-  // only process current data
-  if(overRunUsec <= timing_.tsSfIntervalUsec())
+  // give some slack to late caller,
+  // we can tollerate up to (3) sf of dealy
+  if(overRunUsec < (3 * timing_.tsSfIntervalUsec()))
    {
      noiseWorker_safe(bin);
 
      // transfer to caller
      rxMessages = std::move(readyMessageBins_[bin].get());
+
+     // clear messages for this subframe bin
+     pendingMessageBins_[bin].clear();
+
+     readyMessageBins_[bin].clear();
 
 #if 0
      for(const auto & rxMessage : rxMessages)
@@ -423,24 +440,26 @@ EMANELTE::MHAL::MHALCommon::get_messages(RxMessages & rxMessages, timeval & tvSo
 
         const auto dt = tvToMicroseconds(tvDiff); 
 
-        if(abs(dt.count()) > timing_.tsSfIntervalUsec())
-         {
-           logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, sf_time %ld:%06ld, dt %ld",
-                       __func__,
-                       bin,
-                       sfTime.tv_sec,
-                       sfTime.tv_usec,
-                       dt.count());
-         }
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, rx_seqnum %lu, sf_time %ld:%06ld, dt %ld",
+                    __func__,
+                    bin,
+                    rxMessage.rxControl_.rx_seqnum_,
+                    sfTime.tv_sec,
+                    sfTime.tv_usec,
+                    dt.count());
       }
 #endif
    }
+  else
+   {
+     logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s bin %u, overrun %ld", __func__, bin, overRunUsec);
 
-  // clear messages for this subframe bin
-  pendingMessageBins_[bin].clear();
+     clearReadyMessages_safe(bin);
 
-  readyMessageBins_[bin].clear();
+     clearPendingMessages_safe(bin);
+   }
 
+  // unlock
   pendingMessageBins_[bin].unlockBin();
 
   // set the sor to the subframe time regardless on how late we are, caller will catch up

@@ -1048,12 +1048,14 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::process
 
          const auto recvInfos = pMIMOReceivePropertiesControlMessage->getAntennaReceiveInfos();
 
+         updateSubframeSeq_i(pktInfo.getSource(), txControl.tx_seqnum());
+
 #if 0
          const auto dt = std::chrono::duration_cast<EMANE::Microseconds>(tpTxTime - tpNow);
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                  EMANE::INFO_LEVEL,
-                                 "MACI %03hu %s::%s: src %hu, seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec, num recv infos %zu",
+                                 "MACI %03hu %s::%s: src %hu, tx_seqnum %lu, prop_delay %lu, curr_time %f, txTime %f, dt %ld usec, num recv infos %zu",
                                  id_,
                                  pzModuleName_,
                                  __func__,
@@ -1363,6 +1365,34 @@ int EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::getTxCar
    {
      return -1;
    }
+}
+
+template <class RadioStatManager, class MessageProcessor>
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::updateSubframeSeq_i(const EMANE::NEMId id, const uint64_t seqnum)
+{
+  auto iter = subframeRecveiveSeqCount_.find(id);
+
+  if(iter == subframeRecveiveSeqCount_.end())
+    {
+      subframeRecveiveSeqCount_.emplace(id, seqnum);
+    }
+  else
+    {
+      if((iter->second + 1) != seqnum)
+        {
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::ERROR_LEVEL,
+                                  "MACI %03hu %s::%s: src %hu, expected seqnum %lu, received %lu instead",
+                                  id_,
+                                  pzModuleName_,
+                                  __func__,
+                                  id,
+                                  iter->second + 1,
+                                  seqnum);
+        }
+
+      iter->second = seqnum;
+    }
 }
 
 
