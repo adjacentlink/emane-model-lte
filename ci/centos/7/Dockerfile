@@ -5,7 +5,7 @@ RUN mkdir -p /opt/built
 RUN yum -y install epel-release
 RUN yum -y update
 
-# Copy and install packages from the latest opentestpoint build
+# Copy and install packages from the latest upsteam dependencies
 WORKDIR /opt
 RUN mkdir -p dependencies
 COPY --from=gcr.io/automated-builds-303920/centos7.emane /opt/built/* dependencies/

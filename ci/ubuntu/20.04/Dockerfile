@@ -24,9 +24,7 @@ RUN apt-get -y install libxml2-dev libpcap-dev libpcre3-dev uuid-dev
 RUN git clone https://github.com/adjacentlink/emane-model-lte -b develop
 
 WORKDIR emane-model-lte
-RUN ./autogen.sh
-RUN ./configure
-RUN make deb
+RUN ./autogen.sh && ./configure && make deb
 RUN cp $(find .debbuild -name "*\.deb") /opt/built
 RUN dpkg -i /opt/built/*; apt-get -y install -f
 
