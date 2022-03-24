@@ -92,7 +92,9 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
                                               {"propagationmodel",       {phyConfig.sPropagationModel_}},
                                               {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
                                               {"subid",                  {phyConfig.sSubId_}},
-                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
+                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}},
+					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
+					      {"stats.receivepowertableenable", {phyConfig.sReceivePowerTableEnable_}}
                                             },
                                             false)); // skip config
 

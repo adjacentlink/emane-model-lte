@@ -9,6 +9,7 @@ config.log
 aclocal.m4
 autom4te.cache
 *.o
+*~
 compile
 config.guess
 config.sub

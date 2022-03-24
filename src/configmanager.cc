@@ -80,13 +80,15 @@ namespace {
 \
                <xs:element name='phy' minOccurs='0' maxOccurs='1'>\
                  <xs:complexType>\
-                   <xs:attribute name='fixedantennagain'        type='xs:string' use='optional'/>\
-                   <xs:attribute name='fixedantennagainenable'  type='xs:string' use='optional'/>\
-                   <xs:attribute name='noisemode'               type='xs:string' use='optional'/>\
-                   <xs:attribute name='propagationmodel'        type='xs:string' use='optional'/>\
-                   <xs:attribute name='systemnoisefigure'       type='xs:string' use='optional'/>\
-                   <xs:attribute name='subid'                   type='xs:string' use='optional'/>\
-                   <xs:attribute name='compatibilitymode'       type='xs:string' use='optional'/>\
+                   <xs:attribute name='fixedantennagain'               type='xs:string' use='optional'/>\
+                   <xs:attribute name='fixedantennagainenable'         type='xs:string' use='optional'/>\
+                   <xs:attribute name='noisemode'                      type='xs:string' use='optional'/>\
+                   <xs:attribute name='propagationmodel'               type='xs:string' use='optional'/>\
+                   <xs:attribute name='systemnoisefigure'              type='xs:string' use='optional'/>\
+                   <xs:attribute name='subid'                          type='xs:string' use='optional'/>\
+                   <xs:attribute name='compatibilitymode'              type='xs:string' use='optional'/>\
+                   <xs:attribute name='stats.observedpowertableenable' type='xs:string' use='optional'/>\
+                   <xs:attribute name='stats.receivepowertableenable'  type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
@@ -256,13 +258,15 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                else if(!xmlStrcmp(pLayerNode->name, BAD_CAST "phy"))
                  {
                    // optional
-                   phyConfig_.sAntennaGain_              = checkForValue(pLayerNode, "fixedantennagain",        phyConfig_.sAntennaGain_);
-                   phyConfig_.sFixedAntennaGainEnable_   = checkForValue(pLayerNode, "fixedantennagainenable",  phyConfig_.sFixedAntennaGainEnable_);
-                   phyConfig_.sNoiseMode_                = checkForValue(pLayerNode, "noisemode",               phyConfig_.sNoiseMode_);
-                   phyConfig_.sPropagationModel_         = checkForValue(pLayerNode, "propagationmodel",        phyConfig_.sPropagationModel_);
-                   phyConfig_.sSystemNoiseFigure_        = checkForValue(pLayerNode, "systemnoisefigure",       phyConfig_.sSystemNoiseFigure_);
-                   phyConfig_.sSubId_                    = checkForValue(pLayerNode, "subid",                   phyConfig_.sSubId_);
-                   phyConfig_.sCompatibilityMode_        = checkForValue(pLayerNode, "compatibilitymode",       phyConfig_.sCompatibilityMode_);
+                   phyConfig_.sAntennaGain_              = checkForValue(pLayerNode, "fixedantennagain",               phyConfig_.sAntennaGain_);
+                   phyConfig_.sFixedAntennaGainEnable_   = checkForValue(pLayerNode, "fixedantennagainenable",         phyConfig_.sFixedAntennaGainEnable_);
+                   phyConfig_.sNoiseMode_                = checkForValue(pLayerNode, "noisemode",                      phyConfig_.sNoiseMode_);
+                   phyConfig_.sPropagationModel_         = checkForValue(pLayerNode, "propagationmodel",               phyConfig_.sPropagationModel_);
+                   phyConfig_.sSystemNoiseFigure_        = checkForValue(pLayerNode, "systemnoisefigure",              phyConfig_.sSystemNoiseFigure_);
+                   phyConfig_.sSubId_                    = checkForValue(pLayerNode, "subid",                          phyConfig_.sSubId_);
+                   phyConfig_.sCompatibilityMode_        = checkForValue(pLayerNode, "compatibilitymode",              phyConfig_.sCompatibilityMode_);
+                   phyConfig_.sObservedPowerTableEnable_ = checkForValue(pLayerNode, "stats.observedpowertableenable", phyConfig_.sObservedPowerTableEnable_);
+                   phyConfig_.sReceivePowerTableEnable_  = checkForValue(pLayerNode, "stats.receivepowertableenable",  phyConfig_.sReceivePowerTableEnable_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,

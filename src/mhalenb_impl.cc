@@ -106,13 +106,15 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
   layers.push_back(nemBuilder.buildPHYLayer(platformConfig.id_,
                                             "",
                                             {
-                                              {"fixedantennagain",       {phyConfig.sAntennaGain_}},
-                                              {"fixedantennagainenable", {phyConfig.sFixedAntennaGainEnable_}},
-                                              {"noisemode",              {phyConfig.sNoiseMode_}},
-                                              {"propagationmodel",       {phyConfig.sPropagationModel_}},
-                                              {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
-                                              {"subid",                  {phyConfig.sSubId_}},
-                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
+                                              {"fixedantennagain",               {phyConfig.sAntennaGain_}},
+                                              {"fixedantennagainenable",         {phyConfig.sFixedAntennaGainEnable_}},
+                                              {"noisemode",                      {phyConfig.sNoiseMode_}},
+                                              {"propagationmodel",               {phyConfig.sPropagationModel_}},
+                                              {"systemnoisefigure",              {phyConfig.sSystemNoiseFigure_}},
+                                              {"subid",                          {phyConfig.sSubId_}},
+                                              {"compatibilitymode",              {phyConfig.sCompatibilityMode_}},
+					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
+					      {"stats.receivepowertableenable",  {phyConfig.sReceivePowerTableEnable_}}
                                             },
                                             false)); // skip config
 
