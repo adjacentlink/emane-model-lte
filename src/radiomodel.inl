@@ -124,7 +124,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
                                                   "as a function of Signal to Interference plus Noise Ratio (SINR).");
 
   configRegistrar.registerNonNumeric<std::string>("resourceblocktxpower",
-                                                  EMANE::ConfigurationProperties::DEFAULT,
+                                                  EMANE::ConfigurationProperties::DEFAULT |
+                                                  EMANE::ConfigurationProperties::MODIFIABLE,
                                                   {"0.0"},
                                                   "The transmit power per LTE Resource Block in dBm.");
 
@@ -253,6 +254,39 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   item.second[0].asBool() ? "on" : "off");
 
           frequencyTablesEnable_ = item.second[0].asBool();
+        }
+      else
+        {
+          throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: "
+                                                                "Unexpected configuration item %s",
+                                                                item.first.c_str());
+        }
+    }
+}
+
+
+template <class RadioStatManager, class MessageProcessor>
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::processConfiguration(const EMANE::ConfigurationUpdate & update)
+{
+   for(const auto & item : update)
+     {
+     if(item.first == "resourceblocktxpower")
+        {
+          float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
+
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->setTxPower(resourceBlockTxPowerdBm);
+           }
+
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::INFO_LEVEL,
+                                  "%s %03hu %s: %s = %0.1f",
+                                  pzModuleName_,
+                                  id_,
+                                  __func__,
+                                  item.first.c_str(),
+                                  resourceBlockTxPowerdBm);
         }
       else
         {

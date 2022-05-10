@@ -93,6 +93,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       void destroy() throw() override;
 
+      void processConfiguration(const EMANE::ConfigurationUpdate & update) override;
+
       void processDownstreamControl(const EMANE::ControlMessages & msgs) override;
  
         
