@@ -69,6 +69,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
                                                                                EMANE::PlatformServiceProvider * pPlatformService,
                                                                                EMANE::RadioServiceProvider * pRadioService) :
   MACLayerImplementor{id, pPlatformService, pRadioService},
+  receiveMetricTable_{id_},
   bRunning_{},
   subframeIntervalMicroseconds_{},
   u16SubId_{},
@@ -159,12 +160,17 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
       "DropFreqMismatch - subframe dropped because the transmitter and receiver are not on the same carrier frequency. "
       "DropDirection - subframe dropped if an uplink message is expected and a downlink message is received, and vice versa. "
       "Time - the last time a check occurred.");
+
+  // initialize rx metric table
+  receiveMetricTable_.initialize(registrar);
 }
 
 
 template <class RadioStatManager, class MessageProcessor>
 void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configure(const EMANE::ConfigurationUpdate & update)
 {
+   EMANE::ConfigurationUpdate receiveMetricTableConfig;
+
    for(const auto & item : update)
      {
       if(item.first == "subid")
@@ -255,6 +261,19 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 
           frequencyTablesEnable_ = item.second[0].asBool();
         }
+      else if (item.first.find("rxmetrictable.") != std::string::npos)
+       {
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::INFO_LEVEL,
+                                  "%s %03hu %s: %s",
+                                  pzModuleName_,
+                                  id_,
+                                  __func__,
+                                  item.first.c_str());
+
+         // rx metric table config
+         receiveMetricTableConfig.emplace_back(item);
+       }
       else
         {
           throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: "
@@ -262,6 +281,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                                                 item.first.c_str());
         }
     }
+
+  receiveMetricTable_.configure(receiveMetricTableConfig);
 }
 
 

@@ -7,6 +7,8 @@
             eventservicedevice="${control_interface}">
 
     <radiomodel pcrcurveuri="pcr.xml"
+                rxmetrictable.averageallantennas="false"
+                rxmetrictable.averageallfrequencies="${avgallfreqs}"
                 resourceblocktxpower="0.0"/>
 
     <phy noisemode="all"

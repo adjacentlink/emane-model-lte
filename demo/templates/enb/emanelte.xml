@@ -8,6 +8,8 @@
 
     <radiomodel pcrcurveuri="pcr.xml"
                 antenna="${antenna}"
+                rxmetrictable.averageallantennas="false"
+                rxmetrictable.averageallfrequencies="${avgallfreqs}"
                 resourceblocktxpower="0.0"/>
 
     <phy noisemode="all"
