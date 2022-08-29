@@ -45,7 +45,7 @@
 #include "emane/antenna.h"
 #include "emane/maclayerimpl.h"
 #include "emane/types.h"
-#include "emane/receivemetrictable.h"
+#include "emane/rfreceivemetrictable.h"
 #include "emane/application/logger.h"
 #include "emane/frequencysegment.h"
 #include "emane/platformserviceprovider.h"
@@ -160,7 +160,7 @@ class RadioModel : public EMANE::MACLayerImplementor
       int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
       int getTxCarrierIndex(std::uint64_t carrierFrequency) const;
 
-      EMANE::ReceiveMetricTable receiveMetricTable_;
+      EMANE::RfReceiveMetricTable rfReceiveMetricTable_;
 
     private:
       bool bRunning_;

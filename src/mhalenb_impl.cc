@@ -84,13 +84,13 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
      platformConfig.id_,
      "lteenbradiomodel",
      {
-      {"maxpropagationdelay",                 {radioModelConfig.sMaxPropagationDelay_}},
-      {"pcrcurveuri",                         {radioModelConfig.sPcrCurveURI_}},
-      {"resourceblocktxpower",                {radioModelConfig.sResourceBlockTxPower_}},
-      {"antenna",                             {radioModelConfig.sAntenna_}},
-      {"rxmetrictable.averageallantennas",   {radioModelConfig.sAvgAllAntennas_}},
-      {"rxmetrictable.averageallfrequencies", {radioModelConfig.sAvgAllFrequencies_}},
-      {"subid",                               {phyConfig.sSubId_}},
+      {"maxpropagationdelay",                   {radioModelConfig.sMaxPropagationDelay_}},
+      {"pcrcurveuri",                           {radioModelConfig.sPcrCurveURI_}},
+      {"resourceblocktxpower",                  {radioModelConfig.sResourceBlockTxPower_}},
+      {"antenna",                               {radioModelConfig.sAntenna_}},
+      {"rfrxmetrictable.averageallantennas",    {radioModelConfig.sAvgAllAntennas_}},
+      {"rfrxmetrictable.averageallfrequencies", {radioModelConfig.sAvgAllFrequencies_}},
+      {"subid",                                 {phyConfig.sSubId_}},
      },
      false);
 
@@ -570,14 +570,14 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
               const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
 
-              pRadioModel_->receiveMetricTable_.update(rxControl.nemId_,
-                                                       rxAntennaId,
-                                                       segmentFrequencyHz,
-                                                       rxPower_mW,
-                                                       noiseFloor_mW,
-                                                       receiverSensitivity_mW);
+              pRadioModel_->rfReceiveMetricTable_.update(rxControl.nemId_,
+                                                         rxAntennaId,
+                                                         segmentFrequencyHz,
+                                                         rxPower_mW,
+                                                         noiseFloor_mW,
+                                                         receiverSensitivity_mW);
 
-#if 1
+#if 0
               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
                           __func__,
                           rxControl.nemId_,

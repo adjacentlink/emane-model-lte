@@ -69,7 +69,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
                                                                                EMANE::PlatformServiceProvider * pPlatformService,
                                                                                EMANE::RadioServiceProvider * pRadioService) :
   MACLayerImplementor{id, pPlatformService, pRadioService},
-  receiveMetricTable_{id_},
+  rfReceiveMetricTable_{id_},
   bRunning_{},
   subframeIntervalMicroseconds_{},
   u16SubId_{},
@@ -161,8 +161,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
       "DropDirection - subframe dropped if an uplink message is expected and a downlink message is received, and vice versa. "
       "Time - the last time a check occurred.");
 
-  // initialize rx metric table
-  receiveMetricTable_.initialize(registrar);
+  // initialize rf rx metric table
+  rfReceiveMetricTable_.initialize(registrar);
 }
 
 
@@ -261,7 +261,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 
           frequencyTablesEnable_ = item.second[0].asBool();
         }
-      else if (item.first.find("rxmetrictable.") != std::string::npos)
+      else if (item.first.find("rfrxmetrictable.") != std::string::npos)
        {
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
@@ -282,7 +282,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
         }
     }
 
-  receiveMetricTable_.configure(receiveMetricTableConfig);
+  rfReceiveMetricTable_.configure(receiveMetricTableConfig);
 }
 
 

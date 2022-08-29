@@ -71,12 +71,12 @@ namespace {
 \
                <xs:element name='radiomodel' minOccurs='1' maxOccurs='1'>\
                  <xs:complexType>\
-                   <xs:attribute name='pcrcurveuri'                         type='xs:string' use='required'/>\
-                   <xs:attribute name='maxpropagationdelay'                 type='xs:string' use='optional'/>\
-                   <xs:attribute name='resourceblocktxpower'                type='xs:string' use='optional'/>\
-                   <xs:attribute name='antenna'                             type='xs:string' use='optional'/>\
-                   <xs:attribute name='rxmetrictable.averageallantennas'    type='xs:string' use='optional'/>\
-                   <xs:attribute name='rxmetrictable.averageallfrequencies' type='xs:string' use='optional'/>\
+                   <xs:attribute name='pcrcurveuri'                           type='xs:string' use='required'/>\
+                   <xs:attribute name='maxpropagationdelay'                   type='xs:string' use='optional'/>\
+                   <xs:attribute name='resourceblocktxpower'                  type='xs:string' use='optional'/>\
+                   <xs:attribute name='antenna'                               type='xs:string' use='optional'/>\
+                   <xs:attribute name='rfrxmetrictable.averageallantennas'    type='xs:string' use='optional'/>\
+                   <xs:attribute name='rfrxmetrictable.averageallfrequencies' type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
@@ -245,11 +245,11 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                    radioModelConfig_.sPcrCurveURI_         = getRequiredValue(pLayerNode, "pcrcurveuri");
 
                    // optional
-                   radioModelConfig_.sMaxPropagationDelay_  = checkForValue(pLayerNode, "maxpropagationdelay",                 radioModelConfig_.sMaxPropagationDelay_);
-                   radioModelConfig_.sResourceBlockTxPower_ = checkForValue(pLayerNode, "resourceblocktxpower",                radioModelConfig_.sResourceBlockTxPower_);
-                   radioModelConfig_.sAntenna_              = checkForValue(pLayerNode, "antenna",                             radioModelConfig_.sAntenna_);
-                   radioModelConfig_.sAvgAllAntennas_       = checkForValue(pLayerNode, "rxmetrictable.averageallantennas",   radioModelConfig_.sAvgAllAntennas_);
-                   radioModelConfig_.sAvgAllFrequencies_    = checkForValue(pLayerNode, "rxmetrictable.averageallfrequencies", radioModelConfig_.sAvgAllFrequencies_);
+                   radioModelConfig_.sMaxPropagationDelay_  = checkForValue(pLayerNode, "maxpropagationdelay",                   radioModelConfig_.sMaxPropagationDelay_);
+                   radioModelConfig_.sResourceBlockTxPower_ = checkForValue(pLayerNode, "resourceblocktxpower",                  radioModelConfig_.sResourceBlockTxPower_);
+                   radioModelConfig_.sAntenna_              = checkForValue(pLayerNode, "antenna",                               radioModelConfig_.sAntenna_);
+                   radioModelConfig_.sAvgAllAntennas_       = checkForValue(pLayerNode, "rfrxmetrictable.averageallantennas",    radioModelConfig_.sAvgAllAntennas_);
+                   radioModelConfig_.sAvgAllFrequencies_    = checkForValue(pLayerNode, "rfrxmetrictable.averageallfrequencies", radioModelConfig_.sAvgAllFrequencies_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,

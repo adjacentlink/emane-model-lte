@@ -173,11 +173,11 @@ namespace EMANELTE
             {
                std::stringstream ss;
 
-               ss << "\n\tpcrcurveuri="                         << sPcrCurveURI_; 
-               ss << "\n\tmaxpropagationdelay="                 << sMaxPropagationDelay_;
-               ss << "\n\tresourceblocktxpower="                << sResourceBlockTxPower_;
-               ss << "\n\trxmetrictable.averageallantennas="    << sAvgAllAntennas_;
-               ss << "\n\trxmetrictable.averageallfrequencies=" << sAvgAllFrequencies_;
+               ss << "\n\tpcrcurveuri="                           << sPcrCurveURI_; 
+               ss << "\n\tmaxpropagationdelay="                   << sMaxPropagationDelay_;
+               ss << "\n\tresourceblocktxpower="                  << sResourceBlockTxPower_;
+               ss << "\n\trfrxmetrictable.averageallantennas="    << sAvgAllAntennas_;
+               ss << "\n\trfrxmetrictable.averageallfrequencies=" << sAvgAllFrequencies_;
 
                return ss.str();
              }
