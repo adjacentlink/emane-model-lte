@@ -69,7 +69,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
                                                                                EMANE::PlatformServiceProvider * pPlatformService,
                                                                                EMANE::RadioServiceProvider * pRadioService) :
   MACLayerImplementor{id, pPlatformService, pRadioService},
-  rfReceiveMetricTable_{id_},
+  rfSignalTable_{id_},
   bRunning_{},
   subframeIntervalMicroseconds_{},
   u16SubId_{},
@@ -161,15 +161,15 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
       "DropDirection - subframe dropped if an uplink message is expected and a downlink message is received, and vice versa. "
       "Time - the last time a check occurred.");
 
-  // initialize rf rx metric table
-  rfReceiveMetricTable_.initialize(registrar);
+  // initialize rf signal table
+  rfSignalTable_.initialize(registrar);
 }
 
 
 template <class RadioStatManager, class MessageProcessor>
 void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configure(const EMANE::ConfigurationUpdate & update)
 {
-   EMANE::ConfigurationUpdate receiveMetricTableConfig;
+   EMANE::ConfigurationUpdate rfSignalTableConfig;
 
    for(const auto & item : update)
      {
@@ -261,7 +261,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 
           frequencyTablesEnable_ = item.second[0].asBool();
         }
-      else if (item.first.find("rfrxmetrictable.") != std::string::npos)
+      else if (! item.first.compare(0, EMANE::RFSignalTable::CONFIG_PREFIX.size(), EMANE::RFSignalTable::CONFIG_PREFIX))
        {
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
@@ -271,8 +271,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
                                   __func__,
                                   item.first.c_str());
 
-         // rx metric table config
-         receiveMetricTableConfig.emplace_back(item);
+         // rf signal table config
+         rfSignalTableConfig.emplace_back(item);
        }
       else
         {
@@ -282,7 +282,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
         }
     }
 
-  rfReceiveMetricTable_.configure(receiveMetricTableConfig);
+  rfSignalTable_.configure(rfSignalTableConfig);
 }
 
 

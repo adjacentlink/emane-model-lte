@@ -88,8 +88,8 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
       {"pcrcurveuri",                           {radioModelConfig.sPcrCurveURI_}},
       {"resourceblocktxpower",                  {radioModelConfig.sResourceBlockTxPower_}},
       {"antenna",                               {radioModelConfig.sAntenna_}},
-      {"rfrxmetrictable.averageallantennas",    {radioModelConfig.sAvgAllAntennas_}},
-      {"rfrxmetrictable.averageallfrequencies", {radioModelConfig.sAvgAllFrequencies_}},
+      {"rfsignaltable.averageallantennas",      {radioModelConfig.sAvgAllAntennas_}},
+      {"rfsignaltable.averageallfrequencies",   {radioModelConfig.sAvgAllFrequencies_}},
       {"subid",                                 {phyConfig.sSubId_}},
      },
      false);
@@ -570,12 +570,12 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
               const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
 
-              pRadioModel_->rfReceiveMetricTable_.update(rxControl.nemId_,
-                                                         rxAntennaId,
-                                                         segmentFrequencyHz,
-                                                         rxPower_mW,
-                                                         noiseFloor_mW,
-                                                         receiverSensitivity_mW);
+              pRadioModel_->rfSignalTable_.update(rxControl.nemId_,
+                                                  rxAntennaId,
+                                                  segmentFrequencyHz,
+                                                  rxPower_mW,
+                                                  noiseFloor_mW,
+                                                  receiverSensitivity_mW);
 
 #if 0
               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
