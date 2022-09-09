@@ -95,8 +95,10 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
                                               {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
                                               {"subid",                  {phyConfig.sSubId_}},
                                               {"compatibilitymode",      {phyConfig.sCompatibilityMode_}},
-					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
-					      {"stats.receivepowertableenable", {phyConfig.sReceivePowerTableEnable_}}
+                                              {"noisebinsize",                   {"20"}},
+                                              {"bandwidth",                      {std::to_string(EMANELTE::ResourceBlockBandwidthHz)}},
+ 					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
+					      {"stats.receivepowertableenable",  {phyConfig.sReceivePowerTableEnable_}}
                                             },
                                             false)); // skip config
 

@@ -352,12 +352,13 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "%s %03hu %s antenna index %zu, %s",
+                                    "%s %03hu %s antenna index %zu, %s, bandwidth %lu",
                                     pzModuleName_,
                                     id_,
                                     __func__,
                                     antennas_.size(),
-                                    tag.c_str());
+                                    tag.c_str(),
+                                    antenna.getBandwidthHz());
 
          antennas_.emplace_back(antenna);
        }
@@ -387,13 +388,15 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "%s %03hu %s antenna index %zu, profile %u, az %f, el %f",
+                                    "%s %03hu %s antenna index %zu, profile %u, az %f, el %f, bandwidth %lu",
                                     pzModuleName_,
                                     id_,
                                     __func__,
                                     antennas_.size(),
                                     profile,
-                                    az, el);
+                                    az,
+                                    el,
+                                    antenna.getBandwidthHz());
 
             antennas_.emplace_back(antenna);
           }
