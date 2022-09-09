@@ -171,6 +171,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 {
    EMANE::ConfigurationUpdate rfSignalTableConfig;
 
+   const std::string rfSignalTableConfigPrefix{EMANE::RFSignalTable::CONFIG_PREFIX};
+
    for(const auto & item : update)
      {
       if(item.first == "subid")
@@ -261,7 +263,7 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 
           frequencyTablesEnable_ = item.second[0].asBool();
         }
-      else if (! item.first.compare(0, EMANE::RFSignalTable::CONFIG_PREFIX.size(), EMANE::RFSignalTable::CONFIG_PREFIX))
+      else if (! item.first.compare(0, rfSignalTableConfigPrefix.size(), rfSignalTableConfigPrefix))
        {
           LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                   EMANE::INFO_LEVEL,
