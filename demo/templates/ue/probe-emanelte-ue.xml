@@ -5,6 +5,7 @@
     <EMANE.LTE.UE.Tables.Downlink.Control enable="no"/>
     <EMANE.LTE.UE.Tables.Downlink.Data enable="yes"/>
     <EMANE.LTE.UE.Tables.Events enable="yes"/>
+    <EMANE.LTE.UE.Tables.Receive enable="yes"/>
     <EMANE.LTE.UE.Tables.Uplink.Control enable="no"/>
     <EMANE.LTE.UE.Tables.Uplink.Data enable="no"/>
   </probes>
