@@ -219,7 +219,7 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
    {
      const auto rxAntennaId = rxAntennaSegmentSpans.first;
 
-#if 0 
+#if 0
      logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, num segments %zu",
                  __func__, rxAntennaId, rxAntennaSegmentSpans.second.size());
 #endif
@@ -231,9 +231,14 @@ void EMANELTE::MHAL::MHALCommon::noiseWorker_safe(const uint32_t bin)
         const auto & maxEor             = SegmentTimeSpan_Eor_Get(segmentSpan.second);
         const auto duration             = std::chrono::duration_cast<EMANE::Microseconds>(maxEor - minSor);
 
-#if 0 
-        logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, frequency %lu Hz",
-                    __func__, rxAntennaId, segmentFrequencyHz);
+#if 0
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::RADIO %s, rxAntenna %u, frequency %lu Hz, minSor %f, maxEor %f, duration %ld",
+                    __func__, 
+                    rxAntennaId,
+                    segmentFrequencyHz,
+                    minSor.time_since_epoch().count()/1e9,
+                    maxEor.time_since_epoch().count()/1e9,
+                    duration.count());
 #endif
 
         // per rx antenna

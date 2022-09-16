@@ -45,6 +45,7 @@
 #include "emane/antenna.h"
 #include "emane/maclayerimpl.h"
 #include "emane/types.h"
+#include "emane/rfsignaltable.h"
 #include "emane/application/logger.h"
 #include "emane/frequencysegment.h"
 #include "emane/platformserviceprovider.h"
@@ -92,6 +93,8 @@ class RadioModel : public EMANE::MACLayerImplementor
       void stop() override;
 
       void destroy() throw() override;
+
+      void processConfiguration(const EMANE::ConfigurationUpdate & update) override;
 
       void processDownstreamControl(const EMANE::ControlMessages & msgs) override;
  
@@ -156,6 +159,8 @@ class RadioModel : public EMANE::MACLayerImplementor
 
       int getRxCarrierIndex(std::uint64_t carrierFrequency) const;
       int getTxCarrierIndex(std::uint64_t carrierFrequency) const;
+
+      EMANE::RFSignalTable rfSignalTable_;
 
     private:
       bool bRunning_;

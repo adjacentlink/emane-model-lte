@@ -157,22 +157,27 @@ namespace EMANELTE
            std::string   sMaxPropagationDelay_;
            std::string   sResourceBlockTxPower_;
            std::string   sAntenna_;
+           std::string   sAvgAllAntennas_;
+           std::string   sAvgAllFrequencies_;
 
            RadioModelConfig() :
             sPcrCurveURI_{},
             sMaxPropagationDelay_{"333"}, // in usec, ~100km is the max range supported by timing advance
             sResourceBlockTxPower_{"0.0"},
-            sAntenna_{"omni"}
+            sAntenna_{"omni"},
+            sAvgAllAntennas_{"false"},
+            sAvgAllFrequencies_{"false"}
            { }
 
            std::string format()
             {
                std::stringstream ss;
 
-               ss << "\n\tpcrcurveuri="           << sPcrCurveURI_; 
-               ss << "\n\tmaxpropagationdelay="   << sMaxPropagationDelay_;
-               ss << "\n\tresourceblocktxpower="  << sResourceBlockTxPower_;
-               ss << "\n\tantenna="               << sAntenna_;
+               ss << "\n\tpcrcurveuri="                         << sPcrCurveURI_; 
+               ss << "\n\tmaxpropagationdelay="                 << sMaxPropagationDelay_;
+               ss << "\n\tresourceblocktxpower="                << sResourceBlockTxPower_;
+               ss << "\n\trfsignaltable.averageallantennas="    << sAvgAllAntennas_;
+               ss << "\n\trfsignaltable.averageallfrequencies=" << sAvgAllFrequencies_;
 
                return ss.str();
              }
