@@ -1,3 +1,4 @@
+%global __brp_check_rpaths %{nil}
 Summary: EMANE-MODEL-LTE
 Name: emane-model-lte
 Version: @VERSION@
