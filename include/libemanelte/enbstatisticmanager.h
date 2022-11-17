@@ -41,6 +41,7 @@
 #include <vector>
 #include <map>
 #include <sys/time.h>
+#include <ctime>
 
 namespace ENBSTATS {
       void initialize(float report_interval_secs);

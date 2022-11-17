@@ -1,5 +1,5 @@
 AC_COPYRIGHT([
-  Copyright (c) 2019-2021 - Adjacent Link LLC, Bridgewater, New Jersey
+  Copyright (c) 2019-2022 - Adjacent Link LLC, Bridgewater, New Jersey
   All rights reserved.
  
   Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ AC_COPYRIGHT([
   See toplevel COPYING for more information.
 ])
 
-AC_INIT([emane-model-lte],1.0.8,[emane at adjacent link dot com])
+AC_INIT([emane-model-lte],1.0.9,[emane at adjacent link dot com])
 
 EMANE_VERSION='1.2.3'
 AC_SUBST(EMANE_VERSION)
