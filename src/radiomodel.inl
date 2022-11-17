@@ -69,6 +69,7 @@ EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::RadioModel(E
                                                                                EMANE::PlatformServiceProvider * pPlatformService,
                                                                                EMANE::RadioServiceProvider * pRadioService) :
   MACLayerImplementor{id, pPlatformService, pRadioService},
+  rfSignalTable_{id_},
   bRunning_{},
   subframeIntervalMicroseconds_{},
   u16SubId_{},
@@ -124,7 +125,8 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
                                                   "as a function of Signal to Interference plus Noise Ratio (SINR).");
 
   configRegistrar.registerNonNumeric<std::string>("resourceblocktxpower",
-                                                  EMANE::ConfigurationProperties::DEFAULT,
+                                                  EMANE::ConfigurationProperties::DEFAULT |
+                                                  EMANE::ConfigurationProperties::MODIFIABLE,
                                                   {"0.0"},
                                                   "The transmit power per LTE Resource Block in dBm.");
 
@@ -158,12 +160,19 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::initial
       "DropFreqMismatch - subframe dropped because the transmitter and receiver are not on the same carrier frequency. "
       "DropDirection - subframe dropped if an uplink message is expected and a downlink message is received, and vice versa. "
       "Time - the last time a check occurred.");
+
+  // initialize rf signal table
+  rfSignalTable_.initialize(registrar);
 }
 
 
 template <class RadioStatManager, class MessageProcessor>
 void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configure(const EMANE::ConfigurationUpdate & update)
 {
+   EMANE::ConfigurationUpdate rfSignalTableConfig;
+
+   const std::string rfSignalTableConfigPrefix{EMANE::RFSignalTable::CONFIG_PREFIX};
+
    for(const auto & item : update)
      {
       if(item.first == "subid")
@@ -254,6 +263,54 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::configu
 
           frequencyTablesEnable_ = item.second[0].asBool();
         }
+      else if (! item.first.compare(0, rfSignalTableConfigPrefix.size(), rfSignalTableConfigPrefix))
+       {
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::INFO_LEVEL,
+                                  "%s %03hu %s: %s",
+                                  pzModuleName_,
+                                  id_,
+                                  __func__,
+                                  item.first.c_str());
+
+         // rf signal table config
+         rfSignalTableConfig.emplace_back(item);
+       }
+      else
+        {
+          throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: "
+                                                                "Unexpected configuration item %s",
+                                                                item.first.c_str());
+        }
+    }
+
+  rfSignalTable_.configure(rfSignalTableConfig);
+}
+
+
+template <class RadioStatManager, class MessageProcessor>
+void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::processConfiguration(const EMANE::ConfigurationUpdate & update)
+{
+   for(const auto & item : update)
+     {
+     if(item.first == "resourceblocktxpower")
+        {
+          float resourceBlockTxPowerdBm{EMANE::Utils::ParameterConvert(item.second[0].asString()).toFloat()};
+
+          for(uint32_t idx = 0; idx < EMANELTE::MAX_CARRIERS; ++idx)
+           {
+             messageProcessor_[idx]->setTxPower(resourceBlockTxPowerdBm);
+           }
+
+          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
+                                  EMANE::INFO_LEVEL,
+                                  "%s %03hu %s: %s = %0.1f",
+                                  pzModuleName_,
+                                  id_,
+                                  __func__,
+                                  item.first.c_str(),
+                                  resourceBlockTxPowerdBm);
+        }
       else
         {
           throw EMANE::makeException<EMANE::ConfigureException>("EMANE::Models::LTE::RadioModel: "
@@ -297,12 +354,13 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
          LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "%s %03hu %s antenna index %zu, %s",
+                                    "%s %03hu %s antenna index %zu, %s, bandwidth %lu",
                                     pzModuleName_,
                                     id_,
                                     __func__,
                                     antennas_.size(),
-                                    tag.c_str());
+                                    tag.c_str(),
+                                    antenna.getBandwidthHz());
 
          antennas_.emplace_back(antenna);
        }
@@ -332,13 +390,15 @@ void EMANE::Models::LTE::RadioModel<RadioStatManager, MessageProcessor>::start()
 
             LOGGER_STANDARD_LOGGING(pPlatformService_->logService(),
                                     EMANE::INFO_LEVEL,
-                                    "%s %03hu %s antenna index %zu, profile %u, az %f, el %f",
+                                    "%s %03hu %s antenna index %zu, profile %u, az %f, el %f, bandwidth %lu",
                                     pzModuleName_,
                                     id_,
                                     __func__,
                                     antennas_.size(),
                                     profile,
-                                    az, el);
+                                    az,
+                                    el,
+                                    antenna.getBandwidthHz());
 
             antennas_.emplace_back(antenna);
           }

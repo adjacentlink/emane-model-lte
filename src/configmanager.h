@@ -117,6 +117,8 @@ namespace EMANELTE
            std::string   sSystemNoiseFigure_;
            std::string   sSubId_;
            std::string   sCompatibilityMode_;
+           std::string   sObservedPowerTableEnable_;
+           std::string   sReceivePowerTableEnable_;
 
 
            PhyConfig() :
@@ -126,20 +128,24 @@ namespace EMANELTE
             sPropagationModel_{"precomputed"},
             sSystemNoiseFigure_{"7.0"},
             sSubId_{"65533"},
-            sCompatibilityMode_{"2"}
+            sCompatibilityMode_{"2"},
+	    sObservedPowerTableEnable_{"on"},
+	    sReceivePowerTableEnable_{"on"}
            { }
 
            std::string format()
             {
                std::stringstream ss;
 
-               ss << "\n\tantennagain="         << sAntennaGain_;
-               ss << "\n\tfixedantennagain="    << sFixedAntennaGainEnable_;
-               ss << "\n\tnoisemode="           << sNoiseMode_;
-               ss << "\n\tpropagationmodel="    << sPropagationModel_;
-               ss << "\n\tsystemnoisefigure="   << sSystemNoiseFigure_;
-               ss << "\n\tsubid="               << sSubId_;
-               ss << "\n\tcompatabilitymode="   << sCompatibilityMode_;
+               ss << "\n\tantennagain="                    << sAntennaGain_;
+               ss << "\n\tfixedantennagain="               << sFixedAntennaGainEnable_;
+               ss << "\n\tnoisemode="                      << sNoiseMode_;
+               ss << "\n\tpropagationmodel="               << sPropagationModel_;
+               ss << "\n\tsystemnoisefigure="              << sSystemNoiseFigure_;
+               ss << "\n\tsubid="                          << sSubId_;
+               ss << "\n\tcompatabilitymode="              << sCompatibilityMode_;
+               ss << "\n\tstats.observedpowertableenable=" << sObservedPowerTableEnable_;
+               ss << "\n\tstats.receivepowertableenable="  << sReceivePowerTableEnable_;
 
                return ss.str();
              }
@@ -151,22 +157,27 @@ namespace EMANELTE
            std::string   sMaxPropagationDelay_;
            std::string   sResourceBlockTxPower_;
            std::string   sAntenna_;
+           std::string   sAvgAllAntennas_;
+           std::string   sAvgAllFrequencies_;
 
            RadioModelConfig() :
             sPcrCurveURI_{},
             sMaxPropagationDelay_{"333"}, // in usec, ~100km is the max range supported by timing advance
             sResourceBlockTxPower_{"0.0"},
-            sAntenna_{"omni"}
+            sAntenna_{"omni"},
+            sAvgAllAntennas_{"false"},
+            sAvgAllFrequencies_{"false"}
            { }
 
            std::string format()
             {
                std::stringstream ss;
 
-               ss << "\n\tpcrcurveuri="           << sPcrCurveURI_; 
-               ss << "\n\tmaxpropagationdelay="   << sMaxPropagationDelay_;
-               ss << "\n\tresourceblocktxpower="  << sResourceBlockTxPower_;
-               ss << "\n\tantenna="               << sAntenna_;
+               ss << "\n\tpcrcurveuri="                         << sPcrCurveURI_; 
+               ss << "\n\tmaxpropagationdelay="                 << sMaxPropagationDelay_;
+               ss << "\n\tresourceblocktxpower="                << sResourceBlockTxPower_;
+               ss << "\n\trfsignaltable.averageallantennas="    << sAvgAllAntennas_;
+               ss << "\n\trfsignaltable.averageallfrequencies=" << sAvgAllFrequencies_;
 
                return ss.str();
              }

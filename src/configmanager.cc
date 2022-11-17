@@ -71,22 +71,26 @@ namespace {
 \
                <xs:element name='radiomodel' minOccurs='1' maxOccurs='1'>\
                  <xs:complexType>\
-                   <xs:attribute name='pcrcurveuri'             type='xs:string' use='required'/>\
-                   <xs:attribute name='maxpropagationdelay'     type='xs:string' use='optional'/>\
-                   <xs:attribute name='resourceblocktxpower'    type='xs:string' use='optional'/>\
-                   <xs:attribute name='antenna'                 type='xs:string' use='optional'/>\
+                   <xs:attribute name='pcrcurveuri'                           type='xs:string' use='required'/>\
+                   <xs:attribute name='maxpropagationdelay'                   type='xs:string' use='optional'/>\
+                   <xs:attribute name='resourceblocktxpower'                  type='xs:string' use='optional'/>\
+                   <xs:attribute name='antenna'                               type='xs:string' use='optional'/>\
+                   <xs:attribute name='rfsignaltable.averageallantennas'      type='xs:string' use='optional'/>\
+                   <xs:attribute name='rfsignaltable.averageallfrequencies'   type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
                <xs:element name='phy' minOccurs='0' maxOccurs='1'>\
                  <xs:complexType>\
-                   <xs:attribute name='fixedantennagain'        type='xs:string' use='optional'/>\
-                   <xs:attribute name='fixedantennagainenable'  type='xs:string' use='optional'/>\
-                   <xs:attribute name='noisemode'               type='xs:string' use='optional'/>\
-                   <xs:attribute name='propagationmodel'        type='xs:string' use='optional'/>\
-                   <xs:attribute name='systemnoisefigure'       type='xs:string' use='optional'/>\
-                   <xs:attribute name='subid'                   type='xs:string' use='optional'/>\
-                   <xs:attribute name='compatibilitymode'       type='xs:string' use='optional'/>\
+                   <xs:attribute name='fixedantennagain'               type='xs:string' use='optional'/>\
+                   <xs:attribute name='fixedantennagainenable'         type='xs:string' use='optional'/>\
+                   <xs:attribute name='noisemode'                      type='xs:string' use='optional'/>\
+                   <xs:attribute name='propagationmodel'               type='xs:string' use='optional'/>\
+                   <xs:attribute name='systemnoisefigure'              type='xs:string' use='optional'/>\
+                   <xs:attribute name='subid'                          type='xs:string' use='optional'/>\
+                   <xs:attribute name='compatibilitymode'              type='xs:string' use='optional'/>\
+                   <xs:attribute name='stats.observedpowertableenable' type='xs:string' use='optional'/>\
+                   <xs:attribute name='stats.receivepowertableenable'  type='xs:string' use='optional'/>\
                  </xs:complexType>\
                </xs:element>\
 \
@@ -241,9 +245,11 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                    radioModelConfig_.sPcrCurveURI_         = getRequiredValue(pLayerNode, "pcrcurveuri");
 
                    // optional
-                   radioModelConfig_.sMaxPropagationDelay_  = checkForValue(pLayerNode, "maxpropagationdelay",     radioModelConfig_.sMaxPropagationDelay_);
-                   radioModelConfig_.sResourceBlockTxPower_ = checkForValue(pLayerNode, "resourceblocktxpower",    radioModelConfig_.sResourceBlockTxPower_);
-                   radioModelConfig_.sAntenna_              = checkForValue(pLayerNode, "antenna",                 radioModelConfig_.sAntenna_);
+                   radioModelConfig_.sMaxPropagationDelay_  = checkForValue(pLayerNode, "maxpropagationdelay",                 radioModelConfig_.sMaxPropagationDelay_);
+                   radioModelConfig_.sResourceBlockTxPower_ = checkForValue(pLayerNode, "resourceblocktxpower",                radioModelConfig_.sResourceBlockTxPower_);
+                   radioModelConfig_.sAntenna_              = checkForValue(pLayerNode, "antenna",                             radioModelConfig_.sAntenna_);
+                   radioModelConfig_.sAvgAllAntennas_       = checkForValue(pLayerNode, "rfsignaltable.averageallantennas",    radioModelConfig_.sAvgAllAntennas_);
+                   radioModelConfig_.sAvgAllFrequencies_    = checkForValue(pLayerNode, "rfsignaltable.averageallfrequencies", radioModelConfig_.sAvgAllFrequencies_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,
@@ -256,13 +262,15 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                else if(!xmlStrcmp(pLayerNode->name, BAD_CAST "phy"))
                  {
                    // optional
-                   phyConfig_.sAntennaGain_              = checkForValue(pLayerNode, "fixedantennagain",        phyConfig_.sAntennaGain_);
-                   phyConfig_.sFixedAntennaGainEnable_   = checkForValue(pLayerNode, "fixedantennagainenable",  phyConfig_.sFixedAntennaGainEnable_);
-                   phyConfig_.sNoiseMode_                = checkForValue(pLayerNode, "noisemode",               phyConfig_.sNoiseMode_);
-                   phyConfig_.sPropagationModel_         = checkForValue(pLayerNode, "propagationmodel",        phyConfig_.sPropagationModel_);
-                   phyConfig_.sSystemNoiseFigure_        = checkForValue(pLayerNode, "systemnoisefigure",       phyConfig_.sSystemNoiseFigure_);
-                   phyConfig_.sSubId_                    = checkForValue(pLayerNode, "subid",                   phyConfig_.sSubId_);
-                   phyConfig_.sCompatibilityMode_        = checkForValue(pLayerNode, "compatibilitymode",       phyConfig_.sCompatibilityMode_);
+                   phyConfig_.sAntennaGain_              = checkForValue(pLayerNode, "fixedantennagain",               phyConfig_.sAntennaGain_);
+                   phyConfig_.sFixedAntennaGainEnable_   = checkForValue(pLayerNode, "fixedantennagainenable",         phyConfig_.sFixedAntennaGainEnable_);
+                   phyConfig_.sNoiseMode_                = checkForValue(pLayerNode, "noisemode",                      phyConfig_.sNoiseMode_);
+                   phyConfig_.sPropagationModel_         = checkForValue(pLayerNode, "propagationmodel",               phyConfig_.sPropagationModel_);
+                   phyConfig_.sSystemNoiseFigure_        = checkForValue(pLayerNode, "systemnoisefigure",              phyConfig_.sSystemNoiseFigure_);
+                   phyConfig_.sSubId_                    = checkForValue(pLayerNode, "subid",                          phyConfig_.sSubId_);
+                   phyConfig_.sCompatibilityMode_        = checkForValue(pLayerNode, "compatibilitymode",              phyConfig_.sCompatibilityMode_);
+                   phyConfig_.sObservedPowerTableEnable_ = checkForValue(pLayerNode, "stats.observedpowertableenable", phyConfig_.sObservedPowerTableEnable_);
+                   phyConfig_.sReceivePowerTableEnable_  = checkForValue(pLayerNode, "stats.receivepowertableenable",  phyConfig_.sReceivePowerTableEnable_);
 
                    LOGGER_STANDARD_LOGGING(logger_,
                                            EMANE::INFO_LEVEL,
@@ -274,12 +282,6 @@ void EMANELTE::MHAL::ConfigManager::parseConfigFile_i(const std::string & sFileN
                  }
              }
          }
-    }
-
-  for(auto pEntryNode = pRoot->children;
-      pEntryNode != nullptr;
-      pEntryNode = pEntryNode->next)
-    {
     }
 
    xmlFreeDoc(pSchemaDoc);

@@ -65,10 +65,12 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
         platformConfig.id_,
         "lteueradiomodel",
         {
-          {"maxpropagationdelay",  {radioModelConfig.sMaxPropagationDelay_}},
-          {"pcrcurveuri",          {radioModelConfig.sPcrCurveURI_}},
-          {"resourceblocktxpower", {radioModelConfig.sResourceBlockTxPower_}},
-          {"subid",                {phyConfig.sSubId_}}
+          {"maxpropagationdelay",                 {radioModelConfig.sMaxPropagationDelay_}},
+          {"pcrcurveuri",                         {radioModelConfig.sPcrCurveURI_}},
+          {"resourceblocktxpower",                {radioModelConfig.sResourceBlockTxPower_}},
+          {"rfsignaltable.averageallantennas",    {radioModelConfig.sAvgAllAntennas_}},
+          {"rfsignaltable.averageallfrequencies", {radioModelConfig.sAvgAllFrequencies_}},
+          {"subid",                               {phyConfig.sSubId_}}
         },
         false);
 
@@ -92,7 +94,11 @@ void EMANELTE::MHAL::MHALUEImpl::init_emane()
                                               {"propagationmodel",       {phyConfig.sPropagationModel_}},
                                               {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
                                               {"subid",                  {phyConfig.sSubId_}},
-                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
+                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}},
+                                              {"noisebinsize",                   {"20"}},
+                                              {"bandwidth",                      {std::to_string(EMANELTE::ResourceBlockBandwidthHz)}},
+ 					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
+					      {"stats.receivepowertableenable",  {phyConfig.sReceivePowerTableEnable_}}
                                             },
                                             false)); // skip config
 
@@ -371,6 +377,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 #endif
                }
             }
+#if 0  // JG this log is too noisy
            else
             {
               // during cell search the foi is limited to the min b/w, therefore we may not rx every subchannel
@@ -382,6 +389,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                           txCarrierFrequencyHz,
                           subChannelHz);
             }
+#endif
          }
 
         // check for missing all segments
@@ -468,6 +476,27 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
            const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
            const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
+
+           // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
+           const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
+
+           pRadioModel_->rfSignalTable_.update(rxControl.nemId_,
+                                               rxAntennaId,
+                                               segmentFrequencyHz,
+                                               rxPower_mW,
+                                               noiseFloor_mW,
+                                               receiverSensitivity_mW);
+
+#if 0
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
+                          __func__,
+                          rxControl.nemId_,
+                          rxAntennaId,
+                          segmentFrequencyHz,
+                          rxPower_dBm,
+                          noiseFloor_dBm,
+                          EMANELTE::MW_TO_DB(receiverSensitivity_mW));
+#endif
 
            signalSum_mW     += rxPower_mW;
            noiseFloorSum_mW += noiseFloor_mW;

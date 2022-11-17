@@ -84,11 +84,13 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
      platformConfig.id_,
      "lteenbradiomodel",
      {
-      {"maxpropagationdelay",  {radioModelConfig.sMaxPropagationDelay_}},
-      {"pcrcurveuri",          {radioModelConfig.sPcrCurveURI_}},
-      {"resourceblocktxpower", {radioModelConfig.sResourceBlockTxPower_}},
-      {"antenna",              {radioModelConfig.sAntenna_}},
-      {"subid",                {phyConfig.sSubId_}},
+      {"maxpropagationdelay",                   {radioModelConfig.sMaxPropagationDelay_}},
+      {"pcrcurveuri",                           {radioModelConfig.sPcrCurveURI_}},
+      {"resourceblocktxpower",                  {radioModelConfig.sResourceBlockTxPower_}},
+      {"antenna",                               {radioModelConfig.sAntenna_}},
+      {"rfsignaltable.averageallantennas",      {radioModelConfig.sAvgAllAntennas_}},
+      {"rfsignaltable.averageallfrequencies",   {radioModelConfig.sAvgAllFrequencies_}},
+      {"subid",                                 {phyConfig.sSubId_}},
      },
      false);
 
@@ -106,13 +108,17 @@ void EMANELTE::MHAL::MHALENBImpl::init_emane()
   layers.push_back(nemBuilder.buildPHYLayer(platformConfig.id_,
                                             "",
                                             {
-                                              {"fixedantennagain",       {phyConfig.sAntennaGain_}},
-                                              {"fixedantennagainenable", {phyConfig.sFixedAntennaGainEnable_}},
-                                              {"noisemode",              {phyConfig.sNoiseMode_}},
-                                              {"propagationmodel",       {phyConfig.sPropagationModel_}},
-                                              {"systemnoisefigure",      {phyConfig.sSystemNoiseFigure_}},
-                                              {"subid",                  {phyConfig.sSubId_}},
-                                              {"compatibilitymode",      {phyConfig.sCompatibilityMode_}}
+                                              {"fixedantennagain",               {phyConfig.sAntennaGain_}},
+                                              {"fixedantennagainenable",         {phyConfig.sFixedAntennaGainEnable_}},
+                                              {"noisemode",                      {phyConfig.sNoiseMode_}},
+                                              {"propagationmodel",               {phyConfig.sPropagationModel_}},
+                                              {"systemnoisefigure",              {phyConfig.sSystemNoiseFigure_}},
+                                              {"subid",                          {phyConfig.sSubId_}},
+                                              {"compatibilitymode",              {phyConfig.sCompatibilityMode_}},
+                                              {"noisebinsize",                   {"20"}},
+                                              {"bandwidth",                      {std::to_string(EMANELTE::ResourceBlockBandwidthHz)}},
+					      {"stats.observedpowertableenable", {phyConfig.sObservedPowerTableEnable_}},
+					      {"stats.receivepowertableenable",  {phyConfig.sReceivePowerTableEnable_}}
                                             },
                                             false)); // skip config
 
@@ -251,23 +257,23 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                                                          otaInfo.sot_,
                                                                          rxPower_mW};
 
-#if 0
-            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, RxAntenna %u, src %hu, contributes segmentKey <%lu, %ld, %ld> power %f dBm", 
-                        __func__,
-                        rxAntennaId,
-                        rxControl.nemId_,
-                        std::get<0>(segmentKeyInBand),
-                        std::get<1>(segmentKeyInBand).count(),
-                        std::get<2>(segmentKeyInBand).count(),
-                        frequencySegment.getRxPowerdBm());
-#endif
-
             const auto iter = segmentSOTmap.find(segmentKeyInBand);
 
             if(iter == segmentSOTmap.end())
              {
                // new entry             
                segmentSOTmap.emplace(segmentKeyInBand, segmentValueInBand);
+#if 0
+               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, bin %u, RxAntenna %u, src %hu, initial segmentKey <%lu, %ld, %ld> power %f dBm", 
+                           __func__,
+                           bin,
+                           rxAntennaId,
+                           rxControl.nemId_,
+                           std::get<0>(segmentKeyInBand),
+                           std::get<1>(segmentKeyInBand).count(),
+                           std::get<2>(segmentKeyInBand).count(),
+                           frequencySegment.getRxPowerdBm());
+#endif
              }
             else
              {
@@ -279,6 +285,18 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                minSot = std::min(minSot, otaInfo.sot_);
                maxSot = std::max(maxSot, otaInfo.sot_);
                partialRxPower_mW += rxPower_mW;
+#if 0
+               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 1st, bin %u, RxAntenna %u, src %hu, overlap segmentKey <%lu, %ld, %ld> power %f dBm, total %f dBm", 
+                           __func__,
+                           bin,
+                           rxAntennaId,
+                           rxControl.nemId_,
+                           std::get<0>(segmentKeyInBand),
+                           std::get<1>(segmentKeyInBand).count(),
+                           std::get<2>(segmentKeyInBand).count(),
+                           frequencySegment.getRxPowerdBm(),
+                           EMANELTE::MW_TO_DB(partialRxPower_mW));
+#endif
              }
            } // end for each frequency segment
        } // end for each rx antenna
@@ -338,9 +356,9 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
             continue;
           }
 
-        const auto & noiseData = std::get<0>(spectrumWindow->second);
+        const auto & rawNoiseData = std::get<0>(spectrumWindow->second);
 
-        if(noiseData.empty())
+        if(rawNoiseData.empty())
          {
            logger_.log(EMANE::ERROR_LEVEL, "MHAL::PHY %s, 2nd, bin %u, freq %lu, no noise data",
                        __func__,
@@ -370,15 +388,26 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
         antennaOutOfBandNoiseFloorMap_dBm[rxAntennaId].emplace(segmentKeyOutOfBand, rangeInfo.first);
 
 #if 0
-        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 2nd, RxAntenna %u, add segmentKey <%lu, %ld, %ld> rx power %f dBm, noise %f dB, status %d", 
+        logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, 2nd, bin %u, RxAntenna %u, minSor %f, maxEor %f, add segmentKey <%lu, %ld, %ld> rx power %f dBm, noise %f dB, siginn %d", 
                     __func__,
+                    bin,
                     rxAntennaId,
+                    minSor.time_since_epoch().count()/1e9,
+                    maxEor.time_since_epoch().count()/1e9,
                     std::get<0>(segmentKeyOutOfBand),
                     std::get<1>(segmentKeyOutOfBand).count(),
                     std::get<2>(segmentKeyOutOfBand).count(),
                     EMANELTE::MW_TO_DB(rxPower_mW),
                     rangeInfo.first,
                     rangeInfo.second);
+
+        for(const auto & e : EMANE::Utils::spectrumCompress(rawNoiseData))
+         {
+           logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, {%zu, %f}", 
+                       __func__,
+                       e.first,
+                       EMANELTE::MW_TO_DB(e.second));
+         }
 #endif
 
       } // end second pass
@@ -555,7 +584,6 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                                 std::get<2>(e.first).count());
                   }
 #endif
-
                  // something is wrong, not an expected condition
                  continue;
                }
@@ -564,16 +592,25 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
               const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
               const auto sinr_dB        = rxPower_dBm - noiseFloor_dBm;
 
-#if 0 
-              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s 3rd, src %hu, found rxAntenna %u, <%lu, %ld, %ld>, noise %f dBm, sinr %f dB",
+              // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
+              const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
+
+              pRadioModel_->rfSignalTable_.update(rxControl.nemId_,
+                                                  rxAntennaId,
+                                                  segmentFrequencyHz,
+                                                  rxPower_mW,
+                                                  noiseFloor_mW,
+                                                  receiverSensitivity_mW);
+
+#if 0
+              logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
                           __func__,
                           rxControl.nemId_,
                           rxAntennaId,
                           segmentFrequencyHz,
-                          frequencySegment.getOffset().count(),
-                          frequencySegment.getDuration().count(),
+                          rxPower_dBm,
                           noiseFloor_dBm,
-                          sinr_dB);
+                          EMANELTE::MW_TO_DB(receiverSensitivity_mW));
 #endif
   
               signalSum_mW     += rxPower_mW;
@@ -683,6 +720,11 @@ EMANELTE::MHAL::MHALENBImpl::putSINRResult_i(const ChannelMessage & channel_mess
                                              UplinkSINRTesterImpl * pSINRTester,
                                              const bool received)
 {
+#if 0
+  logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, %s, result %s", 
+              __func__, channel_message.DebugString().c_str(), received ? "pass" : "fail");
+#endif
+
   CHANNEL_TYPE ctype = channel_message.channel_type();
 
   if(channel_message.has_rnti())

@@ -33,13 +33,18 @@ The lastest stable version: 1.0.6.
 
 ### Centos 7
 
+Centos 7 requires an additional step of installing devtoolset-9 for
+c++17 support.
+
 ```
 sudo yum install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
+
+sudo yum install centos-release-scl
+sudo yum install devtoolset-9
+
 git clone https://github.com/adjacentlink/emane-model-lte.git
 cd emane-model-lte
-./autogen.sh
-./configure
-make rpm
+scl enable devtoolset-9 "./autogen.sh && ./configure && make rpm"
 sudo yum install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
