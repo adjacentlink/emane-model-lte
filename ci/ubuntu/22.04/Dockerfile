@@ -17,8 +17,8 @@ COPY --from=gcr.io/automated-builds-303920/ubuntu22.04.openstatistic /opt/built/
 RUN dpkg -i dependencies/*; apt-get -y -f install
 
 # Build tools and dependencies
-RUN apt-get -y install git gcc g++ autoconf automake libtool debhelper dh-python pkg-config python-setuptools \
-                       protobuf-compiler libprotobuf-dev python-protobuf
+RUN apt-get -y install git gcc g++ autoconf automake libtool debhelper dh-python pkg-config python3-setuptools \
+                       protobuf-compiler libprotobuf-dev python3-protobuf
 RUN apt-get -y install libxml2-dev libpcap-dev libpcre3-dev uuid-dev
 
 RUN git clone https://github.com/adjacentlink/emane-model-lte -b develop
