@@ -462,8 +462,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
               continue;
             }
 
-           const auto rxPower_dBm = frequencySegment.getRxPowerdBm();
-           const auto rxPower_mW  = EMANELTE::DB_TO_MW(frequencySegment.getRxPowerdBm());
+           const double rxPower_dBm = frequencySegment.getRxPowerdBm();
+           const double rxPower_mW  = EMANELTE::DB_TO_MW(frequencySegment.getRxPowerdBm());
 
            const auto segmentSor = otaInfo.sot_ + frequencySegment.getOffset();
            const auto segmentEor = segmentSor   + frequencySegment.getDuration();
@@ -472,20 +472,21 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
 
            // HACK force low noise floor to allow for multiple cell testing
            const bool celltest = false;
-           const auto noiseFloor_dBm = celltest ? -111.0f : rangeInfo.first;
-           const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+           const double noiseFloor_dBm = celltest ? -111.0f : rangeInfo.first;
+           const double noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
 
-           const auto sinr_dB = rxPower_dBm - noiseFloor_dBm;
+           const double sinr_dB = rxPower_dBm - noiseFloor_dBm;
 
            // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
-           const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
+           const double receiverSensitivity_dB = EMANELTE::MW_TO_DB(std::get<3>(spectrumWindow->second));
 
            pRadioModel_->rfSignalTable_.update(rxControl.nemId_,
                                                rxAntennaId,
                                                segmentFrequencyHz,
-                                               rxPower_mW,
-                                               noiseFloor_mW,
-                                               receiverSensitivity_mW);
+                                               rxPower_dBm,
+                                               sinr_dB,
+                                               noiseFloor_dBm,
+                                               receiverSensitivity_dB);
 
 #if 0
            logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
@@ -495,7 +496,7 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
                           segmentFrequencyHz,
                           rxPower_dBm,
                           noiseFloor_dBm,
-                          EMANELTE::MW_TO_DB(receiverSensitivity_mW));
+                          receiverSensitivity_dB);
 #endif
 
            signalSum_mW     += rxPower_mW;
@@ -516,8 +517,8 @@ EMANELTE::MHAL::MHALUEImpl::noise_processor(const uint32_t bin,
          // now check for number of pass/fail segments
          if(segmentCacheSize > 0)
           {
-            const auto signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW     / segmentCacheSize);
-            const auto noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
+            const double signalAvg_dBm     = EMANELTE::MW_TO_DB(signalSum_mW     / segmentCacheSize);
+            const double noiseFloorAvg_dBm = EMANELTE::MW_TO_DB(noiseFloorSum_mW / segmentCacheSize);
 
             const bool pcfichPass = pRadioModel_->noiseTestChannelMessage(txControl, 
                                                                           txCarrier.downlink().pcfich(), 

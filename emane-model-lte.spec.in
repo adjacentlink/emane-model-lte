@@ -1,4 +1,6 @@
 %global __brp_check_rpaths %{nil}
+%define source_date_epoch_from_changelog 0
+
 Summary: EMANE-MODEL-LTE
 Name: emane-model-lte
 Version: @VERSION@

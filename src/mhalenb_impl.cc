@@ -543,8 +543,8 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                  continue;
                }
 
-              const auto rxPower_dBm = frequencySegment.getRxPowerdBm();
-              const auto rxPower_mW  = EMANELTE::DB_TO_MW(rxPower_dBm);
+              const double rxPower_dBm = frequencySegment.getRxPowerdBm();
+              const double rxPower_mW  = EMANELTE::DB_TO_MW(rxPower_dBm);
 
               const auto antennaOutOfBandIter = antennaOutOfBandNoiseFloorMap_dBm.find(rxAntennaId);
 
@@ -588,19 +588,20 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                  continue;
                }
             
-              const auto noiseFloor_dBm = outOfBandNoiseIter->second;
-              const auto noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
-              const auto sinr_dB        = rxPower_dBm - noiseFloor_dBm;
+              const double noiseFloor_dBm = outOfBandNoiseIter->second;
+              const double noiseFloor_mW  = EMANELTE::DB_TO_MW(noiseFloor_dBm);
+              const double sinr_dB        = rxPower_dBm - noiseFloor_dBm;
 
               // see include/emane/spectrumserviceprovider.h Spectrum window snapshot
-              const auto receiverSensitivity_mW = std::get<3>(spectrumWindow->second);
+              const double receiverSensitivity_dB = EMANELTE::MW_TO_DB(std::get<3>(spectrumWindow->second));
 
               pRadioModel_->rfSignalTable_.update(rxControl.nemId_,
                                                   rxAntennaId,
                                                   segmentFrequencyHz,
-                                                  rxPower_mW,
-                                                  noiseFloor_mW,
-                                                  receiverSensitivity_mW);
+                                                  rxPower_dBm,
+                                                  sinr_dB,
+                                                  noiseFloor_dBm,
+                                                  receiverSensitivity_dB);
 
 #if 0
               logger_.log(EMANE::INFO_LEVEL, "MHAL::PHY %s, src %hu, rxAntenna %d, frequency %lu, rxPower %f dBm, noise %f dBm, receiverSensitivity %f dB",
@@ -610,7 +611,7 @@ EMANELTE::MHAL::MHALENBImpl::noise_processor(const uint32_t bin,
                           segmentFrequencyHz,
                           rxPower_dBm,
                           noiseFloor_dBm,
-                          EMANELTE::MW_TO_DB(receiverSensitivity_mW));
+                          receiverSensitivity_dB));
 #endif
   
               signalSum_mW     += rxPower_mW;
