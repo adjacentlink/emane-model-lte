@@ -15,40 +15,62 @@ not run as a separate application. The
 [emane-embedded-example](https://github.com/adjacentlink/emane-embedded-example)
 project provides a small example, for those interested.
 
-The lastest stable version: 1.0.6.
+The lastest stable version: 1.0.11.
 
 
 ---
+## Install Instructions
+
+The easiest way to get running with the EMANE LTE model is to install packages
+directly from the latest [pre-built EMANE bundle](https://github.com/adjacentlink/emane/wiki/Install).
+
+
 ## Build Instructions
 
-1. Install the latest [pre-built EMANE bundle](https://github.com/adjacentlink/emane/wiki/Install). EMANE version 1.2.3 or later is **required**.
+1. Install the latest [pre-built EMANE bundle](https://github.com/adjacentlink/emane/wiki/Install).
+This will  install the build dependencies - EMANE, OpenTestPoint and OpenStatistic.
 
 2. Build and install `emane-model-lte`.
-   * [Centos 7](#centos-7)
-   * [Fedora 33](#fedora-33)
-   * [Ubuntu 18.04 and 20.04](#ubuntu-1804-and-2004)
+   * [RockyLinux 8](#rockylinux-8)
+   * [RockyLinux 9](#rockylinux-9)
+   * [Fedora 41](#fedora-41)
+   * [Ubuntu 22.04 and 24.04](#ubuntu-2204-and-2404)
 
-3. Build and install [srsLTE-emane](https://github.com/adjacentlink/srsLTE-emane.git).
+3. Build and install [srsRAN-emane](https://github.com/adjacentlink/srsRAN-emane.git).
 
 
-### Centos 7
-
-Centos 7 requires an additional step of installing devtoolset-9 for
-c++17 support.
+### RockyLinux 8
 
 ```
-sudo yum install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
-
-sudo yum install centos-release-scl
-sudo yum install devtoolset-9
+sudo dnf install epel-release dnf-plugins-core
+sudo dnf config-manager --set-enabled powertools
+sudo dnf install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
 
 git clone https://github.com/adjacentlink/emane-model-lte.git
 cd emane-model-lte
-scl enable devtoolset-9 "./autogen.sh && ./configure && make rpm"
-sudo yum install .rpmbuild/RPMS/x86_64/*rpm
+./autogen.sh
+./configure
+make rpm
+sudo dnf install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
-### Fedora 33
+### RockyLinux 9
+
+```
+sudo dnf install epel-release dnf-plugins-core
+sudo dnf config-manager --enable crb
+sudo dnf install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
+
+git clone https://github.com/adjacentlink/emane-model-lte.git
+cd emane-model-lte
+./autogen.sh
+./configure
+make rpm
+sudo dnf install .rpmbuild/RPMS/x86_64/*rpm
+```
+
+
+### Fedora 41
 ```
 sudo dnf install autoconf automake git libtool libxml2-devel libpcap-devel pcre-devel libuuid-devel python-devel python-setuptools rpm-build make gcc-c++
 git clone https://github.com/adjacentlink/emane-model-lte.git
@@ -59,7 +81,7 @@ make rpm
 sudo dnf install .rpmbuild/RPMS/x86_64/*rpm
 ```
 
-### Ubuntu 18.04 and 20.04
+### Ubuntu 22.04 and 24.04
 
 ```
 sudo apt-get install gcc g++ autoconf automake libtool libxml2-dev libprotobuf-dev python-protobuf libpcap-dev libpcre3-dev uuid-dev debhelper pkg-config python-setuptools protobuf-compiler git dh-python
