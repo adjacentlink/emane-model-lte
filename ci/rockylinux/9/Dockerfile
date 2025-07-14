@@ -1,15 +1,18 @@
-FROM fedora:37
+FROM rockylinux:9
 
 RUN mkdir -p /opt/built
 
 RUN dnf -y update
+RUN dnf -y install epel-release dnf-plugins-core
+RUN dnf config-manager --enable crb
+RUN dnf clean all
 
 # Copy and install packages from the latest upsteam dependencies
 WORKDIR /opt
 RUN mkdir -p dependencies
-COPY --from=gcr.io/automated-builds-303920/fedora37.emane /opt/built/* dependencies/
-COPY --from=gcr.io/automated-builds-303920/fedora37.opentestpoint /opt/built/* dependencies/
-COPY --from=gcr.io/automated-builds-303920/fedora37.openstatistic /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/rockylinux9.emane /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/rockylinux9.opentestpoint /opt/built/* dependencies/
+COPY --from=gcr.io/automated-builds-303920/rockylinux9.openstatistic /opt/built/* dependencies/
 RUN dnf -y install dependencies/*\.rpm
 
 # Build tools and depends
